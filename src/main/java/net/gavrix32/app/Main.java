@@ -43,7 +43,7 @@ public class Main {
             if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE) Window.toggleCursor();
         });
         cam = new Camera();
-        cam.setPos(50, 50, -100);
+        cam.setPos(50, 50, -120);
         Renderer.init();
 
         ImGui.createContext();
@@ -52,7 +52,7 @@ public class Main {
         imGuiImplGlfw.init(Window.get(), true);
         imGuiImplGl3.init();
 
-        int[] samples = new int[] { 8 };
+        int[] samples = new int[] { 32 };
         int[] bounces = new int[] { 8 };
         int[] AASize = new int[] { 150 };
         ImBoolean accumulate = new ImBoolean(true);
