@@ -1,5 +1,6 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.shapes.Box;
 import net.gavrix32.engine.shapes.Sphere;
 

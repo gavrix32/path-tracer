@@ -102,7 +102,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
         material.roughness = 0;
         hit = true;
         minIt = it;
-        col = vec3(0.8);
+        col = vec3(1);
         normal = vec3(0, 1, 0);
     }
     for (int i = 0; i < spheres.length(); i++) {
