@@ -73,6 +73,8 @@ public class Renderer {
         quadShader.setInt("u_random_noise", randNoise ? 1 : 0);
         quadShader.setInt("u_aa_size", AASize);
         quadShader.setInt("u_aces", ACESFilm ? 1 : 0);
+        quadShader.setInt("tex", 0);
+        quadShader.setInt("sky", 1);
         for (int i = 0; i < scene.getBoxes().length; i++) {
             quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes()[i].getPos().x, scene.getBoxes()[i].getPos().y, scene.getBoxes()[i].getPos().z);
             quadShader.setVec3("boxes[" + i + "].size", scene.getBoxes()[i].getSize().x, scene.getBoxes()[i].getSize().y, scene.getBoxes()[i].getSize().z);
@@ -87,9 +89,10 @@ public class Renderer {
             quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres()[i].getMaterial().getEmission());
             quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres()[i].getMaterial().getRoughness());
         }
-
         if (useDenoiser && accFrames > 0) {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_FLOAT, 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
             // Render to framebuffer texture
             glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);

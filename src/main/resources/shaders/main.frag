@@ -29,6 +29,7 @@ uniform mat4 u_camera_rotation;
 uniform int u_samples, u_bounces, u_aa_size, u_aces;
 uniform int u_random_noise;
 uniform sampler2D tex;
+uniform samplerCube sky;
 uniform float u_acc_frames;
 uniform Box boxes[5];
 uniform Sphere spheres[3];
@@ -132,7 +133,8 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
         }
     }
     if (!hit) {
-        col = vec3(0); // 0
+        // col = vec3(0); // 0
+        col = texture(sky, ray.direction).rgb;
         material.emission = 1;
         return true;
     }

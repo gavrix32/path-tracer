@@ -8,12 +8,18 @@ import net.gavrix32.engine.Utils;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
 
+import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL13C.*;
+import static org.lwjgl.stb.STBImage.*;
 
 public class Main implements IApplication {
+
+    private int texture;
 
     @Override
     public void init() {
@@ -33,14 +39,35 @@ public class Main implements IApplication {
         CornellBox.scene.getCamera().setPos(50, 50, -120);
         Spheres.scene.getCamera().setPos(50, 20, -80);
         Renderer.init();
-        RendererSettings.init();
+        RendererGui.init();
+
+        // Skybox
+        texture = glGenTextures();
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        String[] skyBoxPaths = new String[] {
+                "textures/skybox/iceriver/posx.jpg",
+                "textures/skybox/iceriver/negx.jpg",
+                "textures/skybox/iceriver/posy.jpg",
+                "textures/skybox/iceriver/negy.jpg",
+                "textures/skybox/iceriver/posz.jpg",
+                "textures/skybox/iceriver/negz.jpg"
+        };
+        for (int i = 0; i < 6; i++) {
+            int[] width = new int[1], height = new int[1];
+            ByteBuffer data = stbi_load("src/main/resources/" + skyBoxPaths[i], width, height,  new int[1], 3);
+            if (data == null) System.err.println("Failed to load texture: " + stbi_failure_reason());
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        }
     }
 
     @Override
     public void update() {
-        Controls.update(Spheres.scene.getCamera());
-        Renderer.render(Spheres.scene);
-        RendererSettings.update();
+        Controls.update(CornellBox.scene.getCamera());
+        Renderer.render(CornellBox.scene);
+        RendererGui.update();
         Window.update();
     }
 
