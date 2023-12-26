@@ -1,7 +1,7 @@
 package net.gavrix32.engine.shapes;
 
 import net.gavrix32.engine.graphics.Material;
-import org.joml.Vector3f;
+import net.gavrix32.engine.math.Vector3f;
 
 public class Box extends Shape {
     private Vector3f size;

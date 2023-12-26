@@ -1,9 +1,7 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.engine.Utils;
 import org.joml.Matrix4f;
-
-import java.io.IOException;
-import java.util.Objects;
 
 import static org.lwjgl.opengl.GL20.*;
 
@@ -12,14 +10,14 @@ public class Shader {
 
     public Shader(String vertexPath, String fragmentPath) {
         int vertex = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex, load(vertexPath));
+        glShaderSource(vertex, Utils.loadString(vertexPath));
         glCompileShader(vertex);
         if (glGetShaderi(vertex, GL_COMPILE_STATUS) == 0) {
             System.err.println(glGetShaderInfoLog(vertex));
         }
 
         int fragment = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment, load(fragmentPath));
+        glShaderSource(fragment, Utils.loadString(fragmentPath));
         glCompileShader(fragment);
         if (glGetShaderi(fragment, GL_COMPILE_STATUS) == 0) {
             System.err.println(glGetShaderInfoLog(fragment));
@@ -56,15 +54,5 @@ public class Shader {
 
     public void use() {
         glUseProgram(program);
-    }
-
-    private String load(String path) {
-        try {
-            return new String(Objects
-                    .requireNonNull(Shader.class.getClassLoader().getResourceAsStream(path))
-                    .readAllBytes());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

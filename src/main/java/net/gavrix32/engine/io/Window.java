@@ -76,6 +76,9 @@ public class Window {
         }
     }
 
+    public static void vsync(boolean value) {
+        glfwSwapInterval(value ? 1 : 0);
+    }
 
     public static int getWidth() {
         return width;

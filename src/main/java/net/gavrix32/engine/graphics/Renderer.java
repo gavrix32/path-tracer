@@ -1,10 +1,9 @@
 package net.gavrix32.engine.graphics;
 
 import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.shapes.Box;
-import net.gavrix32.engine.shapes.Sphere;
 
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
+import static org.lwjgl.opengl.ARBInternalformatQuery2.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL11C.GL_FLOAT;
 import static org.lwjgl.opengl.GL15C.*;
 import static org.lwjgl.opengl.GL15C.GL_STATIC_DRAW;
@@ -27,8 +26,7 @@ public class Renderer {
     private static int texture, frameBuffer;
     private static int accFrames = 0;
     private static int samples = 8, bounces = 8, AASize = 0;
-    private static boolean accumulate = false, randNoise = false;
-    private static float dt;
+    private static boolean useDenoiser = false, randNoise = false, ACESFilm = true;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -47,51 +45,61 @@ public class Renderer {
         quadShader = new Shader("shaders/main.vert", "shaders/main.frag");
         quadShader.use();
 
+        // Create texture
         texture = glGenTextures();
+
+        // Setup texture
         glBindTexture(GL_TEXTURE_2D, texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+        // Create framebuffer
         frameBuffer = glGenFramebuffers();
+
+        // Setup framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
     }
 
-    public static void render(Camera cam, Box[] boxes, Sphere[] spheres) {
-        dt = (float) glfwGetTime();
-        cam.update();
-        quadShader.setVec2("uRes", Window.getWidth(), Window.getHeight());
-        quadShader.setFloat("uTime", (float) glfwGetTime());
-        quadShader.setVec3("ro", cam.getPos().x, cam.getPos().y, cam.getPos().z);
-        quadShader.setMat4("uRotation", cam.getRotMatrix());
-        quadShader.setFloat("uAccumulate", accFrames);
-        quadShader.setInt("samples", samples);
-        quadShader.setInt("bounces", bounces);
-        quadShader.setInt("randNoise", randNoise ? 1 : 0);
-        quadShader.setInt("AASize", AASize);
-        for (int i = 0; i < boxes.length; i++) {
-            quadShader.setVec3("boxes[" + i + "].pos", boxes[i].getPos().x, boxes[i].getPos().y, boxes[i].getPos().z);
-            quadShader.setVec3("boxes[" + i + "].size", boxes[i].getSize().x, boxes[i].getSize().y, boxes[i].getSize().z);
-            quadShader.setVec3("boxes[" + i + "].col", boxes[i].getCol().x, boxes[i].getCol().y, boxes[i].getCol().z);
-            quadShader.setFloat("boxes[" + i + "].material.emission", boxes[i].getMaterial().getEmission());
-            quadShader.setFloat("boxes[" + i + "].material.roughness", boxes[i].getMaterial().getRoughness());
+    public static void render(Scene scene) {
+        scene.getCamera().update();
+        quadShader.setVec2("u_resolution", Window.getWidth(), Window.getHeight());
+        quadShader.setFloat("u_time", (float) glfwGetTime());
+        quadShader.setVec3("u_camera_position", scene.getCamera().getPos().x, scene.getCamera().getPos().y, scene.getCamera().getPos().z);
+        quadShader.setMat4("u_camera_rotation", scene.getCamera().getRotMatrix());
+        quadShader.setFloat("u_acc_frames", accFrames);
+        quadShader.setInt("u_samples", samples);
+        quadShader.setInt("u_bounces", bounces);
+        quadShader.setInt("u_random_noise", randNoise ? 1 : 0);
+        quadShader.setInt("u_aa_size", AASize);
+        quadShader.setInt("u_aces", ACESFilm ? 1 : 0);
+        for (int i = 0; i < scene.getBoxes().length; i++) {
+            quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes()[i].getPos().x, scene.getBoxes()[i].getPos().y, scene.getBoxes()[i].getPos().z);
+            quadShader.setVec3("boxes[" + i + "].size", scene.getBoxes()[i].getSize().x, scene.getBoxes()[i].getSize().y, scene.getBoxes()[i].getSize().z);
+            quadShader.setVec3("boxes[" + i + "].color", scene.getBoxes()[i].getCol().x, scene.getBoxes()[i].getCol().y, scene.getBoxes()[i].getCol().z);
+            quadShader.setFloat("boxes[" + i + "].material.emission", scene.getBoxes()[i].getMaterial().getEmission());
+            quadShader.setFloat("boxes[" + i + "].material.roughness", scene.getBoxes()[i].getMaterial().getRoughness());
         }
-        for (int i = 0; i < spheres.length; i++) {
-            quadShader.setVec3("spheres[" + i + "].pos", spheres[i].getPos().x, spheres[i].getPos().y, spheres[i].getPos().z);
-            quadShader.setVec3("spheres[" + i + "].col", spheres[i].getCol().x, spheres[i].getCol().y, spheres[i].getCol().z);
-            quadShader.setFloat("spheres[" + i + "].rad", spheres[i].getRadius());
-            quadShader.setFloat("spheres[" + i + "].material.emission", spheres[i].getMaterial().getEmission());
-            quadShader.setFloat("spheres[" + i + "].material.roughness", spheres[i].getMaterial().getRoughness());
+        for (int i = 0; i < scene.getSpheres().length; i++) {
+            quadShader.setVec3("spheres[" + i + "].position", scene.getSpheres()[i].getPos().x, scene.getSpheres()[i].getPos().y, scene.getSpheres()[i].getPos().z);
+            quadShader.setFloat("spheres[" + i + "].radius", scene.getSpheres()[i].getRadius());
+            quadShader.setVec3("spheres[" + i + "].color", scene.getSpheres()[i].getCol().x, scene.getSpheres()[i].getCol().y, scene.getSpheres()[i].getCol().z);
+            quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres()[i].getMaterial().getEmission());
+            quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres()[i].getMaterial().getRoughness());
         }
-        if (accumulate && accFrames > 0) {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, Window.getWidth(), Window.getHeight(), 0, GL_RGBA, GL_FLOAT, 0);
+
+        if (useDenoiser && accFrames > 0) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_FLOAT, 0);
+
+            // Render to framebuffer texture
             glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
             glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
         }
+
+        // Render to screen
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
         accFrames++;
-        dt = (float) (glfwGetTime() - dt);
     }
 
     public static void setSamples(int samples) {
@@ -104,19 +112,19 @@ public class Renderer {
 
     public static void useDenoiser(boolean value) {
         if (!value) resetAccFrames();
-        accumulate = value;
+        useDenoiser = value;
     }
 
     public static void resetAccFrames() {
         accFrames = 0;
     }
 
-    public static float getFrametime() {
-        return dt;
+    public static void useRandomNoise(boolean value) {
+        Renderer.randNoise = value;
     }
 
-    public static void useRandomNoise(boolean randomSeed) {
-        Renderer.randNoise = randomSeed;
+    public static void useACESFilm(boolean value) {
+        Renderer.ACESFilm = value;
     }
 
     public static void setAASize(int aaSize) {

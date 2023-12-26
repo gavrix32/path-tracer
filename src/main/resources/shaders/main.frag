@@ -1,9 +1,9 @@
 #version 460 core
 
-out vec4 color;
+out vec4 out_color;
 
 struct Ray {
-    vec3 ro, rd;
+    vec3 origin, direction;
 };
 
 struct Material {
@@ -11,25 +11,25 @@ struct Material {
 };
 
 struct Sphere {
-    vec3 pos;
-    float rad;
-    vec3 col;
+    vec3 position;
+    float radius;
+    vec3 color;
     Material material;
 };
 
 struct Box {
-    vec3 pos, size, col;
+    vec3 position, size, color;
     Material material;
 };
 
-uniform vec2 uRes;
-uniform float uTime;
-uniform vec3 ro;
-uniform mat4 uRotation;
-uniform int samples, bounces, AASize;
-uniform int randNoise;
+uniform vec2 u_resolution;
+uniform float u_time;
+uniform vec3 u_camera_position;
+uniform mat4 u_camera_rotation;
+uniform int u_samples, u_bounces, u_aa_size, u_aces;
+uniform int u_random_noise;
 uniform sampler2D tex;
-uniform float uAccumulate;
+uniform float u_acc_frames;
 uniform Box boxes[5];
 uniform Sphere spheres[3];
 
@@ -37,7 +37,7 @@ uniform Sphere spheres[3];
 
 uint seed;
 
-vec2 uv = (2 * gl_FragCoord.xy - uRes) / uRes.y;
+vec2 uv = (2 * gl_FragCoord.xy - u_resolution) / u_resolution.y;
 
 /////////////// RANDOM ///////////////
 uint pcg_hash(uint seed) {
@@ -58,7 +58,7 @@ vec3 rand_vec3() {
 void updateSeed() {
     seed = pcg_hash(uint(gl_FragCoord.x));
     seed = pcg_hash(seed + uint(gl_FragCoord.y));
-    seed = pcg_hash(seed + uint(uTime * 1000));
+    seed = pcg_hash(seed + uint(u_time * 1000));
 }
 float rand(vec2 co) {
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
@@ -66,12 +66,16 @@ float rand(vec2 co) {
 /////////////// RANDOM ///////////////
 
 float plane(Ray ray, vec4 p) {
-    return -(dot(ray.ro, p.xyz) + p.w) / dot(ray.rd, p.xyz);
+    return -(dot(ray.origin, p.xyz) + p.w) / dot(ray.direction, p.xyz);
+}
+
+float checkerBoard(vec2 p) {
+    return mod(floor(p.x) + floor(p.y), 2);
 }
 
 float sphere(Ray ray, vec3 ce, float ra) {
-    vec3 oc = ray.ro - ce;
-    float b = dot(oc, ray.rd);
+    vec3 oc = ray.origin - ce;
+    float b = dot(oc, ray.direction);
     float c = dot(oc, oc) - ra * ra;
     float h = b * b - c;
     if(h < 0) return -1;
@@ -79,8 +83,8 @@ float sphere(Ray ray, vec3 ce, float ra) {
 }
 
 vec2 box(in Ray ray, vec3 boxSize, out vec3 outNormal) {
-    vec3 m = 1 / ray.rd;
-    vec3 n = m * ray.ro;
+    vec3 m = 1 / ray.direction;
+    vec3 n = m * ray.origin;
     vec3 k = abs(m) * boxSize;
     vec3 t1 = -n - k;
     vec3 t2 = -n + k;
@@ -88,7 +92,7 @@ vec2 box(in Ray ray, vec3 boxSize, out vec3 outNormal) {
     float tF = min(min(t2.x, t2.y), t2.z);
     if(tN > tF || tF < 0) return vec2(-1);
     outNormal = (tN > 0) ? step(vec3(tN), t1) : step(t2, vec3(tF));
-    outNormal *= -sign(ray.rd);
+    outNormal *= -sign(ray.direction);
     return vec2(tN, tF);
 }
 
@@ -102,26 +106,27 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
         material.roughness = 0;
         hit = true;
         minIt = it;
-        col = vec3(1);
+        //col = vec3(1);
+        col = vec3(checkerBoard(vec3(ray.origin + ray.direction * it).xz * 0.04));
         normal = vec3(0, 1, 0);
     }
     for (int i = 0; i < spheres.length(); i++) {
-        it = sphere(ray, spheres[i].pos, spheres[i].rad);
+        it = sphere(ray, spheres[i].position, spheres[i].radius);
         if (it > 0 && it < minIt) {
             hit = true;
             minIt = it;
-            col = spheres[i].col;
+            col = spheres[i].color;
             material = spheres[i].material;
-            normal = normalize(ray.ro + ray.rd * it - spheres[i].pos);
+            normal = normalize(ray.origin + ray.direction * it - spheres[i].position);
         }
     }
     for (int i = 0; i < boxes.length(); i++) {
         vec3 norm;
-        it = box(Ray(ray.ro - boxes[i].pos, ray.rd), boxes[i].size, norm).x;
+        it = box(Ray(ray.origin - boxes[i].position, ray.direction), boxes[i].size, norm).x;
         if (it > 0 && it < minIt) {
             hit = true;
             minIt = it;
-            col = boxes[i].col;
+            col = boxes[i].color;
             material = boxes[i].material;
             normal = norm;
         }
@@ -137,44 +142,68 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
 
 vec3 raytrace(Ray ray) {
     vec3 energy = vec3(1);
-    for(int i = 0; i < bounces; i++) {
+    for(int i = 0; i < u_bounces; i++) {
         Material material;
-        vec3 col, n;
+        vec3 color, normal;
         float minIt;
-        if (raycast(ray, col, n, minIt, material)) {
-            ray.ro += ray.rd * (minIt - 0.01);
-            ray.rd = mix(rand_vec3(), reflect(ray.rd, n), material.roughness);
-            energy *= col;
+        if (raycast(ray, color, normal, minIt, material)) {
+            ray.origin += ray.direction * (minIt - 0.01);
+            ray.direction = mix(rand_vec3(), reflect(ray.direction, normal), material.roughness);
+            energy *= color;
             if (material.emission > 0) return energy * material.emission;
         }
     }
     return vec3(0);
 }
 
+vec3 ACESFilm(vec3 col) {
+    return (col * (2.51f * col + 0.03f)) / (col * (2.43f * col + 0.59f) + 0.14f);
+}
+
 void main() {
-    if (uAccumulate > 0) {
+    if (u_acc_frames > 0) {
         updateSeed();
-    } else if (randNoise == 1) {
+    } else if (u_random_noise == 1) {
         updateSeed();
     } else {
         seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
     }
 
     // AA
-    uv.x += rand_float() / 100000 * AASize;
-    uv.x -= rand_float() / 100000 * AASize;
-    uv.y += rand_float() / 100000 * AASize;
-    uv.y -= rand_float() / 100000 * AASize;
+    uv.x += rand_float() / 100000 * u_aa_size;
+    uv.x -= rand_float() / 100000 * u_aa_size;
+    uv.y += rand_float() / 100000 * u_aa_size;
+    uv.y -= rand_float() / 100000 * u_aa_size;
 
-    vec3 rd = normalize(vec3(uv, 1)) * mat3(uRotation);
-    Ray ray = Ray(ro, rd);
-    vec3 col = vec3(0);
-    for(int i = 0; i < samples; i++) {
-        col += raytrace(ray);
+    /*float yaw = 0, pitch = u_time;
+    float x = cos(yaw * 3.14 / 180) * cos(pitch * 3.14 / 180);
+    float y = sin(pitch * 3.14 / 180);
+    float z = sin(yaw * 3.14 / 180) * cos(pitch * 3.14 / 180);
+    vec3 d = vec3(x, y, z);*/
+
+    /*m.y = -m.y;
+    vec2 s = sin(m);
+    vec2 c = cos(m);
+    mat3 rotX = mat3(1.0, 0.0, 0.0, 0.0, c.y, s.y, 0.0, -s.y, c.y);
+    mat3 rotY = mat3(c.x, 0.0, -s.x, 0.0, 1.0, 0.0, s.x, 0.0, c.x);*/
+
+
+    //vec3 dir = normalize(vec3(uv, 1)) * rotX;
+    vec3 dir = normalize(vec3(uv, 1)) * mat3(u_camera_rotation);
+    Ray ray = Ray(u_camera_position, dir);
+
+    // DOF
+    /*vec3 fp = ray.ro + ray.dir * 3;
+    ray.ro = ray.ro + mat3(uRotation) * vec3(rand_vec3().xy, 0) * 0.05;
+    ray.dir = normalize(fp - ray.ro);*/
+
+    vec3 color = vec3(0);
+    for(int i = 0; i < u_samples; i++) {
+        color += raytrace(ray);
     }
-    col /= samples;
-    col = pow(col, vec3(1.0 / 2.2));
+    color /= u_samples;
 
-    if (uAccumulate > 0) col = mix(texture(tex, gl_FragCoord.xy / uRes).rgb, col, 1 / uAccumulate);
-    color = vec4(col, 1);
+    if (u_aces == 1) color = ACESFilm(color);
+    if (u_acc_frames > 0) color = mix(texture(tex, gl_FragCoord.xy / u_resolution).rgb, color, 1 / u_acc_frames);
+    out_color = vec4(color, 1);
 }

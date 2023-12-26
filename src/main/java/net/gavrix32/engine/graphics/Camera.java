@@ -4,8 +4,6 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import static org.lwjgl.glfw.GLFW.glfwGetTime;
-
 public class Camera {
     private Vector3f pos;
     private Matrix4f rotMatrix;
