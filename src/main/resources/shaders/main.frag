@@ -108,7 +108,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
         hit = true;
         minIt = it;
         //col = vec3(1);
-        col = vec3(checkerBoard(vec3(ray.origin + ray.direction * it).xz * 0.04));
+        col = vec3(checkerBoard(vec3(ray.origin + ray.direction * it).xz * (1. / 16.)));
         normal = vec3(0, 1, 0);
     }
     for (int i = 0; i < spheres.length(); i++) {
@@ -132,8 +132,25 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
             normal = norm;
         }
     }
+    // Chunk
+    /*for (int x = 0; x < 8; x++) {
+        for (int y = 0; y < 8; y++) {
+            for (int z = 0; z < 8; z++) {
+                vec3 norm;
+                it = box(Ray(ray.origin - vec3((x*16)+8, (y*16)+8, (z*16)+8), ray.direction), vec3(4), norm).x;
+                if (it > 0 && it < minIt) {
+                    hit = true;
+                    minIt = it;
+                    col = vec3(x/8., y/8., z/8.);
+                    material.roughness = 0;
+                    material.emission = 0;
+                    normal = norm;
+                }
+            }
+        }
+    }*/
     if (!hit) {
-        // col = vec3(0); // 0
+        // col = vec3(0, 0.17, 0.20); // 0
         col = texture(sky, ray.direction).rgb;
         material.emission = 1;
         return true;
@@ -144,7 +161,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
 
 vec3 raytrace(Ray ray) {
     vec3 energy = vec3(1);
-    for(int i = 0; i < u_bounces; i++) {
+    for(int i = 0; i <= u_bounces; i++) {
         Material material;
         vec3 color, normal;
         float minIt;
@@ -199,11 +216,18 @@ void main() {
     ray.ro = ray.ro + mat3(uRotation) * vec3(rand_vec3().xy, 0) * 0.05;
     ray.dir = normalize(fp - ray.ro);*/
 
-    vec3 color = vec3(0);
+    // Path Tracing
+    vec3 color;
     for(int i = 0; i < u_samples; i++) {
         color += raytrace(ray);
     }
     color /= u_samples;
+
+    // Ray Casting
+    /*vec3 n;
+    float d;
+    Material m;
+    raycast(ray, color, n, d, m);*/
 
     if (u_aces == 1) color = ACESFilm(color);
     if (u_acc_frames > 0) color = mix(texture(tex, gl_FragCoord.xy / u_resolution).rgb, color, 1 / u_acc_frames);

@@ -7,6 +7,8 @@ import net.gavrix32.engine.IApplication;
 import net.gavrix32.engine.Utils;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
+import net.gavrix32.engine.shapes.Box;
+import net.gavrix32.engine.shapes.Sphere;
 
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
@@ -20,6 +22,7 @@ import static org.lwjgl.stb.STBImage.*;
 public class Main implements IApplication {
 
     private int texture;
+    private Camera cam;
 
     @Override
     public void init() {
@@ -61,12 +64,17 @@ public class Main implements IApplication {
             if (data == null) System.err.println("Failed to load texture: " + stbi_failure_reason());
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         }
+
+        cam = new Camera();
+        cam.setPos(0, 200, -200);
     }
 
     @Override
     public void update() {
         Controls.update(CornellBox.scene.getCamera());
         Renderer.render(CornellBox.scene);
+        /*Controls.update(cam);
+        Renderer.render(new Scene(cam, new Sphere[0], new Box[0]));*/
         RendererGui.update();
         Window.update();
     }

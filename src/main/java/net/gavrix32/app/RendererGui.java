@@ -2,16 +2,15 @@ package net.gavrix32.app;
 
 import imgui.ImGui;
 import imgui.ImGuiIO;
-import imgui.ImGuiStyle;
-import imgui.ImVec4;
-import imgui.flag.ImGuiCol;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
 import imgui.type.ImBoolean;
+import imgui.type.ImInt;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.Utils;
 import net.gavrix32.engine.graphics.Renderer;
+import net.gavrix32.engine.io.Sync;
 import net.gavrix32.engine.io.Window;
 
 import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
@@ -22,15 +21,17 @@ public class RendererGui {
     private static final ImGuiImplGlfw imGuiImplGlfw = new ImGuiImplGlfw();
 
     private static final int[]
-            samples = new int[] { 16 },
+            samples = new int[] { 8 },
             bounces = new int[] { 4 },
             AASize = new int[] { 150 };
 
     private static final ImBoolean
             accumulate = new ImBoolean(true),
             randNoise = new ImBoolean(false),
-            vsync = new ImBoolean(true),
             aces = new ImBoolean(true);
+
+    private static final ImInt syncType = new ImInt();
+    private static final String[] syncTypes = { "Off", "VSync", "Adaptive" };
 
     public static void init() {
         ImGui.createContext();
@@ -41,12 +42,17 @@ public class RendererGui {
     }
 
     public static void update() {
-        /*imGuiImplGlfw.newFrame();
+        imGuiImplGlfw.newFrame();
         ImGui.newFrame();
         ImGui.begin("Render");
         ImGui.text((int) (1 / Engine.getDelta()) + " fps");
         ImGui.text("Frametime: " + Engine.getDelta() * 1000 + " ms");
-        ImGui.checkbox("VSync", vsync);
+        ImGui.combo("Sync", syncType, syncTypes);
+        switch (syncType.get()) {
+            case 0 -> Window.sync(Sync.OFF);
+            case 1 -> Window.sync(Sync.VSYNC);
+            case 2 -> Window.sync(Sync.ADAPTIVE);
+        }
         if (ImGui.sliderInt("Samples", samples, 1, 128)) Renderer.resetAccFrames();
         if (ImGui.sliderInt("Bounces", bounces, 1, 64)) Renderer.resetAccFrames();
         if (ImGui.dragInt("UV Blur", AASize, 1, 0, 256000)) Renderer.resetAccFrames();
@@ -61,8 +67,7 @@ public class RendererGui {
             ImGui.updatePlatformWindows();
             ImGui.renderPlatformWindowsDefault();
             glfwMakeContextCurrent(backupWindowPtr);
-        }*/
-        Window.vsync(vsync.get());
+        }
         Renderer.setSamples(samples[0]);
         Renderer.setBounces(bounces[0]);
         Renderer.setAASize(AASize[0]);

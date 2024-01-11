@@ -30,7 +30,6 @@ public class Window {
                 (monitorWidth - width) / 2,
                 (monitorHeight - height) / 2
         );
-        glfwSwapInterval(1);
         glfwMakeContextCurrent(window);
         GL.createCapabilities();
         glfwSetWindowSizeCallback(window, (window, w, h) -> {
@@ -76,8 +75,12 @@ public class Window {
         }
     }
 
-    public static void vsync(boolean value) {
-        glfwSwapInterval(value ? 1 : 0);
+    public static void sync(Sync type) {
+        switch (type) {
+            case OFF -> glfwSwapInterval(0);
+            case VSYNC -> glfwSwapInterval(1);
+            case ADAPTIVE -> glfwSwapInterval(-1);
+        }
     }
 
     public static int getWidth() {
