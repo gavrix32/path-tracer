@@ -37,34 +37,50 @@ uniform Sphere spheres[3];
 #define PI 3.14159265358979323846;
 
 uint seed;
+// uint rng_state;
 
 vec2 uv = (2 * gl_FragCoord.xy - u_resolution) / u_resolution.y;
 
-/////////////// RANDOM ///////////////
+/*
+ * Source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+ */
 uint pcg_hash(uint seed) {
     uint state = seed * 747796405u + 2891336453u;
     uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
     return (word >> 22u) ^ word;
 }
-float rand_float() {
+/*uint rand_pcg() {
+    uint state = rng_state;
+    rng_state = rng_state * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}*/
+
+float random() {
     seed = pcg_hash(seed);
     return float(seed) * (1 / 4294967296.0);
 }
-vec3 rand_vec3() {
-    float r = rand_float() * 2 * PI;
-    float z = rand_float() * 2 - 1;
+vec3 randomHemisphere() {
+    float r = random() * 2 * PI;
+    float z = random() * 2 - 1;
     float z_scale = sqrt(1.0 - z * z);
     return vec3(cos(r) * z_scale, sin(r) * z_scale, z);
+}
+vec3 randomCosineWeightedHemisphere(vec3 normal) {
+    float z = random() * 2.0 - 1.0;
+    float a = random() * 2.0 * PI;
+    float r = sqrt(1.0 - z * z);
+    float x = r * cos(a);
+    float y = r * sin(a);
+
+    // Convert unit vector in sphere to a cosine weighted vector in hemisphere
+    return normalize(normal + vec3(x, y, z));
 }
 void updateSeed() {
     seed = pcg_hash(uint(gl_FragCoord.x));
     seed = pcg_hash(seed + uint(gl_FragCoord.y));
     seed = pcg_hash(seed + uint(u_time * 1000));
 }
-float rand(vec2 co) {
-    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
-}
-/////////////// RANDOM ///////////////
 
 float plane(Ray ray, vec4 p) {
     return -(dot(ray.origin, p.xyz) + p.w) / dot(ray.direction, p.xyz);
@@ -108,7 +124,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
         hit = true;
         minIt = it;
         //col = vec3(1);
-        col = vec3(checkerBoard(vec3(ray.origin + ray.direction * it).xz * (1. / 16.)));
+        col = vec3(checkerBoard(vec3(ray.origin + ray.direction * it).xz * (0.06)));
         normal = vec3(0, 1, 0);
     }
     for (int i = 0; i < spheres.length(); i++) {
@@ -167,7 +183,7 @@ vec3 raytrace(Ray ray) {
         float minIt;
         if (raycast(ray, color, normal, minIt, material)) {
             ray.origin += ray.direction * (minIt - 0.01);
-            ray.direction = mix(rand_vec3(), reflect(ray.direction, normal), material.roughness);
+            ray.direction = mix(randomCosineWeightedHemisphere(normal), reflect(ray.direction, normal), material.roughness);
             energy *= color;
             if (material.emission > 0) return energy * material.emission;
         }
@@ -180,19 +196,16 @@ vec3 ACESFilm(vec3 col) {
 }
 
 void main() {
-    if (u_acc_frames > 0) {
-        updateSeed();
-    } else if (u_random_noise == 1) {
-        updateSeed();
-    } else {
-        seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
-    }
+    if (u_acc_frames > 0 || u_random_noise == 1) updateSeed();
+    else seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
 
-    // AA
-    uv.x += rand_float() / 100000 * u_aa_size;
-    uv.x -= rand_float() / 100000 * u_aa_size;
-    uv.y += rand_float() / 100000 * u_aa_size;
-    uv.y -= rand_float() / 100000 * u_aa_size;
+    /*
+     * UV blur anti-aliasing
+     */
+    uv.x += random() / 100000 * u_aa_size;
+    uv.x -= random() / 100000 * u_aa_size;
+    uv.y += random() / 100000 * u_aa_size;
+    uv.y -= random() / 100000 * u_aa_size;
 
     /*float yaw = 0, pitch = u_time;
     float x = cos(yaw * 3.14 / 180) * cos(pitch * 3.14 / 180);
