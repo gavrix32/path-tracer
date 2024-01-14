@@ -2,7 +2,7 @@ package net.gavrix32.engine;
 
 import net.gavrix32.engine.io.Window;
 
-import static org.lwjgl.glfw.GLFW.glfwGetTime;
+import static org.lwjgl.glfw.GLFW.*;
 
 public class Engine {
     private static float dt;
@@ -14,6 +14,8 @@ public class Engine {
             app.update();
             dt = (float) (glfwGetTime() - last);
         }
+        glfwTerminate();
+        System.exit(0);
     }
 
     public static float getDelta() {

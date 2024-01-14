@@ -53,6 +53,10 @@ public class Window {
         return glfwWindowShouldClose(window);
     }
 
+    public static void close() {
+        glfwSetWindowShouldClose(window, true);
+    }
+
     public static void toggleCursor() {
         cursorVisible = !cursorVisible;
         glfwSetInputMode(window, GLFW_CURSOR, cursorVisible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);

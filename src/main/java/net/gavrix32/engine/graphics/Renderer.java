@@ -10,6 +10,8 @@ import static org.lwjgl.opengl.GL15C.GL_STATIC_DRAW;
 import static org.lwjgl.opengl.GL20C.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20C.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30C.*;
+import static org.lwjgl.opengl.GL42C.glBindImageTexture;
+import static org.lwjgl.opengl.GL42C.glTexStorage2D;
 
 public class Renderer {
     private static final float[] VERTICES = {
@@ -23,10 +25,10 @@ public class Renderer {
             1, 2, 3
     };
     private static Shader quadShader;
-    private static int texture, frameBuffer;
     private static int accFrames = 0;
-    private static int samples = 8, bounces = 8, AASize = 0;
-    private static boolean useDenoiser = false, randNoise = false, ACESFilm = true;
+    private static int samples = 8, bounces = 4, AASize = 150;
+    private static boolean accumulation = false, randNoise = false, ACESFilm = true;
+    private static int accTexture;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -45,20 +47,11 @@ public class Renderer {
         quadShader = new Shader("shaders/main.vert", "shaders/main.frag");
         quadShader.use();
 
-        // Create texture
-        texture = glGenTextures();
-
-        // Setup texture
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        // Create framebuffer
-        frameBuffer = glGenFramebuffers();
-
-        // Setup framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+        // Accumulation
+        accTexture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, accTexture);
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, Window.getWidth(), Window.getHeight());
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     public static void render(Scene scene) {
@@ -89,18 +82,16 @@ public class Renderer {
             quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres()[i].getMaterial().getEmission());
             quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres()[i].getMaterial().getRoughness());
         }
-        if (useDenoiser && accFrames > 0) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-            // Render to framebuffer texture
-            glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-            glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
+        if (accumulation) {
+            glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
         }
-
-        // Render to screen
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        if (accFrames == 0) {
+            glDeleteTextures(accTexture);
+            accTexture = glGenTextures();
+            glBindTexture(GL_TEXTURE_2D, accTexture);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, Window.getWidth(), Window.getHeight());
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
         glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
         accFrames++;
     }
@@ -113,9 +104,9 @@ public class Renderer {
         Renderer.bounces = bounces;
     }
 
-    public static void useDenoiser(boolean value) {
+    public static void useAccumulation(boolean value) {
         if (!value) resetAccFrames();
-        useDenoiser = value;
+        accumulation = value;
     }
 
     public static void resetAccFrames() {

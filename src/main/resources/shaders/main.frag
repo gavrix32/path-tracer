@@ -28,16 +28,17 @@ uniform vec3 u_camera_position;
 uniform mat4 u_camera_rotation;
 uniform int u_samples, u_bounces, u_aa_size, u_aces;
 uniform int u_random_noise;
-uniform sampler2D tex;
 uniform samplerCube sky;
+uniform int u_fast_accumulate;
 uniform float u_acc_frames;
 uniform Box boxes[5];
 uniform Sphere spheres[3];
 
+layout(binding = 0, rgba32f) uniform image2D frameImage;
+
 #define PI 3.14159265358979323846;
 
-uint seed;
-// uint rng_state;
+uint seed = 0;
 
 vec2 uv = (2 * gl_FragCoord.xy - u_resolution) / u_resolution.y;
 
@@ -49,12 +50,6 @@ uint pcg_hash(uint seed) {
     uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
     return (word >> 22u) ^ word;
 }
-/*uint rand_pcg() {
-    uint state = rng_state;
-    rng_state = rng_state * 747796405u + 2891336453u;
-    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
-    return (word >> 22u) ^ word;
-}*/
 
 float random() {
     seed = pcg_hash(seed);
@@ -148,27 +143,11 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
             normal = norm;
         }
     }
-    // Chunk
-    /*for (int x = 0; x < 8; x++) {
-        for (int y = 0; y < 8; y++) {
-            for (int z = 0; z < 8; z++) {
-                vec3 norm;
-                it = box(Ray(ray.origin - vec3((x*16)+8, (y*16)+8, (z*16)+8), ray.direction), vec3(4), norm).x;
-                if (it > 0 && it < minIt) {
-                    hit = true;
-                    minIt = it;
-                    col = vec3(x/8., y/8., z/8.);
-                    material.roughness = 0;
-                    material.emission = 0;
-                    normal = norm;
-                }
-            }
-        }
-    }*/
     if (!hit) {
-        // col = vec3(0, 0.17, 0.20); // 0
-        col = texture(sky, ray.direction).rgb;
-        material.emission = 1;
+        col = vec3(0);
+        //col = texture(sky, ray.direction).rgb;
+        material.emission = 0;
+        material.roughness = 0;
         return true;
     }
     minDist = minIt;
@@ -243,6 +222,10 @@ void main() {
     raycast(ray, color, n, d, m);*/
 
     if (u_aces == 1) color = ACESFilm(color);
-    if (u_acc_frames > 0) color = mix(texture(tex, gl_FragCoord.xy / u_resolution).rgb, color, 1 / u_acc_frames);
+    if (u_acc_frames > 0.0) {
+        vec3 oldColor = imageLoad(frameImage, ivec2(gl_FragCoord.xy)).rgb;
+        color = mix(color, oldColor, u_acc_frames / (u_acc_frames + 1));
+        imageStore(frameImage, ivec2(gl_FragCoord.xy), vec4(color, 1));
+    }
     out_color = vec4(color, 1);
 }
