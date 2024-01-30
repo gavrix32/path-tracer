@@ -23,13 +23,15 @@ public class GuiRenderer {
 
     private static final int[]
             samples = new int[] { 8 },
-            bounces = new int[] { 4 },
+            bounces = new int[] { 3 },
             AASize = new int[] { 150 };
 
     private static final ImBoolean
             accumulation = new ImBoolean(true),
+            reproj = new ImBoolean(true),
             randNoise = new ImBoolean(false),
-            aces = new ImBoolean(true);
+            aces = new ImBoolean(true),
+            cosweighted = new ImBoolean(true);
 
     private static final ImInt syncType = new ImInt();
     private static final String[] syncTypes = { "Off", "VSync", "Adaptive" };
@@ -43,9 +45,9 @@ public class GuiRenderer {
     }
 
     public static void update() {
-        if (status) {
             imGuiImplGlfw.newFrame();
             ImGui.newFrame();
+        if (status) {
             ImGui.begin("Render");
             ImGui.text((int) (1 / Engine.getDelta()) + " fps");
             ImGui.text("Frametime: " + Engine.getDelta() * 1000 + " ms");
@@ -55,29 +57,32 @@ public class GuiRenderer {
                 case 1 -> Window.sync(Sync.VSYNC);
                 case 2 -> Window.sync(Sync.ADAPTIVE);
             }
-            if (ImGui.sliderInt("Samples", samples, 1, 128)) Renderer.resetAccFrames();
-            if (ImGui.sliderInt("Bounces", bounces, 1, 64)) Renderer.resetAccFrames();
+            if (ImGui.sliderInt("Samples", samples, 1, 64)) Renderer.resetAccFrames();
+            if (ImGui.sliderInt("Bounces", bounces, 1, 8)) Renderer.resetAccFrames();
             if (ImGui.dragInt("UV Blur", AASize, 1, 0, 256000)) Renderer.resetAccFrames();
+            if (ImGui.checkbox("Cosine-weighted distribution", cosweighted)) Renderer.resetAccFrames();
             if (ImGui.checkbox("ACES Film", aces)) Renderer.resetAccFrames();
             ImGui.checkbox("Accumulation", accumulation);
+            ImGui.checkbox("Temporal Reprojection", reproj);
             ImGui.checkbox("Random Noise", randNoise);
             ImGui.end();
-            ImGui.render();
-            imGuiImplGl3.renderDrawData(ImGui.getDrawData());
-            if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-                final long backupWindowPtr = glfwGetCurrentContext();
-                ImGui.updatePlatformWindows();
-                ImGui.renderPlatformWindowsDefault();
-                glfwMakeContextCurrent(backupWindowPtr);
-            }
-            Renderer.setSamples(samples[0]);
-            Renderer.setBounces(bounces[0]);
-            Renderer.setAASize(AASize[0]);
-            Renderer.useAccumulation(accumulation.get());
-            Renderer.useRandomNoise(randNoise.get());
-            Renderer.useACESFilm(aces.get());
         }
-
+        ImGui.render();
+        imGuiImplGl3.renderDrawData(ImGui.getDrawData());
+        if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
+            final long backupWindowPtr = glfwGetCurrentContext();
+            ImGui.updatePlatformWindows();
+            ImGui.renderPlatformWindowsDefault();
+            glfwMakeContextCurrent(backupWindowPtr);
+        }
+        Renderer.setSamples(samples[0]);
+        Renderer.setBounces(bounces[0]);
+        Renderer.setAASize(AASize[0]);
+        Renderer.useAccumulation(accumulation.get());
+        Renderer.useRandomNoise(randNoise.get());
+        Renderer.useACESFilm(aces.get());
+        Renderer.useCosineWeightedDistribution(cosweighted.get());
+        Renderer.useReprojection(reproj.get());
     }
 
     public static void toggle() {

@@ -1,6 +1,8 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
+import org.joml.Matrix4f;
 
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.opengl.ARBInternalformatQuery2.GL_TEXTURE_2D;
@@ -27,7 +29,7 @@ public class Renderer {
     private static Shader quadShader;
     private static int accFrames = 0;
     private static int samples = 8, bounces = 4, AASize = 150;
-    private static boolean accumulation = false, randNoise = false, ACESFilm = true;
+    private static boolean accumulation = false, reproj = false, randNoise = false, ACESFilm = true, cosweighted = true;
     private static int accTexture;
 
     public static void init() {
@@ -61,9 +63,11 @@ public class Renderer {
         quadShader.setVec3("u_camera_position", scene.getCamera().getPos().x, scene.getCamera().getPos().y, scene.getCamera().getPos().z);
         quadShader.setMat4("u_camera_rotation", scene.getCamera().getRotMatrix());
         quadShader.setFloat("u_acc_frames", accFrames);
+        quadShader.setInt("u_cosweighted", cosweighted ? 1 : 0);
         quadShader.setInt("u_samples", samples);
         quadShader.setInt("u_bounces", bounces);
         quadShader.setInt("u_random_noise", randNoise ? 1 : 0);
+        quadShader.setInt("u_reproj", reproj ? 1 : 0);
         quadShader.setInt("u_aa_size", AASize);
         quadShader.setInt("u_aces", ACESFilm ? 1 : 0);
         quadShader.setInt("tex", 0);
@@ -82,16 +86,8 @@ public class Renderer {
             quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres()[i].getMaterial().getEmission());
             quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres()[i].getMaterial().getRoughness());
         }
-        if (accumulation) {
-            glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
-        }
-        if (accFrames == 0) {
-            glDeleteTextures(accTexture);
-            accTexture = glGenTextures();
-            glBindTexture(GL_TEXTURE_2D, accTexture);
-            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, Window.getWidth(), Window.getHeight());
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
+        if (accumulation || reproj) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+        if (accFrames == 0 && !reproj) resetFramebufferTexture();
         glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
         accFrames++;
     }
@@ -109,8 +105,20 @@ public class Renderer {
         accumulation = value;
     }
 
+    public static void useReprojection(boolean value) {
+        reproj = value;
+    }
+
     public static void resetAccFrames() {
         accFrames = 0;
+    }
+
+    public static void resetFramebufferTexture() {
+        glDeleteTextures(accTexture);
+        accTexture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, accTexture);
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, Window.getWidth(), Window.getHeight());
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     public static void useRandomNoise(boolean value) {
@@ -123,5 +131,9 @@ public class Renderer {
 
     public static void setAASize(int aaSize) {
         Renderer.AASize = aaSize;
+    }
+
+    public static void useCosineWeightedDistribution(boolean value) {
+        Renderer.cosweighted = value;
     }
 }

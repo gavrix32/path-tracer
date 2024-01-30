@@ -31,12 +31,14 @@ public class Window {
                 (monitorHeight - height) / 2
         );
         glfwMakeContextCurrent(window);
+        glfwSwapInterval(0);
         GL.createCapabilities();
         glfwSetWindowSizeCallback(window, (window, w, h) -> {
             Window.width = w;
             Window.height = h;
             glViewport(0, 0, w, h);
             Renderer.resetAccFrames();
+            Renderer.resetFramebufferTexture();
         });
     }
 

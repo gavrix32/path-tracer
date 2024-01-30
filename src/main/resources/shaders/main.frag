@@ -22,14 +22,13 @@ struct Box {
     Material material;
 };
 
-uniform vec2 u_resolution;
+uniform vec2 u_resolution, u_cursor_delta;
 uniform float u_time;
 uniform vec3 u_camera_position;
 uniform mat4 u_camera_rotation;
-uniform int u_samples, u_bounces, u_aa_size, u_aces;
+uniform int u_samples, u_bounces, u_aa_size, u_aces, u_cosweighted, u_reproj;
 uniform int u_random_noise;
 uniform samplerCube sky;
-uniform int u_fast_accumulate;
 uniform float u_acc_frames;
 uniform Box boxes[5];
 uniform Sphere spheres[3];
@@ -94,7 +93,7 @@ float sphere(Ray ray, vec3 ce, float ra) {
     return -b - sqrt(h);
 }
 
-vec2 box(in Ray ray, vec3 boxSize, out vec3 outNormal) {
+float box(in Ray ray, vec3 boxSize, out vec3 outNormal) {
     vec3 m = 1 / ray.direction;
     vec3 n = m * ray.origin;
     vec3 k = abs(m) * boxSize;
@@ -102,10 +101,10 @@ vec2 box(in Ray ray, vec3 boxSize, out vec3 outNormal) {
     vec3 t2 = -n + k;
     float tN = max(max(t1.x, t1.y), t1.z);
     float tF = min(min(t2.x, t2.y), t2.z);
-    if(tN > tF || tF < 0) return vec2(-1);
+    if(tN > tF || tF < 0) return -1;
     outNormal = (tN > 0) ? step(vec3(tN), t1) : step(t2, vec3(tF));
     outNormal *= -sign(ray.direction);
-    return vec2(tN, tF);
+    return tF;
 }
 
 bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, out Material material) {
@@ -140,13 +139,13 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
             minIt = it;
             col = boxes[i].color;
             material = boxes[i].material;
-            normal = norm;
+            normal = normalize(norm);
         }
     }
     if (!hit) {
-        col = vec3(0);
-        //col = texture(sky, ray.direction).rgb;
-        material.emission = 0;
+        //col = vec3(0);
+        col = texture(sky, ray.direction).rgb;
+        material.emission = 1;
         material.roughness = 0;
         return true;
     }
@@ -162,7 +161,9 @@ vec3 raytrace(Ray ray) {
         float minIt;
         if (raycast(ray, color, normal, minIt, material)) {
             ray.origin += ray.direction * (minIt - 0.01);
-            ray.direction = mix(randomCosineWeightedHemisphere(normal), reflect(ray.direction, normal), material.roughness);
+            ray.direction = mix(u_cosweighted == 1 ? randomCosineWeightedHemisphere(normal) : randomHemisphere(),
+                                reflect(ray.direction, normal),
+                                material.roughness);
             energy *= color;
             if (material.emission > 0) return energy * material.emission;
         }
@@ -175,7 +176,7 @@ vec3 ACESFilm(vec3 col) {
 }
 
 void main() {
-    if (u_acc_frames > 0 || u_random_noise == 1) updateSeed();
+    if (u_acc_frames > 0 || u_random_noise == 1 || u_reproj == 1) updateSeed();
     else seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
 
     /*
@@ -208,8 +209,9 @@ void main() {
     ray.ro = ray.ro + mat3(uRotation) * vec3(rand_vec3().xy, 0) * 0.05;
     ray.dir = normalize(fp - ray.ro);*/
 
-    // Path Tracing
     vec3 color;
+
+    // Path Tracing
     for(int i = 0; i < u_samples; i++) {
         color += raytrace(ray);
     }
@@ -219,13 +221,21 @@ void main() {
     /*vec3 n;
     float d;
     Material m;
-    raycast(ray, color, n, d, m);*/
+    raycast(ray, color, n, d, m); // Draw albedo*/
+    // color = n; // Draw normals
 
     if (u_aces == 1) color = ACESFilm(color);
-    if (u_acc_frames > 0.0) {
+    if (u_acc_frames > 0) {
         vec3 oldColor = imageLoad(frameImage, ivec2(gl_FragCoord.xy)).rgb;
         color = mix(color, oldColor, u_acc_frames / (u_acc_frames + 1));
         imageStore(frameImage, ivec2(gl_FragCoord.xy), vec4(color, 1));
     }
+    if (u_reproj == 1) {
+        vec3 oldColor = imageLoad(frameImage, ivec2(gl_FragCoord.xy)).rgb;
+        color = mix(color, oldColor, 0.8);
+        imageStore(frameImage, ivec2(gl_FragCoord.xy), vec4(color, 1));
+    }
+    //out_color = vec4(vec3(d * 0.001), 1); // Draw depth
     out_color = vec4(color, 1);
+    //out_color = vec4(vec3(1) * mat3(u_camera_rotation - u_last_camera_rotation), 1);
 }

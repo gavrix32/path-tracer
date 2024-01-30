@@ -60,11 +60,12 @@ public class Main implements IApplication {
         };
         for (int i = 0; i < 6; i++) {
             int[] width = new int[1], height = new int[1];
-            ByteBuffer data = stbi_load("src/main/resources/" + skyBoxPaths[i], width, height,  new int[1], 3);
+            ByteBuffer data = null;
+            data = stbi_load(Main.class.getClassLoader().getResource(skyBoxPaths[i]).getPath(), width, height,  new int[1], 3);
+            // data = stbi_load_from_memory(ByteBuffer.wrap(Utils.loadBytes(skyBoxPaths[i])), width, height,  new int[1], 3);
             if (data == null) System.err.println("Failed to load texture: " + stbi_failure_reason());
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         }
-
         // cam = new Camera();
         // cam.setPos(0, 200, -200);
     }
