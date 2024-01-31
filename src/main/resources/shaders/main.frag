@@ -26,7 +26,8 @@ uniform vec2 u_resolution, u_cursor_delta;
 uniform float u_time;
 uniform vec3 u_camera_position;
 uniform mat4 u_camera_rotation;
-uniform int u_samples, u_bounces, u_aa_size, u_aces, u_cosweighted, u_reproj;
+uniform int u_samples, u_bounces, u_aa_size, u_aces, u_cosweighted, u_reproj,
+            u_show_albedo, u_show_depth, u_show_normals;
 uniform int u_random_noise;
 uniform samplerCube sky;
 uniform float u_acc_frames;
@@ -176,16 +177,21 @@ vec3 ACESFilm(vec3 col) {
 }
 
 void main() {
-    if (u_acc_frames > 0 || u_random_noise == 1 || u_reproj == 1) updateSeed();
-    else seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
+    if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0 && (u_acc_frames > 0 || u_random_noise == 1 || u_reproj == 1)) {
+        updateSeed();
+    } else {
+        seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
+    }
 
     /*
      * UV blur anti-aliasing
      */
-    uv.x += random() / 100000 * u_aa_size;
-    uv.x -= random() / 100000 * u_aa_size;
-    uv.y += random() / 100000 * u_aa_size;
-    uv.y -= random() / 100000 * u_aa_size;
+    if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0) {
+        uv.x += random() / 100000 * u_aa_size;
+        uv.x -= random() / 100000 * u_aa_size;
+        uv.y += random() / 100000 * u_aa_size;
+        uv.y -= random() / 100000 * u_aa_size;
+    }
 
     /*float yaw = 0, pitch = u_time;
     float x = cos(yaw * 3.14 / 180) * cos(pitch * 3.14 / 180);
@@ -210,7 +216,6 @@ void main() {
     ray.dir = normalize(fp - ray.ro);*/
 
     vec3 color;
-
     // Path Tracing
     for(int i = 0; i < u_samples; i++) {
         color += raytrace(ray);
@@ -218,24 +223,30 @@ void main() {
     color /= u_samples;
 
     // Ray Casting
-    /*vec3 n;
-    float d;
-    Material m;
-    raycast(ray, color, n, d, m); // Draw albedo*/
+    if (u_show_depth == 1 || u_show_albedo == 1 || u_show_normals == 1) {
+        vec3 n;
+        float depth;
+        Material m;
+        raycast(ray, color, n, depth, m);
+        if (u_show_normals == 1) color = n * 0.5 + 0.5;
+        if (u_show_depth == 1) color = vec3(depth) * 0.001;
+    }
     // color = n; // Draw normals
 
-    if (u_aces == 1) color = ACESFilm(color);
-    if (u_acc_frames > 0) {
-        vec3 oldColor = imageLoad(frameImage, ivec2(gl_FragCoord.xy)).rgb;
-        color = mix(color, oldColor, u_acc_frames / (u_acc_frames + 1));
-        imageStore(frameImage, ivec2(gl_FragCoord.xy), vec4(color, 1));
+    if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0) {
+        if (u_aces == 1) color = ACESFilm(color);
+        if (u_acc_frames > 0) {
+            vec3 oldColor = imageLoad(frameImage, ivec2(gl_FragCoord.xy)).rgb;
+            color = mix(color, oldColor, u_acc_frames / (u_acc_frames + 1));
+            imageStore(frameImage, ivec2(gl_FragCoord.xy), vec4(color, 1));
+        }
+        if (u_reproj == 1) {
+            vec3 oldColor = imageLoad(frameImage, ivec2(gl_FragCoord.xy)).rgb;
+            color = mix(color, oldColor, 0.8);
+            imageStore(frameImage, ivec2(gl_FragCoord.xy), vec4(color, 1));
+        }
     }
-    if (u_reproj == 1) {
-        vec3 oldColor = imageLoad(frameImage, ivec2(gl_FragCoord.xy)).rgb;
-        color = mix(color, oldColor, 0.8);
-        imageStore(frameImage, ivec2(gl_FragCoord.xy), vec4(color, 1));
-    }
-    //out_color = vec4(vec3(d * 0.001), 1); // Draw depth
+
     out_color = vec4(color, 1);
     //out_color = vec4(vec3(1) * mat3(u_camera_rotation - u_last_camera_rotation), 1);
 }

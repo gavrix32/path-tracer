@@ -24,14 +24,17 @@ public class GuiRenderer {
     private static final int[]
             samples = new int[] { 8 },
             bounces = new int[] { 3 },
-            AASize = new int[] { 150 };
+            AASize = new int[] { 128 };
 
     private static final ImBoolean
             accumulation = new ImBoolean(true),
             reproj = new ImBoolean(true),
             randNoise = new ImBoolean(false),
             aces = new ImBoolean(true),
-            cosweighted = new ImBoolean(true);
+            cosweighted = new ImBoolean(true),
+            showAlbedo = new ImBoolean(false),
+            showNormals = new ImBoolean(false),
+            showDepth = new ImBoolean(false);
 
     private static final ImInt syncType = new ImInt();
     private static final String[] syncTypes = { "Off", "VSync", "Adaptive" };
@@ -57,14 +60,19 @@ public class GuiRenderer {
                 case 1 -> Window.sync(Sync.VSYNC);
                 case 2 -> Window.sync(Sync.ADAPTIVE);
             }
-            if (ImGui.sliderInt("Samples", samples, 1, 64)) Renderer.resetAccFrames();
+            if (ImGui.sliderInt("Samples", samples, 1, 32)) Renderer.resetAccFrames();
             if (ImGui.sliderInt("Bounces", bounces, 1, 8)) Renderer.resetAccFrames();
             if (ImGui.dragInt("UV Blur", AASize, 1, 0, 256000)) Renderer.resetAccFrames();
+            ImGui.text("Accumulated frames: " + Renderer.getAccFrames());
+            ImGui.checkbox("Accumulation", accumulation);
             if (ImGui.checkbox("Cosine-weighted distribution", cosweighted)) Renderer.resetAccFrames();
             if (ImGui.checkbox("ACES Film", aces)) Renderer.resetAccFrames();
-            ImGui.checkbox("Accumulation", accumulation);
             ImGui.checkbox("Temporal Reprojection", reproj);
             ImGui.checkbox("Random Noise", randNoise);
+            ImGui.checkbox("Show Albedo", showAlbedo);
+            ImGui.checkbox("Show Normals", showNormals);
+            ImGui.checkbox("Show Depth", showDepth);
+            ImGui.textWrapped("Controls: WASD to move, Ctrl to speed up, Right Click to grab cursor");
             ImGui.end();
         }
         ImGui.render();
@@ -83,6 +91,9 @@ public class GuiRenderer {
         Renderer.useACESFilm(aces.get());
         Renderer.useCosineWeightedDistribution(cosweighted.get());
         Renderer.useReprojection(reproj.get());
+        Renderer.showAlbedo(showAlbedo.get());
+        Renderer.showNormals(showNormals.get());
+        Renderer.showDepth(showDepth.get());
     }
 
     public static void toggle() {

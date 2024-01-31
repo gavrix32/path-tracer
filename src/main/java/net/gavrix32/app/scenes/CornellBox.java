@@ -20,7 +20,7 @@ public class CornellBox {
                     new Box(new Vector3f(50, 200, 0), new Vector3f(1, 1, 1), new Material(0, 0), new Vector3f(100, 0, 100)),
                     new Box(new Vector3f(-50, 100, 0), new Vector3f(1, 0, 0), new Material(0, 0), new Vector3f(0, 100, 100)),
                     new Box(new Vector3f(150, 100, 0), new Vector3f(0, 1, 0), new Material(0, 0), new Vector3f(0, 100, 100)),
-                    new Box(new Vector3f(50, 200, 0), new Vector3f(1, 1, 1), new Material(5, 0), new Vector3f(50, 1, 50))
+                    new Box(new Vector3f(50, 199.9f, 0), new Vector3f(1, 1, 1), new Material(5, 0), new Vector3f(50, 0.1f, 50))
             }
     );
 }

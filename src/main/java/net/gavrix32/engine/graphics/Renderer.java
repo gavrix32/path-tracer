@@ -1,8 +1,6 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
-import org.joml.Matrix4f;
 
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.opengl.ARBInternalformatQuery2.GL_TEXTURE_2D;
@@ -29,7 +27,9 @@ public class Renderer {
     private static Shader quadShader;
     private static int accFrames = 0;
     private static int samples = 8, bounces = 4, AASize = 150;
-    private static boolean accumulation = false, reproj = false, randNoise = false, ACESFilm = true, cosweighted = true;
+    private static boolean
+            accumulation = false, reproj = false, randNoise = false, ACESFilm = true,
+            cosweighted = true, showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
 
     public static void init() {
@@ -64,6 +64,9 @@ public class Renderer {
         quadShader.setMat4("u_camera_rotation", scene.getCamera().getRotMatrix());
         quadShader.setFloat("u_acc_frames", accFrames);
         quadShader.setInt("u_cosweighted", cosweighted ? 1 : 0);
+        quadShader.setInt("u_show_albedo", showAlbedo ? 1 : 0);
+        quadShader.setInt("u_show_normals", showNormals ? 1 : 0);
+        quadShader.setInt("u_show_depth", showDepth ? 1 : 0);
         quadShader.setInt("u_samples", samples);
         quadShader.setInt("u_bounces", bounces);
         quadShader.setInt("u_random_noise", randNoise ? 1 : 0);
@@ -113,6 +116,10 @@ public class Renderer {
         accFrames = 0;
     }
 
+    public static int getAccFrames() {
+        return accFrames;
+    }
+
     public static void resetFramebufferTexture() {
         glDeleteTextures(accTexture);
         accTexture = glGenTextures();
@@ -122,18 +129,33 @@ public class Renderer {
     }
 
     public static void useRandomNoise(boolean value) {
-        Renderer.randNoise = value;
+        randNoise = value;
     }
 
     public static void useACESFilm(boolean value) {
-        Renderer.ACESFilm = value;
+        ACESFilm = value;
     }
 
     public static void setAASize(int aaSize) {
-        Renderer.AASize = aaSize;
+        AASize = aaSize;
     }
 
     public static void useCosineWeightedDistribution(boolean value) {
-        Renderer.cosweighted = value;
+        cosweighted = value;
+    }
+
+    public static void showAlbedo(boolean value) {
+        if (value) resetAccFrames();
+        showAlbedo = value;
+    }
+
+    public static void showNormals(boolean value) {
+        if (value) resetAccFrames();
+        showNormals = value;
+    }
+
+    public static void showDepth(boolean value) {
+        if (value) resetAccFrames();
+        showDepth = value;
     }
 }
