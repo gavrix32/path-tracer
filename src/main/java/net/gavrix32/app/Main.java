@@ -5,7 +5,7 @@ import net.gavrix32.app.scenes.RGBSpheres;
 import net.gavrix32.app.scenes.Spheres;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.IApplication;
-import net.gavrix32.engine.Utils;
+import net.gavrix32.engine.utils.Utils;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
 

@@ -1,6 +1,7 @@
 package net.gavrix32.engine;
 
 import net.gavrix32.engine.io.Window;
+import net.gavrix32.engine.utils.Timer;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -10,9 +11,9 @@ public class Engine {
     public static void run(IApplication app) {
         app.init();
         while (!Window.isClosed()) {
-            float last = (float) glfwGetTime();
+            Timer.tick();
             app.update();
-            dt = (float) (glfwGetTime() - last);
+            dt = Timer.getDelta();
         }
         glfwTerminate();
         System.exit(0);

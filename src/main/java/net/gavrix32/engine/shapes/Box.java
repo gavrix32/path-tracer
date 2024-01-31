@@ -6,8 +6,8 @@ import net.gavrix32.engine.math.Vector3f;
 public class Box extends Shape {
     private Vector3f size;
 
-    public Box(Vector3f pos, Vector3f col, Material material, Vector3f size) {
-        super(pos, col, material);
+    public Box(Vector3f pos, Vector3f rot, Vector3f col, Material material, Vector3f size) {
+        super(pos, rot, col, material);
         this.size = size;
     }
 

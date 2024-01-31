@@ -77,6 +77,7 @@ public class Renderer {
         quadShader.setInt("sky", 1);
         for (int i = 0; i < scene.getBoxes().length; i++) {
             quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes()[i].getPos().x, scene.getBoxes()[i].getPos().y, scene.getBoxes()[i].getPos().z);
+            quadShader.setVec3("boxes[" + i + "].rotation", scene.getBoxes()[i].getRot().x, scene.getBoxes()[i].getRot().y, scene.getBoxes()[i].getRot().z);
             quadShader.setVec3("boxes[" + i + "].size", scene.getBoxes()[i].getSize().x, scene.getBoxes()[i].getSize().y, scene.getBoxes()[i].getSize().z);
             quadShader.setVec3("boxes[" + i + "].color", scene.getBoxes()[i].getCol().x, scene.getBoxes()[i].getCol().y, scene.getBoxes()[i].getCol().z);
             quadShader.setFloat("boxes[" + i + "].material.emission", scene.getBoxes()[i].getMaterial().getEmission());

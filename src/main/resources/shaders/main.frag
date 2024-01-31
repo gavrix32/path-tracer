@@ -3,7 +3,7 @@
 out vec4 out_color;
 
 struct Ray {
-    vec3 origin, direction;
+    vec3 origin, dir;
 };
 
 struct Material {
@@ -18,7 +18,7 @@ struct Sphere {
 };
 
 struct Box {
-    vec3 position, size, color;
+    vec3 position, rotation, size, color;
     Material material;
 };
 
@@ -31,10 +31,10 @@ uniform int u_samples, u_bounces, u_aa_size, u_aces, u_cosweighted, u_reproj,
 uniform int u_random_noise;
 uniform samplerCube sky;
 uniform float u_acc_frames;
-uniform Box boxes[5];
+uniform Box boxes[7];
 uniform Sphere spheres[3];
 
-layout(binding = 0, rgba32f) uniform image2D frameImage;
+layout(binding = 0, rgba32f) uniform image2D frame_image;
 
 #define PI 3.14159265358979323846;
 
@@ -55,13 +55,13 @@ float random() {
     seed = pcg_hash(seed);
     return float(seed) * (1 / 4294967296.0);
 }
-vec3 randomHemisphere() {
+vec3 random_hemisphere() {
     float r = random() * 2 * PI;
     float z = random() * 2 - 1;
     float z_scale = sqrt(1.0 - z * z);
     return vec3(cos(r) * z_scale, sin(r) * z_scale, z);
 }
-vec3 randomCosineWeightedHemisphere(vec3 normal) {
+vec3 random_cosine_weighted_hemisphere(vec3 normal) {
     float z = random() * 2.0 - 1.0;
     float a = random() * 2.0 * PI;
     float r = sqrt(1.0 - z * z);
@@ -71,32 +71,47 @@ vec3 randomCosineWeightedHemisphere(vec3 normal) {
     // Convert unit vector in sphere to a cosine weighted vector in hemisphere
     return normalize(normal + vec3(x, y, z));
 }
-void updateSeed() {
+void update_seed() {
     seed = pcg_hash(uint(gl_FragCoord.x));
     seed = pcg_hash(seed + uint(gl_FragCoord.y));
     seed = pcg_hash(seed + uint(u_time * 1000));
 }
 
 float plane(Ray ray, vec4 p) {
-    return -(dot(ray.origin, p.xyz) + p.w) / dot(ray.direction, p.xyz);
+    return -(dot(ray.origin, p.xyz) + p.w) / dot(ray.dir, p.xyz);
 }
 
-float checkerBoard(vec2 p) {
+float checkerboard(vec2 p) {
     return mod(floor(p.x) + floor(p.y), 2);
 }
 
 float sphere(Ray ray, vec3 ce, float ra) {
     vec3 oc = ray.origin - ce;
-    float b = dot(oc, ray.direction);
+    float b = dot(oc, ray.dir);
     float c = dot(oc, oc) - ra * ra;
     float h = b * b - c;
     if(h < 0) return -1;
     return -b - sqrt(h);
 }
 
-float box(in Ray ray, vec3 boxSize, out vec3 outNormal) {
-    vec3 m = 1 / ray.direction;
-    vec3 n = m * ray.origin;
+mat4 rotation_axis_angle(vec3 v, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    float ic = 1.0 - c;
+    return mat4(v.x*v.x*ic + c,     v.y*v.x*ic - s*v.z, v.z*v.x*ic + s*v.y, 0.0,
+                v.x*v.y*ic + s*v.z, v.y*v.y*ic + c,     v.z*v.y*ic - s*v.x, 0.0,
+                v.x*v.z*ic - s*v.y, v.y*v.z*ic + s*v.x, v.z*v.z*ic + c,     0.0,
+                0.0,                0.0,                0.0,                1.0);
+}
+
+float box(in Ray ray, vec3 boxSize, out vec3 outNormal, vec3 rotation) {
+    /*mat4 rot = rotationAxisAngle(vec3(normalize(rotation.x), 0, 0), rotation.x)
+    * rotationAxisAngle(vec3(0, normalize(rotation.y), 0), rotation.y)
+    * rotationAxisAngle(vec3(0, 0, normalize(rotation.z)), rotation.z);*/
+    vec3 ro = (/*rot * */vec4(ray.origin, 1)).xyz;
+    vec3 rd = (/*rot * */vec4(ray.dir, 0)).xyz;
+    vec3 m = 1 / rd;
+    vec3 n = m * ro;
     vec3 k = abs(m) * boxSize;
     vec3 t1 = -n - k;
     vec3 t2 = -n + k;
@@ -104,7 +119,7 @@ float box(in Ray ray, vec3 boxSize, out vec3 outNormal) {
     float tF = min(min(t2.x, t2.y), t2.z);
     if(tN > tF || tF < 0) return -1;
     outNormal = (tN > 0) ? step(vec3(tN), t1) : step(t2, vec3(tF));
-    outNormal *= -sign(ray.direction);
+    outNormal *= -sign(rd);
     return tF;
 }
 
@@ -119,7 +134,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
         hit = true;
         minIt = it;
         //col = vec3(1);
-        col = vec3(checkerBoard(vec3(ray.origin + ray.direction * it).xz * (0.06)));
+        col = vec3(checkerboard(vec3(ray.origin + ray.dir * it).xz * (0.06)));
         normal = vec3(0, 1, 0);
     }
     for (int i = 0; i < spheres.length(); i++) {
@@ -129,12 +144,12 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
             minIt = it;
             col = spheres[i].color;
             material = spheres[i].material;
-            normal = normalize(ray.origin + ray.direction * it - spheres[i].position);
+            normal = normalize(ray.origin + ray.dir * it - spheres[i].position);
         }
     }
     for (int i = 0; i < boxes.length(); i++) {
         vec3 norm;
-        it = box(Ray(ray.origin - boxes[i].position, ray.direction), boxes[i].size, norm).x;
+        it = box(Ray(ray.origin - boxes[i].position, ray.dir), boxes[i].size, norm, boxes[i].rotation).x;
         if (it > 0 && it < minIt) {
             hit = true;
             minIt = it;
@@ -145,7 +160,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
     }
     if (!hit) {
         //col = vec3(0);
-        col = texture(sky, ray.direction).rgb;
+        col = texture(sky, ray.dir).rgb;
         material.emission = 1;
         material.roughness = 0;
         return true;
@@ -161,9 +176,9 @@ vec3 raytrace(Ray ray) {
         vec3 color, normal;
         float minIt;
         if (raycast(ray, color, normal, minIt, material)) {
-            ray.origin += ray.direction * (minIt - 0.01);
-            ray.direction = mix(u_cosweighted == 1 ? randomCosineWeightedHemisphere(normal) : randomHemisphere(),
-                                reflect(ray.direction, normal),
+            ray.origin += ray.dir * (minIt - 0.01);
+            ray.dir = mix(u_cosweighted == 1 ? random_cosine_weighted_hemisphere(normal) : random_hemisphere(),
+                                reflect(ray.dir, normal),
                                 material.roughness);
             energy *= color;
             if (material.emission > 0) return energy * material.emission;
@@ -172,13 +187,13 @@ vec3 raytrace(Ray ray) {
     return vec3(0);
 }
 
-vec3 ACESFilm(vec3 col) {
+vec3 aces_tonemap(vec3 col) {
     return (col * (2.51f * col + 0.03f)) / (col * (2.43f * col + 0.59f) + 0.14f);
 }
 
 void main() {
     if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0 && (u_acc_frames > 0 || u_random_noise == 1 || u_reproj == 1)) {
-        updateSeed();
+        update_seed();
     } else {
         seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
     }
@@ -216,7 +231,7 @@ void main() {
     ray.dir = normalize(fp - ray.ro);*/
 
     vec3 color;
-    // Path Tracing
+    // Path TracingframeImage
     for(int i = 0; i < u_samples; i++) {
         color += raytrace(ray);
     }
@@ -234,17 +249,17 @@ void main() {
     // color = n; // Draw normals
 
     if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0) {
-        if (u_aces == 1) color = ACESFilm(color);
         if (u_acc_frames > 0) {
-            vec3 oldColor = imageLoad(frameImage, ivec2(gl_FragCoord.xy)).rgb;
-            color = mix(color, oldColor, u_acc_frames / (u_acc_frames + 1));
-            imageStore(frameImage, ivec2(gl_FragCoord.xy), vec4(color, 1));
+            vec3 old_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy)).rgb;
+            color = mix(color, old_color, u_acc_frames / (u_acc_frames + 1));
+            imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
         if (u_reproj == 1) {
-            vec3 oldColor = imageLoad(frameImage, ivec2(gl_FragCoord.xy)).rgb;
-            color = mix(color, oldColor, 0.8);
-            imageStore(frameImage, ivec2(gl_FragCoord.xy), vec4(color, 1));
+            vec3 old_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy)).rgb;
+            color = mix(color, old_color, 0.8);
+            imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
+        if (u_aces == 1) color = aces_tonemap(color);
     }
 
     out_color = vec4(color, 1);

@@ -8,7 +8,8 @@ import imgui.glfw.ImGuiImplGlfw;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import net.gavrix32.engine.Engine;
-import net.gavrix32.engine.Utils;
+import net.gavrix32.engine.utils.Timer;
+import net.gavrix32.engine.utils.Utils;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.io.Sync;
 import net.gavrix32.engine.io.Window;
@@ -22,7 +23,7 @@ public class GuiRenderer {
     private static final ImGuiImplGlfw imGuiImplGlfw = new ImGuiImplGlfw();
 
     private static final int[]
-            samples = new int[] { 8 },
+            samples = new int[] { 4 },
             bounces = new int[] { 3 },
             AASize = new int[] { 128 };
 
@@ -39,6 +40,8 @@ public class GuiRenderer {
     private static final ImInt syncType = new ImInt();
     private static final String[] syncTypes = { "Off", "VSync", "Adaptive" };
 
+    private static float guiTime;
+
     public static void init() {
         ImGui.createContext();
         ImGuiIO io = ImGui.getIO();
@@ -48,12 +51,14 @@ public class GuiRenderer {
     }
 
     public static void update() {
+        Timer.tick();
             imGuiImplGlfw.newFrame();
             ImGui.newFrame();
         if (status) {
             ImGui.begin("Render");
             ImGui.text((int) (1 / Engine.getDelta()) + " fps");
             ImGui.text("Frametime: " + Engine.getDelta() * 1000 + " ms");
+            ImGui.text("ImGui time: " + guiTime * 1000 + " ms");
             ImGui.combo("Sync", syncType, syncTypes);
             switch (syncType.get()) {
                 case 0 -> Window.sync(Sync.OFF);
@@ -83,6 +88,7 @@ public class GuiRenderer {
             ImGui.renderPlatformWindowsDefault();
             glfwMakeContextCurrent(backupWindowPtr);
         }
+        guiTime = Timer.getDelta();
         Renderer.setSamples(samples[0]);
         Renderer.setBounces(bounces[0]);
         Renderer.setAASize(AASize[0]);

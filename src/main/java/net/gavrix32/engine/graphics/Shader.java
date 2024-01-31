@@ -1,6 +1,6 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.Utils;
+import net.gavrix32.engine.utils.Utils;
 import org.joml.Matrix4f;
 
 import static org.lwjgl.opengl.GL20.*;

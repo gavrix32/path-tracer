@@ -1,4 +1,4 @@
-package net.gavrix32.engine;
+package net.gavrix32.engine.utils;
 
 import net.gavrix32.engine.io.Window;
 import org.lwjgl.BufferUtils;
@@ -26,11 +26,11 @@ public class Utils {
         return new String(loadBytes(path));
     }
 
-    public static void takeScreenshot(String name) {
+    public static void takeScreenshot(String path) {
         // Buffer capacity = pixels count * component count (red, green, blue)
         ByteBuffer buffer = BufferUtils.createByteBuffer(Window.getWidth() * Window.getHeight() * 3);
         glReadPixels(0, 0, Window.getWidth(), Window.getHeight(), GL_RGB, GL_UNSIGNED_BYTE, buffer);
         stbi_flip_vertically_on_write(true);
-        stbi_write_png(name, Window.getWidth(), Window.getHeight(), 3, buffer, Window.getWidth() * 3);
+        stbi_write_png(path, Window.getWidth(), Window.getHeight(), 3, buffer, Window.getWidth() * 3);
     }
 }

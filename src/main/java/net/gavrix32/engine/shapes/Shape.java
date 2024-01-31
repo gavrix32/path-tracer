@@ -4,11 +4,12 @@ import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.math.Vector3f;
 
 public class Shape {
-    private Vector3f pos, col;
+    private Vector3f pos, rot, col;
     private Material material;
 
-    public Shape(Vector3f pos, Vector3f col, Material material) {
+    public Shape(Vector3f pos, Vector3f rot, Vector3f col, Material material) {
         this.pos = pos;
+        this.rot = rot;
         this.col = col;
         this.material = material;
     }
@@ -19,6 +20,14 @@ public class Shape {
 
     public void setPos(Vector3f pos) {
         this.pos = pos;
+    }
+
+    public Vector3f getRot() {
+        return rot;
+    }
+
+    public void setRot(Vector3f rot) {
+        this.rot = rot;
     }
 
     public Vector3f getCol() {

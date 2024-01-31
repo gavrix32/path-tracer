@@ -11,9 +11,9 @@ public class Spheres {
     public static Scene scene = new Scene(
             new Camera(),
             new Sphere[] {
-                    new Sphere(new Vector3f(0, 20, 0), new Vector3f(1, 0.5f, 0), new Material(1, 0), 20),
-                    new Sphere(new Vector3f(50, 20, 0), new Vector3f(1, 1, 1), new Material(0, 1), 20),
-                    new Sphere(new Vector3f(100, 20, 0), new Vector3f(0.5f, 1, 0), new Material(1, 0), 20)
+                    new Sphere(new Vector3f(0, 20, 0), new Vector3f(0, 0, 0), new Vector3f(1, 0.5f, 0), new Material(1, 0), 20),
+                    new Sphere(new Vector3f(50, 20, 0), new Vector3f(0, 0, 0), new Vector3f(1, 1, 1), new Material(0, 1), 20),
+                    new Sphere(new Vector3f(100, 20, 0), new Vector3f(0, 0, 0), new Vector3f(0.5f, 1, 0), new Material(1, 0), 20)
             },
             new Box[] {}
     );
