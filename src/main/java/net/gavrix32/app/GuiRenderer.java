@@ -23,7 +23,7 @@ public class GuiRenderer {
     private static final ImGuiImplGlfw imGuiImplGlfw = new ImGuiImplGlfw();
 
     private static final int[]
-            samples = new int[] { 4 },
+            samples = new int[] { 1 },
             bounces = new int[] { 3 },
             AASize = new int[] { 128 };
 
@@ -32,7 +32,6 @@ public class GuiRenderer {
             reproj = new ImBoolean(true),
             randNoise = new ImBoolean(false),
             aces = new ImBoolean(true),
-            cosweighted = new ImBoolean(true),
             showAlbedo = new ImBoolean(false),
             showNormals = new ImBoolean(false),
             showDepth = new ImBoolean(false);
@@ -70,14 +69,14 @@ public class GuiRenderer {
             if (ImGui.dragInt("UV Blur", AASize, 1, 0, 256000)) Renderer.resetAccFrames();
             ImGui.text("Accumulated frames: " + Renderer.getAccFrames());
             ImGui.checkbox("Accumulation", accumulation);
-            if (ImGui.checkbox("Cosine-weighted distribution", cosweighted)) Renderer.resetAccFrames();
             if (ImGui.checkbox("ACES Film", aces)) Renderer.resetAccFrames();
             ImGui.checkbox("Temporal Reprojection", reproj);
             ImGui.checkbox("Random Noise", randNoise);
             ImGui.checkbox("Show Albedo", showAlbedo);
             ImGui.checkbox("Show Normals", showNormals);
             ImGui.checkbox("Show Depth", showDepth);
-            ImGui.textWrapped("Controls: WASD to move, Ctrl to speed up, Right Click to grab cursor");
+            ImGui.textWrapped("Controls: WASD to move, Ctrl to speed up, Right Click to grab cursor, " +
+                    "Escape to exit, F2 to take screenshot, F11 to enter full screen");
             ImGui.end();
         }
         ImGui.render();
@@ -95,7 +94,6 @@ public class GuiRenderer {
         Renderer.useAccumulation(accumulation.get());
         Renderer.useRandomNoise(randNoise.get());
         Renderer.useACESFilm(aces.get());
-        Renderer.useCosineWeightedDistribution(cosweighted.get());
         Renderer.useReprojection(reproj.get());
         Renderer.showAlbedo(showAlbedo.get());
         Renderer.showNormals(showNormals.get());

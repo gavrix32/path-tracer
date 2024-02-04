@@ -1,40 +1,40 @@
 package net.gavrix32.engine.shapes;
 
 import net.gavrix32.engine.graphics.Material;
-import net.gavrix32.engine.math.Vector3f;
+import net.gavrix32.engine.math.Vec3;
 
 public class Shape {
-    private Vector3f pos, rot, col;
+    private Vec3 pos, rot, col;
     private Material material;
 
-    public Shape(Vector3f pos, Vector3f rot, Vector3f col, Material material) {
+    public Shape(Vec3 pos, Vec3 rot, Vec3 col, Material material) {
         this.pos = pos;
         this.rot = rot;
         this.col = col;
         this.material = material;
     }
 
-    public Vector3f getPos() {
+    public Vec3 getPos() {
         return pos;
     }
 
-    public void setPos(Vector3f pos) {
+    public void setPos(Vec3 pos) {
         this.pos = pos;
     }
 
-    public Vector3f getRot() {
+    public Vec3 getRot() {
         return rot;
     }
 
-    public void setRot(Vector3f rot) {
+    public void setRot(Vec3 rot) {
         this.rot = rot;
     }
 
-    public Vector3f getCol() {
+    public Vec3 getCol() {
         return col;
     }
 
-    public void setCol(Vector3f col) {
+    public void setCol(Vec3 col) {
         this.col = col;
     }
 

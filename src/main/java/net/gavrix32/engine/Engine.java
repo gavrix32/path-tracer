@@ -8,7 +8,7 @@ import static org.lwjgl.glfw.GLFW.*;
 public class Engine {
     private static float dt;
 
-    public static void run(IApplication app) {
+    public static void run(IApp app) {
         app.init();
         while (!Window.isClosed()) {
             Timer.tick();

@@ -1,5 +1,6 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.engine.math.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -19,12 +20,13 @@ public class Camera {
         rotMatrix.rotate(quaternion);
     }
 
-    public void setPos(float x, float y, float z) {
-        pos = new Vector3f(x, y, z);
+    public Camera setPos(float x, float y, float z) {
+        pos.set(x, y, z);
+        return this;
     }
 
-    public Vector3f getPos() {
-        return pos;
+    public Vec3 getPos() {
+        return new Vec3(pos.x, pos.y, pos.z);
     }
 
     public void move(float x, float y, float z) {
@@ -41,9 +43,5 @@ public class Camera {
 
     public Matrix4f getRotMatrix() {
         return rotMatrix;
-    }
-
-    protected Quaternionf getQuaternion() {
-        return quaternion;
     }
 }

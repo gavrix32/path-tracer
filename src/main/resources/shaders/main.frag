@@ -24,12 +24,12 @@ struct Box {
 
 uniform vec2 u_resolution, u_cursor_delta;
 uniform float u_time;
-uniform vec3 u_camera_position;
+uniform vec3 u_camera_position, sky_color;
 uniform mat4 u_camera_rotation;
-uniform int u_samples, u_bounces, u_aa_size, u_aces, u_cosweighted, u_reproj,
-            u_show_albedo, u_show_depth, u_show_normals;
+uniform int u_samples, u_bounces, u_aa_size, u_aces, u_reproj,
+            u_show_albedo, u_show_depth, u_show_normals, sky_has_texture;
 uniform int u_random_noise;
-uniform samplerCube sky;
+uniform samplerCube sky_texture;
 uniform float u_acc_frames;
 uniform Box boxes[7];
 uniform Sphere spheres[3];
@@ -55,22 +55,16 @@ float random() {
     seed = pcg_hash(seed);
     return float(seed) * (1 / 4294967296.0);
 }
-vec3 random_hemisphere() {
-    float r = random() * 2 * PI;
-    float z = random() * 2 - 1;
-    float z_scale = sqrt(1.0 - z * z);
-    return vec3(cos(r) * z_scale, sin(r) * z_scale, z);
-}
+
 vec3 random_cosine_weighted_hemisphere(vec3 normal) {
-    float z = random() * 2.0 - 1.0;
-    float a = random() * 2.0 * PI;
-    float r = sqrt(1.0 - z * z);
+    float a = random() * 2 * PI;
+    float z = random() * 2 - 1;
+    float r = sqrt(1 - z * z);
     float x = r * cos(a);
     float y = r * sin(a);
-
-    // Convert unit vector in sphere to a cosine weighted vector in hemisphere
     return normalize(normal + vec3(x, y, z));
 }
+
 void update_seed() {
     seed = pcg_hash(uint(gl_FragCoord.x));
     seed = pcg_hash(seed + uint(gl_FragCoord.y));
@@ -120,7 +114,7 @@ float box(in Ray ray, vec3 boxSize, out vec3 outNormal, vec3 rotation) {
     if(tN > tF || tF < 0) return -1;
     outNormal = (tN > 0) ? step(vec3(tN), t1) : step(t2, vec3(tF));
     outNormal *= -sign(rd);
-    return tF;
+    return tN;
 }
 
 bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, out Material material) {
@@ -159,8 +153,14 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
         }
     }
     if (!hit) {
-        //col = vec3(0);
-        col = texture(sky, ray.dir).rgb;
+        switch (sky_has_texture) {
+            case 1:
+                col = texture(sky_texture, ray.dir).rgb;
+                break;
+            case 0:
+                col = sky_color;
+                break;
+        }
         material.emission = 1;
         material.roughness = 0;
         return true;
@@ -176,10 +176,8 @@ vec3 raytrace(Ray ray) {
         vec3 color, normal;
         float minIt;
         if (raycast(ray, color, normal, minIt, material)) {
-            ray.origin += ray.dir * (minIt - 0.01);
-            ray.dir = mix(u_cosweighted == 1 ? random_cosine_weighted_hemisphere(normal) : random_hemisphere(),
-                                reflect(ray.dir, normal),
-                                material.roughness);
+            ray.origin += ray.dir * (minIt - 0.001);
+            ray.dir = mix(random_cosine_weighted_hemisphere(normal), reflect(ray.dir, normal), material.roughness);
             energy *= color;
             if (material.emission > 0) return energy * material.emission;
         }

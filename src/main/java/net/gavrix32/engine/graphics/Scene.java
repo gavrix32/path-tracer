@@ -4,14 +4,16 @@ import net.gavrix32.engine.shapes.Box;
 import net.gavrix32.engine.shapes.Sphere;
 
 public class Scene {
-    private Sphere[] spheres;
-    private Box[] boxes;;
     private Camera camera;
+    private Sky sky;
+    private Sphere[] spheres;
+    private Box[] boxes;
 
-    public Scene(Camera camera, Sphere[] spheres, Box[] boxes) {
+    public Scene(Camera camera, Sky sky, Sphere[] spheres, Box[] boxes) {
+        this.camera = camera;
+        this.sky = sky;
         this.spheres = spheres;
         this.boxes = boxes;
-        this.camera = camera;
     }
 
     public Camera getCamera() {
@@ -20,6 +22,14 @@ public class Scene {
 
     public void setCamera(Camera camera) {
         this.camera = camera;
+    }
+
+    public Sky getSky() {
+        return sky;
+    }
+
+    public void setSky(Sky sky) {
+        this.sky = sky;
     }
 
     public Sphere[] getSpheres() {

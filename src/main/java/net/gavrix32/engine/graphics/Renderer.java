@@ -29,7 +29,7 @@ public class Renderer {
     private static int samples = 8, bounces = 4, AASize = 150;
     private static boolean
             accumulation = false, reproj = false, randNoise = false, ACESFilm = true,
-            cosweighted = true, showAlbedo = false, showNormals = false, showDepth = false;
+            showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
 
     public static void init() {
@@ -60,10 +60,9 @@ public class Renderer {
         scene.getCamera().update();
         quadShader.setVec2("u_resolution", Window.getWidth(), Window.getHeight());
         quadShader.setFloat("u_time", (float) glfwGetTime());
-        quadShader.setVec3("u_camera_position", scene.getCamera().getPos().x, scene.getCamera().getPos().y, scene.getCamera().getPos().z);
+        quadShader.setVec3("u_camera_position", scene.getCamera().getPos());
         quadShader.setMat4("u_camera_rotation", scene.getCamera().getRotMatrix());
         quadShader.setFloat("u_acc_frames", accFrames);
-        quadShader.setInt("u_cosweighted", cosweighted ? 1 : 0);
         quadShader.setInt("u_show_albedo", showAlbedo ? 1 : 0);
         quadShader.setInt("u_show_normals", showNormals ? 1 : 0);
         quadShader.setInt("u_show_depth", showDepth ? 1 : 0);
@@ -74,19 +73,24 @@ public class Renderer {
         quadShader.setInt("u_aa_size", AASize);
         quadShader.setInt("u_aces", ACESFilm ? 1 : 0);
         quadShader.setInt("tex", 0);
-        quadShader.setInt("sky", 1);
+        quadShader.setInt("sky_has_texture", scene.getSky().hasTexture ? 1 : 0);
+        if (scene.getSky().hasTexture) {
+            quadShader.setInt("sky_texture", 1);
+        } else {
+            quadShader.setVec3("sky_color", scene.getSky().getColor());
+        }
         for (int i = 0; i < scene.getBoxes().length; i++) {
-            quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes()[i].getPos().x, scene.getBoxes()[i].getPos().y, scene.getBoxes()[i].getPos().z);
-            quadShader.setVec3("boxes[" + i + "].rotation", scene.getBoxes()[i].getRot().x, scene.getBoxes()[i].getRot().y, scene.getBoxes()[i].getRot().z);
-            quadShader.setVec3("boxes[" + i + "].size", scene.getBoxes()[i].getSize().x, scene.getBoxes()[i].getSize().y, scene.getBoxes()[i].getSize().z);
-            quadShader.setVec3("boxes[" + i + "].color", scene.getBoxes()[i].getCol().x, scene.getBoxes()[i].getCol().y, scene.getBoxes()[i].getCol().z);
+            quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes()[i].getPos());
+            quadShader.setVec3("boxes[" + i + "].rotation", scene.getBoxes()[i].getRot());
+            quadShader.setVec3("boxes[" + i + "].size", scene.getBoxes()[i].getSize());
+            quadShader.setVec3("boxes[" + i + "].color", scene.getBoxes()[i].getCol());
             quadShader.setFloat("boxes[" + i + "].material.emission", scene.getBoxes()[i].getMaterial().getEmission());
             quadShader.setFloat("boxes[" + i + "].material.roughness", scene.getBoxes()[i].getMaterial().getRoughness());
         }
         for (int i = 0; i < scene.getSpheres().length; i++) {
-            quadShader.setVec3("spheres[" + i + "].position", scene.getSpheres()[i].getPos().x, scene.getSpheres()[i].getPos().y, scene.getSpheres()[i].getPos().z);
+            quadShader.setVec3("spheres[" + i + "].position", scene.getSpheres()[i].getPos());
             quadShader.setFloat("spheres[" + i + "].radius", scene.getSpheres()[i].getRadius());
-            quadShader.setVec3("spheres[" + i + "].color", scene.getSpheres()[i].getCol().x, scene.getSpheres()[i].getCol().y, scene.getSpheres()[i].getCol().z);
+            quadShader.setVec3("spheres[" + i + "].color", scene.getSpheres()[i].getCol());
             quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres()[i].getMaterial().getEmission());
             quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres()[i].getMaterial().getRoughness());
         }
@@ -139,10 +143,6 @@ public class Renderer {
 
     public static void setAASize(int aaSize) {
         AASize = aaSize;
-    }
-
-    public static void useCosineWeightedDistribution(boolean value) {
-        cosweighted = value;
     }
 
     public static void showAlbedo(boolean value) {
