@@ -63,14 +63,6 @@ public class CornellBox {
                             new Vec3(0, 0, 0),
                             new Vec3(1, 1, 1),
                             new Material(0, 0),
-                            new Vec3(100, 100, 0)),
-                    // Mirror
-                    new Box(new Vec3(149.999f, 100, 0),
-                            new Vec3(0, 0, 0),
-                            new Vec3(1, 1, 1),
-                            new Material(0, 1),
-                            new Vec3(0, 50, 50))
-                    //new Box(new Vector3f(50, 100, 0), new Vector3f(0, 0, 0), new Vector3f(1, 1, 1), new Material(0, 0.5f), new Vector3f(50, 0.1f, 50))
-            }
-    );
+                            new Vec3(100, 100, 0))
+            });
 }

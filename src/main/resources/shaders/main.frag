@@ -31,7 +31,7 @@ uniform int u_samples, u_bounces, u_aa_size, u_aces, u_reproj,
 uniform int u_random_noise;
 uniform samplerCube sky_texture;
 uniform float u_acc_frames;
-uniform Box boxes[7];
+uniform Box boxes[6];
 uniform Sphere spheres[3];
 
 layout(binding = 0, rgba32f) uniform image2D frame_image;
@@ -219,7 +219,6 @@ void main() {
     mat3 rotY = mat3(c.x, 0.0, -s.x, 0.0, 1.0, 0.0, s.x, 0.0, c.x);*/
 
 
-    //vec3 dir = normalize(vec3(uv, 1)) * rotX;
     vec3 dir = normalize(vec3(uv, 1)) * mat3(u_camera_rotation);
     Ray ray = Ray(u_camera_position, dir);
 
@@ -229,13 +228,11 @@ void main() {
     ray.dir = normalize(fp - ray.ro);*/
 
     vec3 color;
-    // Path TracingframeImage
     for(int i = 0; i < u_samples; i++) {
         color += raytrace(ray);
     }
     color /= u_samples;
 
-    // Ray Casting
     if (u_show_depth == 1 || u_show_albedo == 1 || u_show_normals == 1) {
         vec3 n;
         float depth;
@@ -244,7 +241,6 @@ void main() {
         if (u_show_normals == 1) color = n * 0.5 + 0.5;
         if (u_show_depth == 1) color = vec3(depth) * 0.001;
     }
-    // color = n; // Draw normals
 
     if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0) {
         if (u_acc_frames > 0) {
@@ -261,5 +257,4 @@ void main() {
     }
 
     out_color = vec4(color, 1);
-    //out_color = vec4(vec3(1) * mat3(u_camera_rotation - u_last_camera_rotation), 1);
 }

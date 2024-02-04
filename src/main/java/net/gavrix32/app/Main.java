@@ -20,6 +20,7 @@ public class Main implements IApp {
         });
         Renderer.init();
         GuiRenderer.init();
+        Controls controls = new Controls();
     }
 
     @Override

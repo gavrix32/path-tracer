@@ -24,7 +24,7 @@ public class GuiRenderer {
 
     private static final int[]
             samples = new int[] { 1 },
-            bounces = new int[] { 3 },
+            bounces = new int[] { 8 },
             AASize = new int[] { 128 };
 
     private static final ImBoolean
@@ -36,7 +36,9 @@ public class GuiRenderer {
             showNormals = new ImBoolean(false),
             showDepth = new ImBoolean(false);
 
-    private static final ImInt syncType = new ImInt();
+    private static final ImInt
+            syncType = new ImInt(),
+            fov = new ImInt();
     private static final String[] syncTypes = { "Off", "VSync", "Adaptive" };
 
     private static float guiTime;
