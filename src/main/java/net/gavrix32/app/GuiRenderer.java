@@ -7,6 +7,9 @@ import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
+import net.gavrix32.app.scenes.CornellBox;
+import net.gavrix32.app.scenes.RGBSpheres;
+import net.gavrix32.app.scenes.Spheres;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.utils.Timer;
 import net.gavrix32.engine.utils.Utils;
@@ -38,8 +41,10 @@ public class GuiRenderer {
 
     private static final ImInt
             syncType = new ImInt(),
-            fov = new ImInt();
+            scene = new ImInt();
+
     private static final String[] syncTypes = { "Off", "VSync", "Adaptive" };
+    private static final String[] scenes = { "Cornell Box", "RGB Spheres", "Spheres" };
 
     private static float guiTime;
 
@@ -60,6 +65,12 @@ public class GuiRenderer {
             ImGui.text((int) (1 / Engine.getDelta()) + " fps");
             ImGui.text("Frametime: " + Engine.getDelta() * 1000 + " ms");
             ImGui.text("ImGui time: " + guiTime * 1000 + " ms");
+            if (ImGui.combo("Scene", scene, scenes)) Renderer.resetAccFrames();
+            switch (scene.get()) {
+                case 0 -> Renderer.setScene(CornellBox.scene);
+                case 1 -> Renderer.setScene(RGBSpheres.scene);
+                case 2 -> Renderer.setScene(Spheres.scene);
+            }
             ImGui.combo("Sync", syncType, syncTypes);
             switch (syncType.get()) {
                 case 0 -> Window.sync(Sync.OFF);

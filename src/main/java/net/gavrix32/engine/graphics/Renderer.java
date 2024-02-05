@@ -24,6 +24,7 @@ public class Renderer {
             0, 1, 3,
             1, 2, 3
     };
+    private static Scene scene;
     private static Shader quadShader;
     private static int accFrames = 0;
     private static int samples = 8, bounces = 4, AASize = 150;
@@ -56,7 +57,7 @@ public class Renderer {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    public static void render(Scene scene) {
+    public static void render() {
         scene.getCamera().update();
         quadShader.setVec2("u_resolution", Window.getWidth(), Window.getHeight());
         quadShader.setFloat("u_time", (float) glfwGetTime());
@@ -79,25 +80,35 @@ public class Renderer {
         } else {
             quadShader.setVec3("sky_color", scene.getSky().getColor());
         }
+        quadShader.setInt("u_spheres_count", scene.getSpheres().length);
+        for (int i = 0; i < scene.getSpheres().length; i++) {
+            quadShader.setVec3("spheres[" + i + "].position", scene.getSpheres()[i].getPos());
+            quadShader.setFloat("spheres[" + i + "].radius", scene.getSpheres()[i].getRadius());
+            quadShader.setVec3("spheres[" + i + "].color", scene.getSpheres()[i].getColor());
+            quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres()[i].getMaterial().getEmission());
+            quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres()[i].getMaterial().getRoughness());
+        }
+        quadShader.setInt("u_boxes_count", scene.getBoxes().length);
         for (int i = 0; i < scene.getBoxes().length; i++) {
             quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes()[i].getPos());
             quadShader.setVec3("boxes[" + i + "].rotation", scene.getBoxes()[i].getRot());
             quadShader.setVec3("boxes[" + i + "].size", scene.getBoxes()[i].getSize());
-            quadShader.setVec3("boxes[" + i + "].color", scene.getBoxes()[i].getCol());
+            quadShader.setVec3("boxes[" + i + "].color", scene.getBoxes()[i].getColor());
             quadShader.setFloat("boxes[" + i + "].material.emission", scene.getBoxes()[i].getMaterial().getEmission());
             quadShader.setFloat("boxes[" + i + "].material.roughness", scene.getBoxes()[i].getMaterial().getRoughness());
-        }
-        for (int i = 0; i < scene.getSpheres().length; i++) {
-            quadShader.setVec3("spheres[" + i + "].position", scene.getSpheres()[i].getPos());
-            quadShader.setFloat("spheres[" + i + "].radius", scene.getSpheres()[i].getRadius());
-            quadShader.setVec3("spheres[" + i + "].color", scene.getSpheres()[i].getCol());
-            quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres()[i].getMaterial().getEmission());
-            quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres()[i].getMaterial().getRoughness());
         }
         if (accumulation || reproj) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
         if (accFrames == 0 && !reproj) resetFramebufferTexture();
         glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
         accFrames++;
+    }
+
+    public static void setScene(Scene scene) {
+        Renderer.scene = scene;
+    }
+
+    public static Scene getScene() {
+        return scene;
     }
 
     public static void setSamples(int samples) {

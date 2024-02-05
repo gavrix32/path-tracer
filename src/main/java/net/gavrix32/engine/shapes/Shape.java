@@ -30,7 +30,7 @@ public class Shape {
         this.rot = rot;
     }
 
-    public Vec3 getCol() {
+    public Vec3 getColor() {
         return col;
     }
 

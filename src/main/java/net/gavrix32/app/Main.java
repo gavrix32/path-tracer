@@ -20,13 +20,13 @@ public class Main implements IApp {
         });
         Renderer.init();
         GuiRenderer.init();
-        Controls controls = new Controls();
+        Renderer.setScene(CornellBox.scene);
     }
 
     @Override
     public void update() {
-        Controls.update(CornellBox.scene.getCamera());
-        Renderer.render(CornellBox.scene);
+        Controls.update(Renderer.getScene().getCamera());
+        Renderer.render();
         GuiRenderer.update();
         Window.update();
     }

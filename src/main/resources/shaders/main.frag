@@ -22,21 +22,24 @@ struct Box {
     Material material;
 };
 
+#define PI 3.14159
+#define MAX_SPHERES 3
+#define MAX_BOXES 6
+
 uniform vec2 u_resolution, u_cursor_delta;
 uniform float u_time;
 uniform vec3 u_camera_position, sky_color;
 uniform mat4 u_camera_rotation;
 uniform int u_samples, u_bounces, u_aa_size, u_aces, u_reproj,
-            u_show_albedo, u_show_depth, u_show_normals, sky_has_texture;
+            u_show_albedo, u_show_depth, u_show_normals, sky_has_texture,
+            u_spheres_count, u_boxes_count;
 uniform int u_random_noise;
 uniform samplerCube sky_texture;
 uniform float u_acc_frames;
-uniform Box boxes[6];
-uniform Sphere spheres[3];
+uniform Sphere spheres[MAX_SPHERES];
+uniform Box boxes[MAX_BOXES];
 
 layout(binding = 0, rgba32f) uniform image2D frame_image;
-
-#define PI 3.14159265358979323846;
 
 uint seed = 0;
 
@@ -131,7 +134,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
         col = vec3(checkerboard(vec3(ray.origin + ray.dir * it).xz * (0.06)));
         normal = vec3(0, 1, 0);
     }
-    for (int i = 0; i < spheres.length(); i++) {
+    for (int i = 0; i < u_spheres_count; i++) {
         it = sphere(ray, spheres[i].position, spheres[i].radius);
         if (it > 0 && it < minIt) {
             hit = true;
@@ -141,7 +144,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
             normal = normalize(ray.origin + ray.dir * it - spheres[i].position);
         }
     }
-    for (int i = 0; i < boxes.length(); i++) {
+    for (int i = 0; i < u_boxes_count; i++) {
         vec3 norm;
         it = box(Ray(ray.origin - boxes[i].position, ray.dir), boxes[i].size, norm, boxes[i].rotation).x;
         if (it > 0 && it < minIt) {
