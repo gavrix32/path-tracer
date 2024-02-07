@@ -1,8 +1,9 @@
 package net.gavrix32.engine.graphics;
 
 import net.gavrix32.engine.io.Window;
+import net.gavrix32.engine.math.Vec2;
 
-import static org.lwjgl.glfw.GLFW.glfwGetTime;
+import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.ARBInternalformatQuery2.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL11C.GL_FLOAT;
 import static org.lwjgl.opengl.GL15C.*;
@@ -29,9 +30,10 @@ public class Renderer {
     private static int accFrames = 0;
     private static int samples = 8, bounces = 4, AASize = 150;
     private static boolean
-            accumulation = false, reproj = false, randNoise = false, ACESFilm = true,
+            accumulation = false, reproj = false, randNoise = false, gammaCorrection, ACESFilm = true,
             showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
+    private static float gamma;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -59,7 +61,7 @@ public class Renderer {
 
     public static void render() {
         scene.getCamera().update();
-        quadShader.setVec2("u_resolution", Window.getWidth(), Window.getHeight());
+        quadShader.setVec2("u_resolution", new Vec2(Window.getWidth(), Window.getHeight()));
         quadShader.setFloat("u_time", (float) glfwGetTime());
         quadShader.setVec3("u_camera_position", scene.getCamera().getPos());
         quadShader.setMat4("u_camera_rotation", scene.getCamera().getRotMatrix());
@@ -72,6 +74,8 @@ public class Renderer {
         quadShader.setInt("u_random_noise", randNoise ? 1 : 0);
         quadShader.setInt("u_reproj", reproj ? 1 : 0);
         quadShader.setInt("u_aa_size", AASize);
+        quadShader.setFloat("u_gamma", gamma);
+        quadShader.setInt("u_gamma_correction", gammaCorrection ? 1 : 0);
         quadShader.setInt("u_aces", ACESFilm ? 1 : 0);
         quadShader.setInt("tex", 0);
         quadShader.setInt("sky_has_texture", scene.getSky().hasTexture ? 1 : 0);
@@ -146,6 +150,11 @@ public class Renderer {
 
     public static void useRandomNoise(boolean value) {
         randNoise = value;
+    }
+
+    public static void useGammaCorrection(boolean value, float gamma) {
+        gammaCorrection = value;
+        Renderer.gamma = gamma;
     }
 
     public static void useACESFilm(boolean value) {

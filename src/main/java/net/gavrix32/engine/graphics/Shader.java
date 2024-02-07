@@ -1,5 +1,6 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.engine.math.Vec2;
 import net.gavrix32.engine.math.Vec3;
 import net.gavrix32.engine.utils.Utils;
 import org.joml.Matrix4f;
@@ -41,8 +42,8 @@ public class Shader {
         glUniform1f(glGetUniformLocation(program, name), value);
     }
 
-    public void setVec2(String name, float x, float y) {
-        glUniform2f(glGetUniformLocation(program, name), x, y);
+    public void setVec2(String name, Vec2 value) {
+        glUniform2f(glGetUniformLocation(program, name), value.x, value.y);
     }
 
     public void setVec3(String name, Vec3 value) {

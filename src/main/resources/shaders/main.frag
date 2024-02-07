@@ -26,11 +26,11 @@ struct Box {
 #define MAX_SPHERES 3
 #define MAX_BOXES 6
 
-uniform vec2 u_resolution, u_cursor_delta;
-uniform float u_time;
+uniform vec2 u_resolution;
+uniform float u_time, u_gamma;
 uniform vec3 u_camera_position, sky_color;
 uniform mat4 u_camera_rotation;
-uniform int u_samples, u_bounces, u_aa_size, u_aces, u_reproj,
+uniform int u_samples, u_bounces, u_aa_size, u_gamma_correction, u_aces, u_reproj,
             u_show_albedo, u_show_depth, u_show_normals, sky_has_texture,
             u_spheres_count, u_boxes_count;
 uniform int u_random_noise;
@@ -45,9 +45,7 @@ uint seed = 0;
 
 vec2 uv = (2 * gl_FragCoord.xy - u_resolution) / u_resolution.y;
 
-/*
- * Source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
- */
+// source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
 uint pcg_hash(uint seed) {
     uint state = seed * 747796405u + 2891336453u;
     uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
@@ -188,8 +186,10 @@ vec3 raytrace(Ray ray) {
     return vec3(0);
 }
 
-vec3 aces_tonemap(vec3 col) {
-    return (col * (2.51f * col + 0.03f)) / (col * (2.43f * col + 0.59f) + 0.14f);
+vec3 post_process(vec3 col) {
+    if (u_aces == 1) col = (col * (2.51f * col + 0.03f)) / (col * (2.43f * col + 0.59f) + 0.14f);
+    if (u_gamma_correction == 1) col = pow(col, vec3(1.0 / u_gamma));
+    return col;
 }
 
 void main() {
@@ -199,9 +199,7 @@ void main() {
         seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
     }
 
-    /*
-     * UV blur anti-aliasing
-     */
+    // uv blur anti-aliasing
     if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0) {
         uv.x += random() / 100000 * u_aa_size;
         uv.x -= random() / 100000 * u_aa_size;
@@ -209,26 +207,8 @@ void main() {
         uv.y -= random() / 100000 * u_aa_size;
     }
 
-    /*float yaw = 0, pitch = u_time;
-    float x = cos(yaw * 3.14 / 180) * cos(pitch * 3.14 / 180);
-    float y = sin(pitch * 3.14 / 180);
-    float z = sin(yaw * 3.14 / 180) * cos(pitch * 3.14 / 180);
-    vec3 d = vec3(x, y, z);*/
-
-    /*m.y = -m.y;
-    vec2 s = sin(m);
-    vec2 c = cos(m);
-    mat3 rotX = mat3(1.0, 0.0, 0.0, 0.0, c.y, s.y, 0.0, -s.y, c.y);
-    mat3 rotY = mat3(c.x, 0.0, -s.x, 0.0, 1.0, 0.0, s.x, 0.0, c.x);*/
-
-
     vec3 dir = normalize(vec3(uv, 1)) * mat3(u_camera_rotation);
     Ray ray = Ray(u_camera_position, dir);
-
-    // DOF
-    /*vec3 fp = ray.ro + ray.dir * 3;
-    ray.ro = ray.ro + mat3(uRotation) * vec3(rand_vec3().xy, 0) * 0.05;
-    ray.dir = normalize(fp - ray.ro);*/
 
     vec3 color;
     for(int i = 0; i < u_samples; i++) {
@@ -243,9 +223,7 @@ void main() {
         raycast(ray, color, n, depth, m);
         if (u_show_normals == 1) color = n * 0.5 + 0.5;
         if (u_show_depth == 1) color = vec3(depth) * 0.001;
-    }
-
-    if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0) {
+    } else {
         if (u_acc_frames > 0) {
             vec3 old_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy)).rgb;
             color = mix(color, old_color, u_acc_frames / (u_acc_frames + 1));
@@ -256,8 +234,7 @@ void main() {
             color = mix(color, old_color, 0.8);
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
-        if (u_aces == 1) color = aces_tonemap(color);
     }
-
-    out_color = vec4(color, 1);
+    color = post_process(color);
+    out_color.rgb = color;
 }

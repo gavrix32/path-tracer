@@ -8,8 +8,7 @@ import imgui.glfw.ImGuiImplGlfw;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import net.gavrix32.app.scenes.CornellBox;
-import net.gavrix32.app.scenes.RGBSpheres;
-import net.gavrix32.app.scenes.Spheres;
+import net.gavrix32.app.scenes.*;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.utils.Timer;
 import net.gavrix32.engine.utils.Utils;
@@ -26,15 +25,18 @@ public class GuiRenderer {
     private static final ImGuiImplGlfw imGuiImplGlfw = new ImGuiImplGlfw();
 
     private static final int[]
-            samples = new int[] { 1 },
-            bounces = new int[] { 8 },
-            AASize = new int[] { 128 };
+            samples = new int[] {1},
+            bounces = new int[] {8},
+            AASize = new int[] {128};
+
+    private static final float[] gamma = new float[] {2.2f};
 
     private static final ImBoolean
             accumulation = new ImBoolean(true),
             reproj = new ImBoolean(true),
             randNoise = new ImBoolean(false),
-            aces = new ImBoolean(true),
+            gammaCorrection = new ImBoolean(true),
+            aces = new ImBoolean(false),
             showAlbedo = new ImBoolean(false),
             showNormals = new ImBoolean(false),
             showDepth = new ImBoolean(false);
@@ -43,8 +45,8 @@ public class GuiRenderer {
             syncType = new ImInt(),
             scene = new ImInt();
 
-    private static final String[] syncTypes = { "Off", "VSync", "Adaptive" };
-    private static final String[] scenes = { "Cornell Box", "RGB Spheres", "Spheres" };
+    private static final String[] syncTypes = {"Off", "VSync", "Adaptive"};
+    private static final String[] scenes = {"Cornell Box", "RGB Spheres", "Spheres"};
 
     private static float guiTime;
 
@@ -82,7 +84,11 @@ public class GuiRenderer {
             if (ImGui.dragInt("UV Blur", AASize, 1, 0, 256000)) Renderer.resetAccFrames();
             ImGui.text("Accumulated frames: " + Renderer.getAccFrames());
             ImGui.checkbox("Accumulation", accumulation);
-            if (ImGui.checkbox("ACES Film", aces)) Renderer.resetAccFrames();
+            if (ImGui.checkbox("Gamma Correction", gammaCorrection)) Renderer.resetAccFrames();
+            if (gammaCorrection.get()) {
+                if (ImGui.sliderFloat("Gamma", gamma, 0, 5, "%.1f")) Renderer.resetAccFrames();
+            }
+            if (ImGui.checkbox("ACES Tone Mapping", aces)) Renderer.resetAccFrames();
             ImGui.checkbox("Temporal Reprojection", reproj);
             ImGui.checkbox("Random Noise", randNoise);
             ImGui.checkbox("Show Albedo", showAlbedo);
@@ -106,6 +112,7 @@ public class GuiRenderer {
         Renderer.setAASize(AASize[0]);
         Renderer.useAccumulation(accumulation.get());
         Renderer.useRandomNoise(randNoise.get());
+        Renderer.useGammaCorrection(gammaCorrection.get(), gamma[0]);
         Renderer.useACESFilm(aces.get());
         Renderer.useReprojection(reproj.get());
         Renderer.showAlbedo(showAlbedo.get());
