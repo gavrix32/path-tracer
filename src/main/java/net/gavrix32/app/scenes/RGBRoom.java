@@ -12,16 +12,9 @@ import net.gavrix32.engine.shapes.Sphere;
 
 public class RGBRoom {
     public static Scene scene = new Scene(
-            new Camera().setPos(50, 80, -99),
+            new Camera().setPos(50, 100, -99),
             new Plane(new Vec4(), new Vec3(1), new Material(0, 0), false),
-            new Sky(new String[] {
-                    "textures/skybox/iceriver/posx.jpg",
-                    "textures/skybox/iceriver/negx.jpg",
-                    "textures/skybox/iceriver/posy.jpg",
-                    "textures/skybox/iceriver/negy.jpg",
-                    "textures/skybox/iceriver/posz.jpg",
-                    "textures/skybox/iceriver/negz.jpg"
-            }),
+            new Sky(new Vec3(0)),
             new Sphere[] {
             },
             new Box[] {
