@@ -1,17 +1,20 @@
 package net.gavrix32.engine.graphics;
 
 import net.gavrix32.engine.shapes.Box;
+import net.gavrix32.engine.shapes.Plane;
 import net.gavrix32.engine.shapes.Sphere;
 
 public class Scene {
     private Camera camera;
     private Sky sky;
+    private Plane plane;
     private Sphere[] spheres;
     private Box[] boxes;
 
-    public Scene(Camera camera, Sky sky, Sphere[] spheres, Box[] boxes) {
+    public Scene(Camera camera, Plane plane, Sky sky, Sphere[] spheres, Box[] boxes) {
         this.camera = camera;
         this.sky = sky;
+        this.plane = plane;
         this.spheres = spheres;
         this.boxes = boxes;
     }
@@ -22,6 +25,14 @@ public class Scene {
 
     public void setCamera(Camera camera) {
         this.camera = camera;
+    }
+
+    public Plane getPlane() {
+        return plane;
+    }
+
+    public void setPlane(Plane plane) {
+        this.plane = plane;
     }
 
     public Sky getSky() {

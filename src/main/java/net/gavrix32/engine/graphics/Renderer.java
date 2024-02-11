@@ -2,6 +2,7 @@ package net.gavrix32.engine.graphics;
 
 import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.math.Vec2;
+import org.joml.Matrix4f;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.ARBInternalformatQuery2.GL_TEXTURE_2D;
@@ -34,6 +35,7 @@ public class Renderer {
             showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
     private static float gamma;
+    private static Matrix4f oldRotM = new Matrix4f();
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -65,6 +67,8 @@ public class Renderer {
         quadShader.setFloat("u_time", (float) glfwGetTime());
         quadShader.setVec3("u_camera_position", scene.getCamera().getPos());
         quadShader.setMat4("u_camera_rotation", scene.getCamera().getRotMatrix());
+        quadShader.setMat4("u_old_camera_rotation", oldRotM);
+        oldRotM = scene.getCamera().getRotMatrix();
         quadShader.setFloat("u_acc_frames", accFrames);
         quadShader.setInt("u_show_albedo", showAlbedo ? 1 : 0);
         quadShader.setInt("u_show_normals", showNormals ? 1 : 0);
@@ -77,13 +81,21 @@ public class Renderer {
         quadShader.setFloat("u_gamma", gamma);
         quadShader.setInt("u_gamma_correction", gammaCorrection ? 1 : 0);
         quadShader.setInt("u_aces", ACESFilm ? 1 : 0);
-        quadShader.setInt("tex", 0);
         quadShader.setInt("sky_has_texture", scene.getSky().hasTexture ? 1 : 0);
         if (scene.getSky().hasTexture) {
             quadShader.setInt("sky_texture", 1);
         } else {
             quadShader.setVec3("sky_color", scene.getSky().getColor());
         }
+        // Plane
+        {
+            quadShader.setVec4("u_plane_normal", scene.getPlane().getNormal());
+            quadShader.setVec3("u_plane_color", scene.getPlane().getColor());
+            quadShader.setFloat("u_plane_emission", scene.getPlane().getMaterial().getEmission());
+            quadShader.setFloat("u_plane_roughness", scene.getPlane().getMaterial().getRoughness());
+            quadShader.setInt("u_plane_checkerboard", scene.getPlane().isCheckerBoard() ? 1 : 0);
+        }
+        // Spheres
         quadShader.setInt("u_spheres_count", scene.getSpheres().length);
         for (int i = 0; i < scene.getSpheres().length; i++) {
             quadShader.setVec3("spheres[" + i + "].position", scene.getSpheres()[i].getPos());
@@ -92,6 +104,7 @@ public class Renderer {
             quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres()[i].getMaterial().getEmission());
             quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres()[i].getMaterial().getRoughness());
         }
+        // Boxed
         quadShader.setInt("u_boxes_count", scene.getBoxes().length);
         for (int i = 0; i < scene.getBoxes().length; i++) {
             quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes()[i].getPos());

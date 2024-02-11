@@ -10,10 +10,10 @@ import net.gavrix32.engine.shapes.Box;
 import net.gavrix32.engine.shapes.Plane;
 import net.gavrix32.engine.shapes.Sphere;
 
-public class CornellBox {
+public class RGBRoom {
     public static Scene scene = new Scene(
             new Camera().setPos(50, 80, -99),
-            new Plane(new Vec4(0, 1, 0, 0), new Vec3(1), new Material(0, 0), true),
+            new Plane(new Vec4(), new Vec3(1), new Material(0, 0), false),
             new Sky(new String[] {
                     "textures/skybox/iceriver/posx.jpg",
                     "textures/skybox/iceriver/negx.jpg",
@@ -23,48 +23,56 @@ public class CornellBox {
                     "textures/skybox/iceriver/negz.jpg"
             }),
             new Sphere[] {
-                    new Sphere(new Vec3(0, 20, 0),
-                            new Vec3(0, 0, 0),
-                            new Vec3(1),
-                            new Material(0, 0), 20),
-                    new Sphere(new Vec3(50, 20, 0),
-                            new Vec3(0, 0, 0),
-                            new Vec3(1),
-                            new Material(0, 0.5f), 20),
-                    new Sphere(new Vec3(100, 20, 0),
-                            new Vec3(0, 0, 0),
-                            new Vec3(1),
-                            new Material(0, 1), 20)
             },
             new Box[] {
-                    new Box(new Vec3(50, 100, 100),
+                    new Box(new Vec3(-30, 100, 90),     // Red light wall
                             new Vec3(0, 0, 0),
-                            new Vec3(1, 1, 1),
+                            new Vec3(1, 0, 0),
+                            new Material(1, 0),
+                            new Vec3(20, 100, 10)),
+                    new Box(new Vec3(10, 100, 80),      // Wall
+                            new Vec3(0, 0, 0),
+                            new Vec3(1),
                             new Material(0, 0),
-                            new Vec3(100, 100, 0)),
+                            new Vec3(20, 100, 20)),
+                    new Box(new Vec3(50, 100, 90),      // Green light wall
+                            new Vec3(0, 0, 0),
+                            new Vec3(0, 1, 0),
+                            new Material(1, 0),
+                            new Vec3(20, 100, 10)),
+                    new Box(new Vec3(90, 100, 80),      // Wall
+                            new Vec3(0, 0, 0),
+                            new Vec3(1),
+                            new Material(0, 0),
+                            new Vec3(20, 100, 20)),
+                    new Box(new Vec3(130, 100, 90),     // Blue light wall
+                            new Vec3(0, 0, 0),
+                            new Vec3(0, 0, 1),
+                            new Material(1, 0),
+                            new Vec3(20, 100, 10)),
                     new Box(new Vec3(50, 200, 0),
                             new Vec3(0, 0, 0),
-                            new Vec3(1, 1, 1),
+                            new Vec3(1),
+                            new Material(0, 0),
+                            new Vec3(100, 0, 100)),
+                    new Box(new Vec3(50, 0, 0),
+                            new Vec3(0, 0, 0),
+                            new Vec3(1),
                             new Material(0, 0),
                             new Vec3(100, 0, 100)),
                     new Box(new Vec3(-50, 100, 0),
                             new Vec3(0, 0, 0),
-                            new Vec3(1, 0, 0),
+                            new Vec3(1),
                             new Material(0, 0),
                             new Vec3(0, 100, 100)),
                     new Box(new Vec3(150, 100, 0),
                             new Vec3(0, 0, 0),
-                            new Vec3(0, 1, 0),
+                            new Vec3(1),
                             new Material(0, 0),
                             new Vec3(0, 100, 100)),
-                    new Box(new Vec3(50, 199.999f, 0),
-                            new Vec3(0, 0, 0),
-                            new Vec3(1, 1, 1),
-                            new Material(5, 0),
-                            new Vec3(50, 0.1f, 50)),
                     new Box(new Vec3(50, 100, -100),
                             new Vec3(0, 0, 0),
-                            new Vec3(1, 1, 1),
+                            new Vec3(1),
                             new Material(0, 0),
                             new Vec3(100, 100, 0))
             });

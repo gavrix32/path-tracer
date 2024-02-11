@@ -23,16 +23,18 @@ struct Box {
 };
 
 #define PI 3.14159
+#define MAX_DISTANCE 999999999
 #define MAX_SPHERES 3
-#define MAX_BOXES 6
+#define MAX_BOXES 50
 
+uniform float u_time, u_gamma, u_plane_emission, u_plane_roughness;
 uniform vec2 u_resolution;
-uniform float u_time, u_gamma;
-uniform vec3 u_camera_position, sky_color;
-uniform mat4 u_camera_rotation;
+uniform vec3 u_camera_position, sky_color, u_plane_color;
+uniform vec4 u_plane_normal;
+uniform mat4 u_camera_rotation, u_old_camera_rotation;
 uniform int u_samples, u_bounces, u_aa_size, u_gamma_correction, u_aces, u_reproj,
             u_show_albedo, u_show_depth, u_show_normals, sky_has_texture,
-            u_spheres_count, u_boxes_count;
+            u_spheres_count, u_boxes_count, u_plane_checkerboard;
 uniform int u_random_noise;
 uniform samplerCube sky_texture;
 uniform float u_acc_frames;
@@ -118,36 +120,38 @@ float box(in Ray ray, vec3 boxSize, out vec3 outNormal, vec3 rotation) {
     return tN;
 }
 
-bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, out Material material) {
+bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance, out Material material) {
     bool hit = false;
-    float it, minIt = 99999;
-    vec3 n;
-    it = plane(ray, vec4(0, 1, 0, 0));
-    if (it > 0 && it < minIt) {
-        material.emission = 0;
-        material.roughness = 0;
+    float dist, minDist = MAX_DISTANCE;
+    vec3 hitPos = ray.origin + ray.dir;
+    dist = plane(ray, u_plane_normal);
+    if (dist > 0 && dist < minDist) {
+        material.emission = u_plane_emission;
+        material.roughness = u_plane_roughness;
         hit = true;
-        minIt = it;
+        minDist = dist;
         //col = vec3(1);
-        col = vec3(checkerboard(vec3(ray.origin + ray.dir * it).xz * (0.06)));
+        //col = vec3(checkerboard(vec3(ray.dir * dist + ray.origin).xz * (0.06)));
+        col = u_plane_checkerboard == 1 ? vec3(u_plane_color * checkerboard(vec3(ray.dir * dist + ray.origin).xz * (0.06))) : u_plane_color;
+        //col = u_plane_color;
         normal = vec3(0, 1, 0);
     }
     for (int i = 0; i < u_spheres_count; i++) {
-        it = sphere(ray, spheres[i].position, spheres[i].radius);
-        if (it > 0 && it < minIt) {
+        dist = sphere(ray, spheres[i].position, spheres[i].radius);
+        if (dist > 0 && dist < minDist) {
             hit = true;
-            minIt = it;
+            minDist = dist;
             col = spheres[i].color;
             material = spheres[i].material;
-            normal = normalize(ray.origin + ray.dir * it - spheres[i].position);
+            normal = normalize(ray.origin + ray.dir * dist - spheres[i].position);
         }
     }
     for (int i = 0; i < u_boxes_count; i++) {
         vec3 norm;
-        it = box(Ray(ray.origin - boxes[i].position, ray.dir), boxes[i].size, norm, boxes[i].rotation).x;
-        if (it > 0 && it < minIt) {
+        dist = box(Ray(ray.origin - boxes[i].position, ray.dir), boxes[i].size, norm, boxes[i].rotation).x;
+        if (dist > 0 && dist < minDist) {
             hit = true;
-            minIt = it;
+            minDist = dist;
             col = boxes[i].color;
             material = boxes[i].material;
             normal = normalize(norm);
@@ -166,7 +170,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDist, ou
         material.roughness = 0;
         return true;
     }
-    minDist = minIt;
+    minDistance = minDist;
     return hit;
 }
 
@@ -215,6 +219,14 @@ void main() {
         color += raytrace(ray);
     }
     color /= u_samples;
+
+    // vec3 oldDir = normalize(vec3(gl_FragCoord.xy, 1)) * mat3(u_old_camera_rotation);
+    // vec3 reprojVector = (normalize(vec3(gl_FragCoord.xy, 1)) * mat3(u_camera_rotation)) * hitPos - oldDir * hitPos;
+    // vec2 oldUV = reprojVector.xy / reprojVector.z;
+    // vec2 uvDelta = gl_FragCoord.xy - oldUV;
+
+    // Projection перспектива
+    // View camera position
 
     if (u_show_depth == 1 || u_show_albedo == 1 || u_show_normals == 1) {
         vec3 n;

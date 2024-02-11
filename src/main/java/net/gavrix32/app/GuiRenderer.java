@@ -46,65 +46,67 @@ public class GuiRenderer {
             scene = new ImInt();
 
     private static final String[] syncTypes = {"Off", "VSync", "Adaptive"};
-    private static final String[] scenes = {"Cornell Box", "RGB Spheres", "Spheres"};
+    private static final String[] scenes = {"Cornell Box", "RGB Room", "RGB Spheres", "Spheres"};
 
     private static float guiTime;
 
     public static void init() {
         ImGui.createContext();
         ImGuiIO io = ImGui.getIO();
-        io.getFonts().addFontFromMemoryTTF(Utils.loadBytes("fonts/arial.ttf"), 14);
+        io.getFonts().addFontFromMemoryTTF(Utils.loadBytes("fonts/Inter-Regular.ttf"), 15);
         imGuiImplGlfw.init(Window.get(), true);
         imGuiImplGl3.init();
     }
 
     public static void update() {
         Timer.tick();
+        if (status) {
             imGuiImplGlfw.newFrame();
             ImGui.newFrame();
-        if (status) {
             ImGui.begin("Render");
             ImGui.text((int) (1 / Engine.getDelta()) + " fps");
             ImGui.text("Frametime: " + Engine.getDelta() * 1000 + " ms");
             ImGui.text("ImGui time: " + guiTime * 1000 + " ms");
-            if (ImGui.combo("Scene", scene, scenes)) Renderer.resetAccFrames();
-            switch (scene.get()) {
-                case 0 -> Renderer.setScene(CornellBox.scene);
-                case 1 -> Renderer.setScene(RGBSpheres.scene);
-                case 2 -> Renderer.setScene(Spheres.scene);
+            if (ImGui.combo("Scene", scene, scenes)) {
+                Renderer.resetAccFrames();
+                switch (scene.get()) {
+                    case 0 -> Renderer.setScene(CornellBox.scene);
+                    case 1 -> Renderer.setScene(RGBRoom.scene);
+                    case 2 -> Renderer.setScene(RGBSpheres.scene);
+                    case 3 -> Renderer.setScene(Spheres.scene);
+                }
             }
-            ImGui.combo("Sync", syncType, syncTypes);
-            switch (syncType.get()) {
-                case 0 -> Window.sync(Sync.OFF);
-                case 1 -> Window.sync(Sync.VSYNC);
-                case 2 -> Window.sync(Sync.ADAPTIVE);
+            if (ImGui.combo("Sync", syncType, syncTypes)) {
+                switch (syncType.get()) {
+                    case 0 -> Window.sync(Sync.OFF);
+                    case 1 -> Window.sync(Sync.VSYNC);
+                    case 2 -> Window.sync(Sync.ADAPTIVE);
+                }
             }
             if (ImGui.sliderInt("Samples", samples, 1, 32)) Renderer.resetAccFrames();
             if (ImGui.sliderInt("Bounces", bounces, 1, 8)) Renderer.resetAccFrames();
             if (ImGui.dragInt("UV Blur", AASize, 1, 0, 256000)) Renderer.resetAccFrames();
             ImGui.text("Accumulated frames: " + Renderer.getAccFrames());
             ImGui.checkbox("Accumulation", accumulation);
-            if (ImGui.checkbox("Gamma Correction", gammaCorrection)) Renderer.resetAccFrames();
-            if (gammaCorrection.get()) {
-                if (ImGui.sliderFloat("Gamma", gamma, 0, 5, "%.1f")) Renderer.resetAccFrames();
-            }
-            if (ImGui.checkbox("ACES Tone Mapping", aces)) Renderer.resetAccFrames();
+            ImGui.checkbox("Gamma Correction", gammaCorrection);
+            if (gammaCorrection.get()) ImGui.sliderFloat("Gamma", gamma, 0, 5, "%.1f");
+            ImGui.checkbox("ACES Tone Mapping", aces);
             ImGui.checkbox("Temporal Reprojection", reproj);
             ImGui.checkbox("Random Noise", randNoise);
             ImGui.checkbox("Show Albedo", showAlbedo);
             ImGui.checkbox("Show Normals", showNormals);
             ImGui.checkbox("Show Depth", showDepth);
             ImGui.textWrapped("Controls: WASD to move, Ctrl to speed up, Right Click to grab cursor, " +
-                    "Escape to exit, F2 to take screenshot, F11 to enter full screen");
+                    "Escape to exit, F2 to take screenshot, F11 to enter full screen, F1 to off/on gui");
             ImGui.end();
-        }
-        ImGui.render();
-        imGuiImplGl3.renderDrawData(ImGui.getDrawData());
-        if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-            final long backupWindowPtr = glfwGetCurrentContext();
-            ImGui.updatePlatformWindows();
-            ImGui.renderPlatformWindowsDefault();
-            glfwMakeContextCurrent(backupWindowPtr);
+            ImGui.render();
+            imGuiImplGl3.renderDrawData(ImGui.getDrawData());
+            if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
+                final long backupWindowPtr = glfwGetCurrentContext();
+                ImGui.updatePlatformWindows();
+                ImGui.renderPlatformWindowsDefault();
+                glfwMakeContextCurrent(backupWindowPtr);
+            }
         }
         guiTime = Timer.getDelta();
         Renderer.setSamples(samples[0]);
