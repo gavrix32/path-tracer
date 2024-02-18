@@ -5,6 +5,7 @@ import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.IApp;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
+import net.gavrix32.engine.utils.Logger;
 
 import static org.lwjgl.glfw.GLFW.*;
 

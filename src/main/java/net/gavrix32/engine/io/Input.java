@@ -28,19 +28,19 @@ public class Input {
         lastY = currentY;
     }
 
-    public static double getCursorX() {
-        return currentX;
+    public static float getCursorX() {
+        return (float) currentX;
     }
 
-    public static double getCursorY() {
-        return currentY;
+    public static float getCursorY() {
+        return (float) currentY;
     }
 
-    public static double getDeltaX() {
-        return deltaX;
+    public static float getDeltaX() {
+        return (float) deltaX;
     }
 
-    public static double getDeltaY() {
-        return deltaY;
+    public static float getDeltaY() {
+        return (float) deltaY;
     }
 }

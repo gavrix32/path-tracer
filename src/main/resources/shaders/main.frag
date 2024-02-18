@@ -27,25 +27,24 @@ struct Box {
 #define MAX_SPHERES 3
 #define MAX_BOXES 50
 
-uniform float u_time, u_gamma, u_plane_emission, u_plane_roughness;
 uniform vec2 u_resolution;
-uniform vec3 u_camera_position, sky_color, u_plane_color;
+uniform vec3 u_camera_position, u_old_camera_position, sky_color, u_plane_color;
 uniform vec4 u_plane_normal;
-uniform mat4 u_camera_rotation, u_old_camera_rotation;
+uniform mat4 proj, view, old_view;
 uniform int u_samples, u_bounces, u_aa_size, u_gamma_correction, u_aces, u_reproj,
             u_show_albedo, u_show_depth, u_show_normals, sky_has_texture,
             u_spheres_count, u_boxes_count, u_plane_checkerboard;
 uniform int u_random_noise;
 uniform samplerCube sky_texture;
-uniform float u_acc_frames;
+uniform float u_acc_frames, u_time, u_gamma, u_plane_emission, u_plane_roughness;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
 
 layout(binding = 0, rgba32f) uniform image2D frame_image;
 
 uint seed = 0;
-
 vec2 uv = (2 * gl_FragCoord.xy - u_resolution) / u_resolution.y;
+vec3 hitPos;
 
 // source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
 uint pcg_hash(uint seed) {
@@ -123,7 +122,6 @@ float box(in Ray ray, vec3 boxSize, out vec3 outNormal, vec3 rotation) {
 bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance, out Material material) {
     bool hit = false;
     float dist, minDist = MAX_DISTANCE;
-    vec3 hitPos = ray.origin + ray.dir;
     dist = plane(ray, u_plane_normal);
     if (dist > 0 && dist < minDist) {
         material.emission = u_plane_emission;
@@ -181,7 +179,9 @@ vec3 raytrace(Ray ray) {
         vec3 color, normal;
         float minIt;
         if (raycast(ray, color, normal, minIt, material)) {
+            hitPos = ray.origin + ray.dir * minIt;
             ray.origin += ray.dir * (minIt - 0.001);
+            // random() < material.roughness ? 1.0f : 0.0f
             ray.dir = mix(random_cosine_weighted_hemisphere(normal), reflect(ray.dir, normal), material.roughness);
             energy *= color;
             if (material.emission > 0) return energy * material.emission;
@@ -194,6 +194,13 @@ vec3 post_process(vec3 col) {
     if (u_aces == 1) col = (col * (2.51f * col + 0.03f)) / (col * (2.43f * col + 0.59f) + 0.14f);
     if (u_gamma_correction == 1) col = pow(col, vec3(1.0 / u_gamma));
     return col;
+}
+
+vec3 reproject(mat3 pcam_mat, vec3 pcam_pos, vec2 iRes, vec3 p) {
+    float td = distance(pcam_pos, p);
+    vec3 dir = (p - pcam_pos)/td;
+    vec3 screen = dir*pcam_mat;
+    return vec3(screen.xy * iRes.y / (screen.z) + 0.5 * iRes.xy, td);
 }
 
 void main() {
@@ -211,7 +218,8 @@ void main() {
         uv.y -= random() / 100000 * u_aa_size;
     }
 
-    vec3 dir = normalize(vec3(uv, 1)) * mat3(u_camera_rotation);
+    vec3 dir = normalize((mat3(proj) * vec3(uv, 1)) * mat3(view));
+    // vec3 dir = normalize(vec3(uv, 1)) * mat3(u_camera_rotation);
     Ray ray = Ray(u_camera_position, dir);
 
     vec3 color;
@@ -220,13 +228,7 @@ void main() {
     }
     color /= u_samples;
 
-    // vec3 oldDir = normalize(vec3(gl_FragCoord.xy, 1)) * mat3(u_old_camera_rotation);
-    // vec3 reprojVector = (normalize(vec3(gl_FragCoord.xy, 1)) * mat3(u_camera_rotation)) * hitPos - oldDir * hitPos;
-    // vec2 oldUV = reprojVector.xy / reprojVector.z;
-    // vec2 uvDelta = gl_FragCoord.xy - oldUV;
-
-    // Projection перспектива
-    // View camera position
+    vec3 rep = reproject(mat3(old_view), u_old_camera_position, u_resolution, hitPos);
 
     if (u_show_depth == 1 || u_show_albedo == 1 || u_show_normals == 1) {
         vec3 n;

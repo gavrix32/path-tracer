@@ -58,10 +58,5 @@ public class Controls {
             camera.move(0, -speed, 0);
             Renderer.resetAccFrames();
         }
-        if (!Window.isCursorVisible()) {
-            camera.rotate((float) (Input.getDeltaY() * -0.003f), 0, 0);
-            camera.rotate(0, (float) (Input.getDeltaX() * -0.003f), 0);
-            if (Input.getDeltaX() != 0 || Input.getDeltaY() != 0) Renderer.resetAccFrames();
-        }
     }
 }

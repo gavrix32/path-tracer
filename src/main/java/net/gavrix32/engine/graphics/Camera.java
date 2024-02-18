@@ -1,23 +1,27 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.math.Vec3;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public class Camera {
-    private Vector3f pos;
-    private Matrix4f rotMatrix;
-    private Quaternionf quaternion;
+    private Vector3f pos, rot;
+    private Matrix4f view;
 
     public Camera() {
         pos = new Vector3f();
-        quaternion = new Quaternionf();
+        rot = new Vector3f();
+        view = new Matrix4f();
     }
 
     public void update() {
-        rotMatrix = new Matrix4f();
-        rotMatrix.rotate(quaternion);
+        view.identity();
+        view.rotateX(rot.x);
+        view.rotateY(rot.y);
+        view.rotateZ(rot.z);
+    }
+
+    public Vector3f getPos() {
+        return new Vector3f(pos);
     }
 
     public Camera setPos(float x, float y, float z) {
@@ -25,23 +29,29 @@ public class Camera {
         return this;
     }
 
-    public Vec3 getPos() {
-        return new Vec3(pos.x, pos.y, pos.z);
+    public Vector3f getRot() {
+        return rot;
+    }
+
+    public void setRot(Vector3f rot) {
+        this.rot = rot;
     }
 
     public void move(float x, float y, float z) {
-        pos.add(quaternion.positiveX(new Vector3f()).mul(x));
-        pos.add(quaternion.positiveY(new Vector3f()).mul(y));
-        pos.add(quaternion.positiveZ(new Vector3f()).mul(z));
+        pos.add(view.positiveX(new Vector3f()).mul(x));
+        pos.add(view.positiveY(new Vector3f()).mul(y));
+        pos.add(view.positiveZ(new Vector3f()).mul(z));
     }
 
-    public void rotate(float x, float y, float z) {
-        quaternion.rotateLocalX(x);
-        quaternion.rotateLocalY(y);
-        quaternion.rotateLocalZ(z);
+    public void rotateX(float x) {
+        rot.add(x, 0, 0);
     }
 
-    public Matrix4f getRotMatrix() {
-        return rotMatrix;
+    public void rotateY(float y) {
+        rot.add(0, y, 0);
+    }
+
+    public Matrix4f getView() {
+        return view;
     }
 }

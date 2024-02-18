@@ -1,8 +1,11 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.math.Vec2;
+import net.gavrix32.engine.shapes.Box;
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.ARBInternalformatQuery2.GL_TEXTURE_2D;
@@ -35,7 +38,7 @@ public class Renderer {
             showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
     private static float gamma;
-    private static Matrix4f oldRotM = new Matrix4f();
+    private static Matrix4f proj, view;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -59,16 +62,25 @@ public class Renderer {
         glBindTexture(GL_TEXTURE_2D, accTexture);
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, Window.getWidth(), Window.getHeight());
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        proj = new Matrix4f();
+        view = new Matrix4f();
     }
 
     public static void render() {
+        quadShader.setMat4("old_view", scene.getCamera().getView());
+        quadShader.setVec3("u_old_camera_position", scene.getCamera().getPos());
         scene.getCamera().update();
-        quadShader.setVec2("u_resolution", new Vec2(Window.getWidth(), Window.getHeight()));
-        quadShader.setFloat("u_time", (float) glfwGetTime());
+        if (!Window.isCursorVisible()) {
+            scene.getCamera().rotateX(Input.getDeltaY() * -0.003f);
+            scene.getCamera().rotateY(Input.getDeltaX() * -0.003f);
+            if (Input.getDeltaX() != 0 || Input.getDeltaY() != 0) Renderer.resetAccFrames();
+        }
         quadShader.setVec3("u_camera_position", scene.getCamera().getPos());
-        quadShader.setMat4("u_camera_rotation", scene.getCamera().getRotMatrix());
-        quadShader.setMat4("u_old_camera_rotation", oldRotM);
-        oldRotM = scene.getCamera().getRotMatrix();
+        quadShader.setMat4("view", scene.getCamera().getView());
+        quadShader.setVec2("u_resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
+        quadShader.setFloat("u_time", (float) glfwGetTime());
+        quadShader.setMat4("proj", proj);
         quadShader.setFloat("u_acc_frames", accFrames);
         quadShader.setInt("u_show_albedo", showAlbedo ? 1 : 0);
         quadShader.setInt("u_show_normals", showNormals ? 1 : 0);
@@ -104,7 +116,7 @@ public class Renderer {
             quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres()[i].getMaterial().getEmission());
             quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres()[i].getMaterial().getRoughness());
         }
-        // Boxed
+        // Boxes
         quadShader.setInt("u_boxes_count", scene.getBoxes().length);
         for (int i = 0; i < scene.getBoxes().length; i++) {
             quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes()[i].getPos());

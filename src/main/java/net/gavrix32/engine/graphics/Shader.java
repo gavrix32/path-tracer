@@ -1,10 +1,11 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.math.Vec2;
-import net.gavrix32.engine.math.Vec3;
-import net.gavrix32.engine.math.Vec4;
+import net.gavrix32.engine.utils.Logger;
 import net.gavrix32.engine.utils.Utils;
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import static org.lwjgl.opengl.GL20.*;
 
@@ -15,24 +16,18 @@ public class Shader {
         int vertex = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertex, Utils.loadString(vertexPath));
         glCompileShader(vertex);
-        if (glGetShaderi(vertex, GL_COMPILE_STATUS) == 0) {
-            System.err.println(glGetShaderInfoLog(vertex));
-        }
+        if (glGetShaderi(vertex, GL_COMPILE_STATUS) == 0) Logger.error(vertexPath + "\n" + glGetShaderInfoLog(vertex));
 
         int fragment = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragment, Utils.loadString(fragmentPath));
         glCompileShader(fragment);
-        if (glGetShaderi(fragment, GL_COMPILE_STATUS) == 0) {
-            System.err.println(glGetShaderInfoLog(fragment));
-        }
+        if (glGetShaderi(fragment, GL_COMPILE_STATUS) == 0) Logger.error(fragmentPath + "\n" + glGetShaderInfoLog(fragment));
 
         program = glCreateProgram();
         glAttachShader(program, vertex);
         glAttachShader(program, fragment);
         glLinkProgram(program);
-        if (glGetProgrami(program, GL_LINK_STATUS) == 0) {
-            System.err.println(glGetProgramInfoLog(program));
-        }
+        if (glGetProgrami(program, GL_LINK_STATUS) == 0) Logger.error(glGetProgramInfoLog(program));
     }
 
     public void setInt(String name, int value) {
@@ -43,15 +38,15 @@ public class Shader {
         glUniform1f(glGetUniformLocation(program, name), value);
     }
 
-    public void setVec2(String name, Vec2 value) {
+    public void setVec2(String name, Vector2f value) {
         glUniform2f(glGetUniformLocation(program, name), value.x, value.y);
     }
 
-    public void setVec3(String name, Vec3 value) {
+    public void setVec3(String name, Vector3f value) {
         glUniform3f(glGetUniformLocation(program, name), value.x, value.y, value.z);
     }
 
-    public void setVec4(String name, Vec4 value) {
+    public void setVec4(String name, Vector4f value) {
         glUniform4f(glGetUniformLocation(program, name), value.x, value.y, value.z, value.w);
     }
 

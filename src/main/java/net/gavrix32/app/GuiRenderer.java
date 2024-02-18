@@ -46,7 +46,7 @@ public class GuiRenderer {
             scene = new ImInt();
 
     private static final String[] syncTypes = {"Off", "VSync", "Adaptive"};
-    private static final String[] scenes = {"Cornell Box", "RGB Room", "RGB Spheres", "Spheres"};
+    private static final String[] scenes = {"Cornell Box", "RGB Room", "RGB Spheres", "Spheres", "Liminal"};
 
     private static float guiTime;
 
@@ -65,7 +65,7 @@ public class GuiRenderer {
             ImGui.newFrame();
             ImGui.begin("Render");
             ImGui.text((int) (1 / Engine.getDelta()) + " fps");
-            ImGui.text("Frametime: " + Engine.getDelta() * 1000 + " ms");
+            ImGui.text("Frame time: " + Engine.getDelta() * 1000 + " ms");
             ImGui.text("ImGui time: " + guiTime * 1000 + " ms");
             if (ImGui.combo("Scene", scene, scenes)) {
                 Renderer.resetAccFrames();
@@ -74,6 +74,7 @@ public class GuiRenderer {
                     case 1 -> Renderer.setScene(RGBRoom.scene);
                     case 2 -> Renderer.setScene(RGBSpheres.scene);
                     case 3 -> Renderer.setScene(Spheres.scene);
+                    case 4 -> Renderer.setScene(Liminal.scene);
                 }
             }
             if (ImGui.combo("Sync", syncType, syncTypes)) {

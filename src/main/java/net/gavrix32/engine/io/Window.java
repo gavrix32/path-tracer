@@ -1,11 +1,14 @@
 package net.gavrix32.engine.io;
 
 import net.gavrix32.engine.graphics.Renderer;
+import net.gavrix32.engine.utils.Logger;
+import org.lwjgl.Version;
+import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11C.glViewport;
+import static org.lwjgl.opengl.GL46C.*;
 
 public class Window {
     private static long window;
@@ -17,11 +20,13 @@ public class Window {
         Window.height = height;
         defaultWidth = width;
         defaultHeight = height;
-        glfwInit();
+        GLFWErrorCallback.createPrint(System.err).set();
+        if (!glfwInit()) Logger.error("Failed to initialize GLFW");
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         window = glfwCreateWindow(width, height, title, 0, 0);
+        if (window == 0) Logger.error("Failed to create the GLFW window");
         GLFWVidMode vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         monitorWidth = vidMode.width();
         monitorHeight = vidMode.height();
@@ -31,8 +36,14 @@ public class Window {
                 (monitorHeight - height) / 2
         );
         glfwMakeContextCurrent(window);
-        glfwSwapInterval(0);
         GL.createCapabilities();
+        Logger.info("LWJGL " + Version.getVersion());
+        Logger.info(glGetString(GL_RENDERER));
+        Logger.info("OpenGL " + glGetString(GL_VERSION));
+        Logger.info("GLSL " + glGetString(GL_SHADING_LANGUAGE_VERSION));
+        Logger.info("GLX_EXT_swap_control_tear extension support: " + glfwExtensionSupported("GLX_EXT_swap_control_tear"));
+        Logger.info("WGL_EXT_swap_control_tear extension support: " + glfwExtensionSupported("WGL_EXT_swap_control_tear"));
+        glfwSwapInterval(0);
         glfwSetWindowSizeCallback(window, (window, w, h) -> {
             Window.width = w;
             Window.height = h;

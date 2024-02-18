@@ -1,7 +1,8 @@
 package net.gavrix32.engine.graphics;
 
 import net.gavrix32.app.Main;
-import net.gavrix32.engine.math.Vec3;
+import net.gavrix32.engine.utils.Logger;
+import org.joml.Vector3f;
 
 import java.nio.ByteBuffer;
 
@@ -19,11 +20,11 @@ import static org.lwjgl.stb.STBImage.stbi_failure_reason;
 import static org.lwjgl.stb.STBImage.stbi_load;
 
 public class Sky {
-    private Vec3 color;
+    private Vector3f color;
     private String[] paths;
     protected boolean hasTexture;
 
-    public Sky(Vec3 color) {
+    public Sky(Vector3f color) {
         this.color = color;
         hasTexture = false;
     }
@@ -40,17 +41,17 @@ public class Sky {
             ByteBuffer data;
             data = stbi_load(Main.class.getClassLoader().getResource(paths[i]).getPath(), width, height,  new int[1], 3);
             //data = stbi_load_from_memory(ByteBuffer.wrap(Utils.loadBytes(skyBoxPaths[i])), width, height,  new int[1], 3);
-            if (data == null) System.err.println("Failed to load texture: " + stbi_failure_reason());
+            if (data == null) Logger.error("Failed to load texture: " + stbi_failure_reason());
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         }
         hasTexture = true;
     }
 
-    public Vec3 getColor() {
+    public Vector3f getColor() {
         return color;
     }
 
-    public Sky setColor(Vec3 color) {
+    public Sky setColor(Vector3f color) {
         this.color = color;
         return this;
     }
