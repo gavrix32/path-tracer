@@ -2,10 +2,12 @@ package net.gavrix32.engine.graphics;
 
 public class Material {
     private float emission, roughness;
+    private boolean isMetal;
 
-    public Material(float emission, float roughness) {
+    public Material(float emission, float roughness, boolean isMetal) {
         this.emission = emission;
         this.roughness = roughness;
+        this.isMetal = isMetal;
     }
 
     public float getEmission() {
@@ -22,5 +24,13 @@ public class Material {
 
     public void setRoughness(float roughness) {
         this.roughness = roughness;
+    }
+
+    public boolean isMetal() {
+        return isMetal;
+    }
+
+    public void setMetal(boolean metal) {
+        isMetal = metal;
     }
 }

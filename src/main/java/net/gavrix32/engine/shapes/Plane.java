@@ -5,20 +5,20 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 public class Plane {
-    private Vector4f normal;
     private Vector3f color;
     private Material material;
     private boolean checkerBoard;
 
-    public Plane(Vector4f normal, Vector3f color, Material material, boolean checkerBoard) {
-        this.normal = normal;
+    public Plane() {
+        this.color = new Vector3f(1);
+        this.material = new Material(0, 1, false);
+        this.checkerBoard = true;
+    }
+
+    public Plane(Vector3f color, Material material, boolean checkerBoard) {
         this.color = color;
         this.material = material;
         this.checkerBoard = checkerBoard;
-    }
-
-    public Vector4f getNormal() {
-        return normal;
     }
 
     public Vector3f getColor() {

@@ -5,7 +5,6 @@ import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.IApp;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
-import net.gavrix32.engine.utils.Logger;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -21,7 +20,7 @@ public class Main implements IApp {
         });
         Renderer.init();
         GuiRenderer.init();
-        Renderer.setScene(CornellBox.scene);
+        Renderer.setScene(CornellBox.getScene());
     }
 
     @Override

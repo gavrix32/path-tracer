@@ -8,6 +8,7 @@ struct Ray {
 
 struct Material {
     float emission, roughness;
+    bool isMetal;
 };
 
 struct Sphere {
@@ -29,12 +30,10 @@ struct Box {
 
 uniform vec2 u_resolution;
 uniform vec3 u_camera_position, u_old_camera_position, sky_color, u_plane_color;
-uniform vec4 u_plane_normal;
 uniform mat4 proj, view, old_view;
-uniform int u_samples, u_bounces, u_aa_size, u_gamma_correction, u_aces, u_reproj,
+uniform int u_samples, u_bounces, u_aa_size, u_random_noise, u_gamma_correction, u_aces, u_reproj,
             u_show_albedo, u_show_depth, u_show_normals, sky_has_texture,
-            u_spheres_count, u_boxes_count, u_plane_checkerboard;
-uniform int u_random_noise;
+            u_spheres_count, u_boxes_count, u_plane_checkerboard, u_plane_is_dielectric;
 uniform samplerCube sky_texture;
 uniform float u_acc_frames, u_time, u_gamma, u_plane_emission, u_plane_roughness;
 uniform Sphere spheres[MAX_SPHERES];
@@ -122,16 +121,13 @@ float box(in Ray ray, vec3 boxSize, out vec3 outNormal, vec3 rotation) {
 bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance, out Material material) {
     bool hit = false;
     float dist, minDist = MAX_DISTANCE;
-    dist = plane(ray, u_plane_normal);
+    dist = plane(ray, vec4(0, 1, 0, 0));
     if (dist > 0 && dist < minDist) {
         material.emission = u_plane_emission;
         material.roughness = u_plane_roughness;
         hit = true;
         minDist = dist;
-        //col = vec3(1);
-        //col = vec3(checkerboard(vec3(ray.dir * dist + ray.origin).xz * (0.06)));
         col = u_plane_checkerboard == 1 ? vec3(u_plane_color * checkerboard(vec3(ray.dir * dist + ray.origin).xz * (0.06))) : u_plane_color;
-        //col = u_plane_color;
         normal = vec3(0, 1, 0);
     }
     for (int i = 0; i < u_spheres_count; i++) {
@@ -166,6 +162,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
         }
         material.emission = 1;
         material.roughness = 0;
+        material.isMetal = false;
         return true;
     }
     minDistance = minDist;
@@ -181,8 +178,13 @@ vec3 raytrace(Ray ray) {
         if (raycast(ray, color, normal, minIt, material)) {
             hitPos = ray.origin + ray.dir * minIt;
             ray.origin += ray.dir * (minIt - 0.001);
-            // random() < material.roughness ? 1.0f : 0.0f
-            ray.dir = mix(random_cosine_weighted_hemisphere(normal), reflect(ray.dir, normal), material.roughness);
+            vec3 diffused = random_cosine_weighted_hemisphere(normal);
+            vec3 reflected = reflect(ray.dir, normal);
+            if (material.isMetal) {
+                ray.dir = mix(reflected, diffused, material.roughness);
+            } else {
+                ray.dir = mix(reflected, diffused, random() < material.roughness ? 1 : 0);
+            }
             energy *= color;
             if (material.emission > 0) return energy * material.emission;
         }

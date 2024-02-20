@@ -7,7 +7,6 @@ import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
-import net.gavrix32.app.scenes.CornellBox;
 import net.gavrix32.app.scenes.*;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.utils.Timer;
@@ -70,11 +69,11 @@ public class GuiRenderer {
             if (ImGui.combo("Scene", scene, scenes)) {
                 Renderer.resetAccFrames();
                 switch (scene.get()) {
-                    case 0 -> Renderer.setScene(CornellBox.scene);
-                    case 1 -> Renderer.setScene(RGBRoom.scene);
-                    case 2 -> Renderer.setScene(RGBSpheres.scene);
-                    case 3 -> Renderer.setScene(Spheres.scene);
-                    case 4 -> Renderer.setScene(Liminal.scene);
+                    case 0 -> Renderer.setScene(CornellBox.getScene());
+                    case 1 -> Renderer.setScene(RGBRoom.getScene());
+                    case 2 -> Renderer.setScene(RGBSpheres.getScene());
+                    case 3 -> Renderer.setScene(Spheres.getScene());
+                    case 4 -> Renderer.setScene(Liminal.getScene());
                 }
             }
             if (ImGui.combo("Sync", syncType, syncTypes)) {

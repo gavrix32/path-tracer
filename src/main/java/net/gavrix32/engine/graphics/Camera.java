@@ -8,8 +8,8 @@ public class Camera {
     private Matrix4f view;
 
     public Camera() {
-        pos = new Vector3f();
-        rot = new Vector3f();
+        pos = new Vector3f(0);
+        rot = new Vector3f(0);
         view = new Matrix4f();
     }
 

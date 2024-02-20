@@ -24,6 +24,11 @@ public class Sky {
     private String[] paths;
     protected boolean hasTexture;
 
+    public Sky() {
+        this.color = new Vector3f(0);
+        hasTexture = false;
+    }
+
     public Sky(Vector3f color) {
         this.color = color;
         hasTexture = false;
