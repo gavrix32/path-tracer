@@ -9,6 +9,11 @@ import net.gavrix32.engine.io.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Main implements IApp {
+    private CornellBox cornellBox;
+    private RGBRoom rgbRoom;
+    private RGBSpheres rgbSpheres;
+    private Spheres spheres;
+    private Liminal liminal;
 
     @Override
     public void init() {
@@ -19,8 +24,13 @@ public class Main implements IApp {
             if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE) Window.toggleCursor();
         });
         Renderer.init();
-        GuiRenderer.init();
-        Renderer.setScene(CornellBox.getScene());
+        cornellBox = new CornellBox();
+        rgbRoom = new RGBRoom();
+        rgbSpheres = new RGBSpheres();
+        spheres = new Spheres();
+        liminal = new Liminal();
+        GuiRenderer.init(cornellBox.getScene(), rgbRoom.getScene(), rgbSpheres.getScene(), spheres.getScene(), liminal.getScene());
+        Renderer.setScene(cornellBox.getScene());
     }
 
     @Override

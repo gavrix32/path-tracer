@@ -8,8 +8,10 @@ import net.gavrix32.engine.shapes.Plane;
 import org.joml.Vector3f;
 
 public class RGBRoom {
-    public static Scene getScene() {
-        Scene scene = new Scene();
+    private Scene scene;
+
+    public RGBRoom() {
+        scene = new Scene();
         scene.setCamera(new Camera().setPos(50, 100, -99));
         scene.setPlane(new Plane(new Vector3f(1), new Material(0, 1, false), false));
         scene.addBoxes(
@@ -64,6 +66,9 @@ public class RGBRoom {
                         new Material(0, 1, true),
                         new Vector3f(100, 100, 0))
         );
+    }
+
+    public Scene getScene() {
         return scene;
     }
 }

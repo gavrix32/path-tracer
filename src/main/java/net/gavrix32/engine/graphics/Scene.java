@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Scene {
+    private String name;
     private Camera camera;
     private Sky sky;
     private Plane plane;
@@ -15,11 +16,20 @@ public class Scene {
     private final ArrayList<Box> boxes;
 
     public Scene() {
+        name = "Unnamed scene";
         camera = new Camera();
         sky = new Sky();
         plane = new Plane();
         spheres = new ArrayList<>();
         boxes = new ArrayList<>();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Camera getCamera() {
@@ -54,6 +64,10 @@ public class Scene {
         this.boxes.addAll(Arrays.asList(boxes));
     }
 
+    public Box getBox(int index) {
+        return boxes.get(index);
+    }
+
     public ArrayList<Box> getBoxes() {
         return boxes;
     }
@@ -64,6 +78,10 @@ public class Scene {
 
     public void addSpheres(Sphere... spheres) {
         this.spheres.addAll(Arrays.asList(spheres));
+    }
+
+    public Sphere getSphere(int index) {
+        return spheres.get(index);
     }
 
     public ArrayList<Sphere> getSpheres() {

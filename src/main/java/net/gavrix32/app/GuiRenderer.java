@@ -7,8 +7,8 @@ import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
-import net.gavrix32.app.scenes.*;
 import net.gavrix32.engine.Engine;
+import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.utils.Timer;
 import net.gavrix32.engine.utils.Utils;
 import net.gavrix32.engine.graphics.Renderer;
@@ -25,7 +25,7 @@ public class GuiRenderer {
 
     private static final int[]
             samples = new int[] {1},
-            bounces = new int[] {8},
+            bounces = new int[] {3},
             AASize = new int[] {128};
 
     private static final float[] gamma = new float[] {2.2f};
@@ -42,14 +42,17 @@ public class GuiRenderer {
 
     private static final ImInt
             syncType = new ImInt(),
-            scene = new ImInt();
+            sceneID = new ImInt();
 
     private static final String[] syncTypes = {"Off", "VSync", "Adaptive"};
-    private static final String[] scenes = {"Cornell Box", "RGB Room", "RGB Spheres", "Spheres", "Liminal"};
+    private static final String[] sceneNames = {"Cornell Box", "RGB Room", "RGB Spheres", "Spheres", "Liminal"};
+    private static Scene[] scenes;
 
     private static float guiTime;
 
-    public static void init() {
+
+    public static void init(Scene... scenes) {
+        GuiRenderer.scenes = scenes;
         ImGui.createContext();
         ImGuiIO io = ImGui.getIO();
         io.getFonts().addFontFromMemoryTTF(Utils.loadBytes("fonts/Inter-Regular.ttf"), 15);
@@ -58,7 +61,8 @@ public class GuiRenderer {
     }
 
     public static void update() {
-        Timer.tick();
+        Timer guiTimer = new Timer();
+        guiTimer.tick();
         if (status) {
             imGuiImplGlfw.newFrame();
             ImGui.newFrame();
@@ -66,14 +70,14 @@ public class GuiRenderer {
             ImGui.text((int) (1 / Engine.getDelta()) + " fps");
             ImGui.text("Frame time: " + Engine.getDelta() * 1000 + " ms");
             ImGui.text("ImGui time: " + guiTime * 1000 + " ms");
-            if (ImGui.combo("Scene", scene, scenes)) {
+            if (ImGui.combo("Scene", sceneID, sceneNames)) {
                 Renderer.resetAccFrames();
-                switch (scene.get()) {
-                    case 0 -> Renderer.setScene(CornellBox.getScene());
-                    case 1 -> Renderer.setScene(RGBRoom.getScene());
-                    case 2 -> Renderer.setScene(RGBSpheres.getScene());
-                    case 3 -> Renderer.setScene(Spheres.getScene());
-                    case 4 -> Renderer.setScene(Liminal.getScene());
+                switch (sceneID.get()) {
+                    case 0 -> Renderer.setScene(scenes[0]);
+                    case 1 -> Renderer.setScene(scenes[1]);
+                    case 2 -> Renderer.setScene(scenes[2]);
+                    case 3 -> Renderer.setScene(scenes[3]);
+                    case 4 -> Renderer.setScene(scenes[4]);
                 }
             }
             if (ImGui.combo("Sync", syncType, syncTypes)) {
@@ -84,7 +88,7 @@ public class GuiRenderer {
                 }
             }
             if (ImGui.sliderInt("Samples", samples, 1, 32)) Renderer.resetAccFrames();
-            if (ImGui.sliderInt("Bounces", bounces, 1, 8)) Renderer.resetAccFrames();
+            if (ImGui.sliderInt("Bounces", bounces, 0, 8)) Renderer.resetAccFrames();
             if (ImGui.dragInt("UV Blur", AASize, 1, 0, 256000)) Renderer.resetAccFrames();
             ImGui.text("Accumulated frames: " + Renderer.getAccFrames());
             ImGui.checkbox("Accumulation", accumulation);
@@ -108,7 +112,7 @@ public class GuiRenderer {
                 glfwMakeContextCurrent(backupWindowPtr);
             }
         }
-        guiTime = Timer.getDelta();
+        guiTime = guiTimer.getDelta();
         Renderer.setSamples(samples[0]);
         Renderer.setBounces(bounces[0]);
         Renderer.setAASize(AASize[0]);

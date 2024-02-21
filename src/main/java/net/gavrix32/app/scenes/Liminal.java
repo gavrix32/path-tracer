@@ -7,8 +7,10 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 public class Liminal {
-    public static Scene getScene() {
-        Scene scene = new Scene();
+    private Scene scene;
+
+    public Liminal() {
+        scene = new Scene();
         scene.setCamera(new Camera().setPos(0, 100, 50));
         scene.setPlane(new Plane(new Vector3f(1),
                 new Material(0, 1, true), true));
@@ -39,6 +41,8 @@ public class Liminal {
                         new Material(5, 1, true),
                         new Vector3f(20, 0, 20))
         );
+    }
+    public Scene getScene() {
         return scene;
     }
 }

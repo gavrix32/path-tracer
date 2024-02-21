@@ -11,9 +11,10 @@ public class Engine {
     public static void run(IApp app) {
         app.init();
         while (!Window.isClosed()) {
-            Timer.tick();
+            Timer frameTime = new Timer();
+            frameTime.tick();
             app.update();
-            dt = Timer.getDelta();
+            dt = frameTime.getDelta();
         }
         glfwTerminate();
         System.exit(0);

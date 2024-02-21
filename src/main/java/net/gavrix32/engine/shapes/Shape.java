@@ -25,6 +25,12 @@ public class Shape {
         this.pos = pos;
     }
 
+    public void setPos(float x, float y, float z) {
+        this.pos.x = x;
+        this.pos.y = y;
+        this.pos.z = z;
+    }
+
     public Vector3f getRot() {
         return rot;
     }
@@ -33,12 +39,24 @@ public class Shape {
         this.rot = rot;
     }
 
+    public void setRot(float x, float y, float z) {
+        this.rot.x = x;
+        this.rot.y = y;
+        this.rot.z = z;
+    }
+
     public Vector3f getColor() {
         return col;
     }
 
-    public void setCol(Vector3f col) {
+    public void setColor(Vector3f col) {
         this.col = col;
+    }
+
+    public void setColor(float r, float g, float b) {
+        this.col.x = r;
+        this.col.y = g;
+        this.col.z = b;
     }
 
     public Material getMaterial() {

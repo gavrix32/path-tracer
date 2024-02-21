@@ -8,8 +8,10 @@ import net.gavrix32.engine.shapes.Sphere;
 import org.joml.Vector3f;
 
 public class Spheres {
-    public static Scene getScene() {
-        Scene scene = new Scene();
+    private Scene scene;
+
+    public Spheres() {
+        scene = new Scene();
         scene.setCamera(new Camera().setPos(50, 20, -80));
         scene.setPlane(new Plane(new Vector3f(1), new Material(0, 1, false), false));
         scene.addSpheres(
@@ -29,6 +31,8 @@ public class Spheres {
                         new Vector3f(0.5f, 1, 0),
                         new Material(1, 1, true), 20)
         );
+    }
+    public Scene getScene() {
         return scene;
     }
 }

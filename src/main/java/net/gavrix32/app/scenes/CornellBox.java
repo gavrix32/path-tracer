@@ -9,8 +9,10 @@ import net.gavrix32.engine.shapes.Sphere;
 import org.joml.Vector3f;
 
 public class CornellBox {
-    public static Scene getScene() {
-        Scene scene = new Scene();
+    private final Scene scene;
+
+    public CornellBox() {
+        scene = new Scene();
         scene.setCamera(new Camera().setPos(50, 80, -99));
         scene.setSky(new Sky(new String[] {
                 "textures/skybox/iceriver/posx.jpg",
@@ -69,6 +71,8 @@ public class CornellBox {
                         new Vector3f(1),
                         new Material(0, 0, true), 20)
         );
+    }
+    public Scene getScene() {
         return scene;
     }
 }
