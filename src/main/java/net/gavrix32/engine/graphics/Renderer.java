@@ -1,5 +1,6 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.app.GuiRenderer;
 import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
 import org.joml.Matrix4f;
@@ -66,6 +67,7 @@ public class Renderer {
     }
 
     public static void render() {
+        glClear(GL_COLOR_BUFFER_BIT);
         quadShader.setMat4("old_view", scene.getCamera().getView());
         quadShader.setVec3("u_old_camera_position", scene.getCamera().getPos());
         scene.getCamera().update();
@@ -76,7 +78,8 @@ public class Renderer {
         }
         quadShader.setVec3("u_camera_position", scene.getCamera().getPos());
         quadShader.setMat4("view", scene.getCamera().getView());
-        quadShader.setVec2("u_resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
+        if (Editor.getWidthDelta() != 0 || Editor.getHeightDelta() != 0) resetAccFrames();
+        quadShader.setVec2("u_resolution", new Vector2f(Editor.getWidth(), Editor.getHeight()));
         quadShader.setFloat("u_time", (float) glfwGetTime());
         quadShader.setMat4("proj", proj);
         quadShader.setFloat("u_acc_frames", accFrames);
@@ -128,7 +131,9 @@ public class Renderer {
         }
         if (accumulation || reproj) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
         if (accFrames == 0 && !reproj) resetFramebufferTexture();
+        Editor.bindFramebuffer();
         glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
+        Editor.unbindFramebuffer();
         accFrames++;
     }
 

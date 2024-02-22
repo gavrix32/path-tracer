@@ -70,6 +70,11 @@ public class Window {
         glfwSetWindowShouldClose(window, true);
     }
 
+    public static void setCursorVisible(boolean value) {
+        Window.cursorVisible = value;
+        glfwSetInputMode(window, GLFW_CURSOR, value ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+    }
+
     public static void toggleCursor() {
         cursorVisible = !cursorVisible;
         glfwSetInputMode(window, GLFW_CURSOR, cursorVisible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
@@ -77,6 +82,19 @@ public class Window {
 
     public static boolean isCursorVisible() {
         return cursorVisible;
+    }
+
+    public static void setFullscreen(boolean value) {
+        Window.fullscreen = value;
+        if (fullscreen) {
+            glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0,
+                    monitorWidth, monitorHeight, GLFW_DONT_CARE);
+            Renderer.resetAccFrames();
+        } else {
+            glfwSetWindowMonitor(window, 0, (monitorWidth - defaultWidth) / 2, (monitorHeight - defaultHeight) / 2,
+                    defaultWidth, defaultHeight, GLFW_DONT_CARE);
+            Renderer.resetAccFrames();
+        }
     }
 
     public static void toggleFullscreen() {

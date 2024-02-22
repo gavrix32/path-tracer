@@ -36,7 +36,7 @@ public class CornellBox {
                 new Box(new Vector3f(-50, 100, 0), // Left wall
                         new Vector3f(0, 0, 0),
                         new Vector3f(1, 0, 0),
-                        new Material(0, 01, true),
+                        new Material(0, 1, true),
                         new Vector3f(0, 100, 100)),
                 new Box(new Vector3f(150, 100, 0), // Right wall
                         new Vector3f(0, 0, 0),
