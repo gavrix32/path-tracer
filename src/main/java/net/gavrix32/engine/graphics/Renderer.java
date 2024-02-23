@@ -71,8 +71,12 @@ public class Renderer {
         }
         quadShader.setVec3("u_camera_position", scene.getCamera().getPos());
         quadShader.setMat4("view", scene.getCamera().getView());
-        if (Viewport.getWidthDelta() != 0 || Viewport.getHeightDelta() != 0) resetAccFrames();
-        quadShader.setVec2("u_resolution", new Vector2f(Viewport.getWidth(), Viewport.getHeight()));
+        if (Editor.status) {
+            if (Viewport.getWidthDelta() != 0 || Viewport.getHeightDelta() != 0) resetAccFrames();
+            quadShader.setVec2("u_resolution", new Vector2f(Viewport.getWidth(), Viewport.getHeight()));
+        } else {
+            quadShader.setVec2("u_resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
+        }
         quadShader.setFloat("u_time", (float) glfwGetTime());
         quadShader.setMat4("proj", proj);
         quadShader.setFloat("u_acc_frames", accFrames);
@@ -87,12 +91,16 @@ public class Renderer {
         quadShader.setFloat("u_gamma", gamma);
         quadShader.setInt("u_gamma_correction", gammaCorrection ? 1 : 0);
         quadShader.setInt("u_aces", ACESFilm ? 1 : 0);
+
         quadShader.setInt("sky_has_texture", scene.getSky().hasTexture ? 1 : 0);
         if (scene.getSky().hasTexture) {
             quadShader.setInt("sky_texture", 1);
         } else {
-            quadShader.setVec3("sky_color", scene.getSky().getColor());
+            quadShader.setVec3("sky.color", scene.getSky().getColor());
         }
+        quadShader.setFloat("sky.material.emission", scene.getSky().getMaterial().getEmission());
+        quadShader.setFloat("sky.material.roughness", scene.getSky().getMaterial().getRoughness());
+        quadShader.setFloat("sky.material.isMetal", scene.getSky().getMaterial().isMetal() ? 1 : 0);
         // Plane
         {
             quadShader.setVec3("u_plane_color", scene.getPlane().getColor());
@@ -124,6 +132,7 @@ public class Renderer {
         }
         if (accumulation || reproj) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
         if (accFrames == 0 && !reproj) resetFramebufferTexture();
+        if (!Editor.status) glViewport(0, 0, Window.getWidth(), Window.getHeight());
         Viewport.bindFramebuffer();
         glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
         Viewport.unbindFramebuffer();

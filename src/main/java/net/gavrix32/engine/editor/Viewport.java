@@ -77,10 +77,10 @@ public class Viewport {
     }
 
     public static void bindFramebuffer() {
-        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+        if (Editor.status) glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
     }
 
     public static void unbindFramebuffer() {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        if (Editor.status) glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 }

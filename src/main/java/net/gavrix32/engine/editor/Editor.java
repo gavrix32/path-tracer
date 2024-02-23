@@ -5,6 +5,7 @@ import imgui.ImGuiIO;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
+import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.utils.Utils;
@@ -15,7 +16,7 @@ import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
 
 public class Editor {
-    private static boolean status = true;
+    public static boolean status = true;
     private static final ImGuiImplGl3 imGuiImplGl3 = new ImGuiImplGl3();
     private static final ImGuiImplGlfw imGuiImplGlfw = new ImGuiImplGlfw();
 
@@ -33,12 +34,12 @@ public class Editor {
             imGuiImplGlfw.newFrame();
             ImGui.newFrame();
             ImGui.dockSpaceOverViewport();
-
+            ImGui.beginDisabled(!Window.isCursorVisible());
             Viewport.update();
             Render.update();
             Scenes.update(scenes, sceneNames);
             Logs.update();
-
+            ImGui.endDisabled();
             ImGui.render();
             imGuiImplGl3.renderDrawData(ImGui.getDrawData());
             if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
@@ -52,5 +53,6 @@ public class Editor {
 
     public static void toggle() {
         status = !status;
+        Renderer.resetAccFrames();
     }
 }

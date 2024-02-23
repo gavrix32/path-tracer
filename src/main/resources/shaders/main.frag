@@ -23,13 +23,18 @@ struct Box {
     Material material;
 };
 
+struct Sky {
+    vec3 color;
+    Material material;
+};
+
 #define PI 3.14159
 #define MAX_DISTANCE 999999999
-#define MAX_SPHERES 3
+#define MAX_SPHERES 50
 #define MAX_BOXES 50
 
 uniform vec2 u_resolution;
-uniform vec3 u_camera_position, u_old_camera_position, sky_color, u_plane_color;
+uniform vec3 u_camera_position, u_old_camera_position, u_plane_color;
 uniform mat4 proj, view, old_view;
 uniform int u_samples, u_bounces, u_aa_size, u_random_noise, u_gamma_correction, u_aces, u_reproj,
             u_show_albedo, u_show_depth, u_show_normals, sky_has_texture,
@@ -38,6 +43,7 @@ uniform samplerCube sky_texture;
 uniform float u_acc_frames, u_time, u_gamma, u_plane_emission, u_plane_roughness;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
+uniform Sky sky;
 
 layout(binding = 0, rgba32f) uniform image2D frame_image;
 
@@ -157,12 +163,10 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
                 col = texture(sky_texture, ray.dir).rgb;
                 break;
             case 0:
-                col = sky_color;
+                col = sky.color;;
                 break;
         }
-        material.emission = 1;
-        material.roughness = 0;
-        material.isMetal = false;
+        material = sky.material;
         return true;
     }
     minDistance = minDist;
@@ -214,10 +218,8 @@ void main() {
 
     // uv blur anti-aliasing
     if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0) {
-        uv.x += random() / 100000 * u_aa_size;
-        uv.x -= random() / 100000 * u_aa_size;
-        uv.y += random() / 100000 * u_aa_size;
-        uv.y -= random() / 100000 * u_aa_size;
+        uv.x += (random() - 0.5) / 100000 * u_aa_size;
+        uv.y += (random() - 0.5) / 100000 * u_aa_size;
     }
 
     vec3 dir = normalize((mat3(proj) * vec3(uv, 1)) * mat3(view));

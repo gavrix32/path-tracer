@@ -27,7 +27,7 @@ public class Shader {
         glAttachShader(program, vertex);
         glAttachShader(program, fragment);
         glLinkProgram(program);
-        if (glGetProgrami(program, GL_LINK_STATUS) == 0) Logger.error(glGetProgramInfoLog(program));
+        if (glGetProgrami(program, GL_LINK_STATUS) == 0) Logger.error("Shader program " + glGetProgramInfoLog(program));
     }
 
     public void setInt(String name, int value) {

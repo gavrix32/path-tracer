@@ -25,6 +25,9 @@ public class Controls {
                 Utils.takeScreenshot("screenshots/" + dtf.format(now) + ".png");
             }
         });
+        glfwSetMouseButtonCallback(Window.get(), (window, button, action, mods) -> {
+            if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE) Window.toggleCursor();
+        });
     }
 
     public static void update(Camera camera) {

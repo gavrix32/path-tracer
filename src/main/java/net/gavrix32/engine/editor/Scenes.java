@@ -5,6 +5,7 @@ import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.graphics.Scene;
+import net.gavrix32.engine.io.Window;
 
 import java.util.ArrayList;
 
@@ -58,6 +59,11 @@ public class Scenes {
                 float[] emission = new float[] {scene.getBox(i).getMaterial().getEmission()};
                 float[] roughness = new float[] {scene.getBox(i).getMaterial().getRoughness()};
                 ImBoolean isMetal = new ImBoolean(scene.getBox(i).getMaterial().isMetal());
+                float[] position = new float[] {
+                        scene.getBox(i).getPos().x,
+                        scene.getBox(i).getPos().y,
+                        scene.getBox(i).getPos().z
+                };
                 ImGui.pushID(i);
                 if (ImGui.colorEdit3("Box " + i + " color", color)) {
                     Renderer.resetAccFrames();
@@ -75,7 +81,12 @@ public class Scenes {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setMaterial(emission[0], roughness[0], isMetal.get());
                 }
+                if (ImGui.dragFloat3("Position", position)) {
+                    Renderer.resetAccFrames();
+                    scene.getBox(i).setPos(position[0], position[1], position[2]);
+                }
                 ImGui.popID();
+                ImGui.separator();
             }
             ImGui.treePop();
         }
@@ -89,6 +100,11 @@ public class Scenes {
                 float[] emission = new float[] {scene.getSphere(i).getMaterial().getEmission()};
                 float[] roughness = new float[] {scene.getSphere(i).getMaterial().getRoughness()};
                 ImBoolean isMetal = new ImBoolean(scene.getSphere(i).getMaterial().isMetal());
+                float[] position = new float[] {
+                        scene.getSphere(i).getPos().x,
+                        scene.getSphere(i).getPos().y,
+                        scene.getSphere(i).getPos().z
+                };
                 ImGui.pushID(i);
                 if (ImGui.colorEdit3("Sphere " + i + " color", color)) {
                     Renderer.resetAccFrames();
@@ -106,7 +122,12 @@ public class Scenes {
                     Renderer.resetAccFrames();
                     scene.getSphere(i).setMaterial(emission[0], roughness[0], isMetal.get());
                 }
+                if (ImGui.dragFloat3("Position", position)) {
+                    Renderer.resetAccFrames();
+                    scene.getSphere(i).setPos(position[0], position[1], position[2]);
+                }
                 ImGui.popID();
+                ImGui.separator();
             }
             ImGui.treePop();
         }

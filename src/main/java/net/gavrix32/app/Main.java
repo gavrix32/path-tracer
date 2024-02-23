@@ -26,10 +26,6 @@ public class Main implements IApp {
         Window.init("Ray Tracing", 1280, 720);
         Window.setFullscreen(true);
         //GLUtil.setupDebugMessageCallback();
-
-        glfwSetMouseButtonCallback(Window.get(), (window, button, action, mods) -> {
-            if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE) Window.toggleCursor();
-        });
         cornellBox = new CornellBox();
         scenes.add(cornellBox.getScene());
         names.add("Cornell Box");

@@ -44,8 +44,9 @@ public class Scene {
         return sky;
     }
 
-    public void setSky(Sky sky) {
+    public Sky setSky(Sky sky) {
         this.sky = sky;
+        return sky;
     }
 
     public Plane getPlane() {
