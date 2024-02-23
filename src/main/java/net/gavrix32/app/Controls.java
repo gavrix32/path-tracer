@@ -1,6 +1,7 @@
 package net.gavrix32.app;
 
 import net.gavrix32.engine.Engine;
+import net.gavrix32.engine.editor.Editor;
 import net.gavrix32.engine.graphics.Camera;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.io.Input;
@@ -17,7 +18,7 @@ public class Controls {
         glfwSetKeyCallback(Window.get(), (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) Window.close();
             if (key == GLFW_KEY_F11 && action == GLFW_RELEASE) Window.toggleFullscreen();
-            if (key == GLFW_KEY_F1 && action == GLFW_RELEASE) GuiRenderer.toggle();
+            if (key == GLFW_KEY_F1 && action == GLFW_RELEASE) Editor.toggle();
             if (key == GLFW_KEY_F2 && action == GLFW_RELEASE) {
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
                 LocalDateTime now = LocalDateTime.now();

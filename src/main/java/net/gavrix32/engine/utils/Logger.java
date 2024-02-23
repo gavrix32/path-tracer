@@ -19,7 +19,7 @@ public class Logger {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
         msg = dtf.format(LocalDateTime.now()) + " [WARNING] " + msg;
         logList.add(msg);
-        if (printToOutput) System.out.println(msg);
+        if (printToOutput) System.out.println("\u001B[33m" + msg + "\u001B[0m)");
     }
 
     public static void error(String msg) {

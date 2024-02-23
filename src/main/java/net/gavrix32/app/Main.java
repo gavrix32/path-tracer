@@ -3,13 +3,18 @@ package net.gavrix32.app;
 import net.gavrix32.app.scenes.*;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.IApp;
+import net.gavrix32.engine.editor.Editor;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
 import net.gavrix32.engine.utils.Logger;
 
+import java.util.ArrayList;
+
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Main implements IApp {
+    private ArrayList<Scene> scenes = new ArrayList<>();
+    private ArrayList<String> names = new ArrayList<>();
     private CornellBox cornellBox;
     private RGBRoom rgbRoom;
     private RGBSpheres rgbSpheres;
@@ -26,22 +31,29 @@ public class Main implements IApp {
             if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE) Window.toggleCursor();
         });
         cornellBox = new CornellBox();
+        scenes.add(cornellBox.getScene());
+        names.add("Cornell Box");
         rgbRoom = new RGBRoom();
+        scenes.add(rgbRoom.getScene());
+        names.add("RGB Room");
         rgbSpheres = new RGBSpheres();
+        scenes.add(rgbSpheres.getScene());
+        names.add("RGB Spheres");
         spheres = new Spheres();
+        scenes.add(spheres.getScene());
+        names.add("Spheres");
         liminal = new Liminal();
-        GuiRenderer.init(cornellBox.getScene(), rgbRoom.getScene(), rgbSpheres.getScene(), spheres.getScene(), liminal.getScene());
+        scenes.add(liminal.getScene());
+        names.add("Liminal");
         Renderer.init();
         Renderer.setScene(cornellBox.getScene());
-        Logger.warning("Warning example");
-        Logger.error("Error example");
     }
 
     @Override
     public void update() {
         Controls.update(Renderer.getScene().getCamera());
         Renderer.render();
-        GuiRenderer.update();
+        Editor.update(scenes, names);
         Window.update();
     }
 

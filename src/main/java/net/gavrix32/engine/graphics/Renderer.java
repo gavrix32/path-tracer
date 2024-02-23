@@ -1,21 +1,14 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.app.GuiRenderer;
+import net.gavrix32.engine.editor.Editor;
+import net.gavrix32.engine.editor.Viewport;
 import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.ARBInternalformatQuery2.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11C.GL_FLOAT;
-import static org.lwjgl.opengl.GL15C.*;
-import static org.lwjgl.opengl.GL15C.GL_STATIC_DRAW;
-import static org.lwjgl.opengl.GL20C.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20C.glVertexAttribPointer;
-import static org.lwjgl.opengl.GL30C.*;
-import static org.lwjgl.opengl.GL42C.glBindImageTexture;
-import static org.lwjgl.opengl.GL42C.glTexStorage2D;
+import static org.lwjgl.opengl.GL46C.*;
 
 public class Renderer {
     private static final float[] VERTICES = {
@@ -31,12 +24,12 @@ public class Renderer {
     private static Scene scene;
     private static Shader quadShader;
     private static int accFrames = 0;
-    private static int samples = 8, bounces = 4, AASize = 150;
+    private static int samples = 1, bounces = 3, AASize = 128;
     private static boolean
-            accumulation = false, reproj = false, randNoise = false, gammaCorrection, ACESFilm = true,
+            accumulation = true, reproj = true, randNoise = false, gammaCorrection = true, ACESFilm = false,
             showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
-    private static float gamma;
+    private static float gamma = 2.2f;
     private static Matrix4f proj, view;
 
     public static void init() {
@@ -78,8 +71,8 @@ public class Renderer {
         }
         quadShader.setVec3("u_camera_position", scene.getCamera().getPos());
         quadShader.setMat4("view", scene.getCamera().getView());
-        if (Editor.getWidthDelta() != 0 || Editor.getHeightDelta() != 0) resetAccFrames();
-        quadShader.setVec2("u_resolution", new Vector2f(Editor.getWidth(), Editor.getHeight()));
+        if (Viewport.getWidthDelta() != 0 || Viewport.getHeightDelta() != 0) resetAccFrames();
+        quadShader.setVec2("u_resolution", new Vector2f(Viewport.getWidth(), Viewport.getHeight()));
         quadShader.setFloat("u_time", (float) glfwGetTime());
         quadShader.setMat4("proj", proj);
         quadShader.setFloat("u_acc_frames", accFrames);
@@ -131,10 +124,10 @@ public class Renderer {
         }
         if (accumulation || reproj) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
         if (accFrames == 0 && !reproj) resetFramebufferTexture();
-        Editor.bindFramebuffer();
+        Viewport.bindFramebuffer();
         glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
-        Editor.unbindFramebuffer();
-        accFrames++;
+        Viewport.unbindFramebuffer();
+        if (accumulation) accFrames++;
     }
 
     public static void setScene(Scene scene) {
@@ -196,17 +189,14 @@ public class Renderer {
     }
 
     public static void showAlbedo(boolean value) {
-        if (value) resetAccFrames();
         showAlbedo = value;
     }
 
     public static void showNormals(boolean value) {
-        if (value) resetAccFrames();
         showNormals = value;
     }
 
     public static void showDepth(boolean value) {
-        if (value) resetAccFrames();
         showDepth = value;
     }
 }

@@ -1,4 +1,4 @@
-package net.gavrix32.engine.graphics;
+package net.gavrix32.engine.editor;
 
 import imgui.ImGui;
 import imgui.ImVec2;
@@ -6,10 +6,10 @@ import net.gavrix32.engine.io.Window;
 
 import static org.lwjgl.opengl.GL30C.*;
 
-public class Editor {
+public class Viewport {
     private static int frameBuffer, viewportTexture, renderBuffer, width, height, widthDelta, heightDelta;
 
-    public static void init() {
+    static {
         frameBuffer = glGenFramebuffers();
         glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
@@ -30,7 +30,8 @@ public class Editor {
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
     }
 
-    public static void update() {
+    protected static void update() {
+        ImGui.begin("Viewport");
         widthDelta = width - (int) ImGui.getContentRegionAvail().x;
         heightDelta = height - (int) ImGui.getContentRegionAvail().y;
         width = (int) ImGui.getContentRegionAvail().x;
@@ -54,6 +55,7 @@ public class Editor {
         ImGui.getWindowDrawList().addImage(viewportTexture,
                 pos.x, pos.y,pos.x + width, pos.y + height,
                 0, 1, 1, 0);
+        ImGui.end();
     }
 
     public static void toggle() {}
