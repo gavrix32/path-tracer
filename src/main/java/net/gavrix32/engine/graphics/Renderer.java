@@ -27,7 +27,7 @@ public class Renderer {
     private static int samples = 1, bounces = 3, AASize = 128;
     private static boolean
             accumulation = true, reproj = true, randNoise = false, gammaCorrection = true, ACESFilm = false,
-            showAlbedo = false, showNormals = false, showDepth = false;
+            showAlbedo = false, showNormals = false, showDepth = false, cursorInViewport;
     private static int accTexture;
     private static float gamma = 2.2f;
     private static Matrix4f proj, view;
@@ -124,7 +124,7 @@ public class Renderer {
         for (int i = 0; i < scene.getBoxes().size(); i++) {
             quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes().get(i).getPos());
             quadShader.setVec3("boxes[" + i + "].rotation", scene.getBoxes().get(i).getRot());
-            quadShader.setVec3("boxes[" + i + "].size", scene.getBoxes().get(i).getSize());
+            quadShader.setVec3("boxes[" + i + "].scale", scene.getBoxes().get(i).getScale());
             quadShader.setVec3("boxes[" + i + "].color", scene.getBoxes().get(i).getColor());
             quadShader.setFloat("boxes[" + i + "].material.emission", scene.getBoxes().get(i).getMaterial().getEmission());
             quadShader.setFloat("boxes[" + i + "].material.roughness", scene.getBoxes().get(i).getMaterial().getRoughness());

@@ -1,6 +1,7 @@
 package net.gavrix32.engine.shapes;
 
 import net.gavrix32.engine.graphics.Material;
+import net.gavrix32.engine.utils.Logger;
 import org.joml.Vector3f;
 
 public class Shape {
@@ -9,7 +10,7 @@ public class Shape {
 
     public Shape(Vector3f pos, Vector3f rot, Vector3f col, Material material) {
         if (col.x < 0 || col.x > 1 || col.y < 0 || col.y > 1 || col.z < 0 || col.z > 1) {
-            System.err.println("The color value must be between 0 and 1!");
+            Logger.error("Color value must be between 0 and 1");
         }
         this.pos = pos;
         this.rot = rot;

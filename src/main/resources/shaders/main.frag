@@ -19,7 +19,7 @@ struct Sphere {
 };
 
 struct Box {
-    vec3 position, rotation, size, color;
+    vec3 position, rotation, scale, color;
     Material material;
 };
 
@@ -50,6 +50,7 @@ layout(binding = 0, rgba32f) uniform image2D frame_image;
 uint seed = 0;
 vec2 uv = (2 * gl_FragCoord.xy - u_resolution) / u_resolution.y;
 vec3 hitPos;
+float minD;
 
 // source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
 uint pcg_hash(uint seed) {
@@ -148,7 +149,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
     }
     for (int i = 0; i < u_boxes_count; i++) {
         vec3 norm;
-        dist = box(Ray(ray.origin - boxes[i].position, ray.dir), boxes[i].size, norm, boxes[i].rotation).x;
+        dist = box(Ray(ray.origin - boxes[i].position, ray.dir), boxes[i].scale, norm, boxes[i].rotation).x;
         if (dist > 0 && dist < minDist) {
             hit = true;
             minDist = dist;
@@ -180,7 +181,7 @@ vec3 raytrace(Ray ray) {
         vec3 color, normal;
         float minIt;
         if (raycast(ray, color, normal, minIt, material)) {
-            hitPos = ray.origin + ray.dir * minIt;
+            minD = minIt;
             ray.origin += ray.dir * (minIt - 0.001);
             vec3 diffused = random_cosine_weighted_hemisphere(normal);
             vec3 reflected = reflect(ray.dir, normal);
@@ -209,6 +210,26 @@ vec3 reproject(mat3 pcam_mat, vec3 pcam_pos, vec2 iRes, vec3 p) {
     return vec3(screen.xy * iRes.y / (screen.z) + 0.5 * iRes.xy, td);
 }
 
+vec3 project2Screen(const mat4 view, const mat4 proj, vec3 v) {
+    vec4 p = proj * (view * vec4(v, 1.0));
+    p /= p.w;
+    p.xy += 0.5;
+    p.z *= 2.0;
+    p.z -= 1.0;
+    return p.xyz;
+}
+
+mat4 getProjMatrix(vec2 size, float near, float far) {
+    float fn = far + near;
+    float f_n = far - near;
+
+    return mat4(
+        1.0,      0.0,    0.0,                         0.0,
+        0.0,      1.0,    0.0,                         0.0,
+        0.0,      0.0,    fn / f_n,                    1.0,
+        0.0,      0.0,    (2.0 * far * near) / f_n,    0.0);
+}
+
 void main() {
     if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0 && (u_acc_frames > 0 || u_random_noise == 1 || u_reproj == 1)) {
         update_seed();
@@ -222,8 +243,9 @@ void main() {
         uv.y += (random() - 0.5) / 100000 * u_aa_size;
     }
 
-    vec3 dir = normalize((mat3(proj) * vec3(uv, 1)) * mat3(view));
-    // vec3 dir = normalize(vec3(uv, 1)) * mat3(u_camera_rotation);
+    //vec3 dir = normalize(vec3(uv, 1) * mat3(view));
+    mat4 proj = getProjMatrix(u_resolution, 1, 100);
+    vec3 dir = normalize(vec3(uv, 1) * mat3(proj) * mat3(view));
     Ray ray = Ray(u_camera_position, dir);
 
     vec3 color;
@@ -232,7 +254,8 @@ void main() {
     }
     color /= u_samples;
 
-    vec3 rep = reproject(mat3(old_view), u_old_camera_position, u_resolution, hitPos);
+    vec3 worldPos = ray.origin + ray.dir * minD;
+    vec3 projPos = project2Screen(old_view, proj, worldPos);
 
     if (u_show_depth == 1 || u_show_albedo == 1 || u_show_normals == 1) {
         vec3 n;
@@ -248,7 +271,7 @@ void main() {
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
         if (u_reproj == 1) {
-            vec3 old_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy)).rgb;
+            vec3 old_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy/* - projPos.xy*/)).rgb;
             color = mix(color, old_color, 0.8);
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }

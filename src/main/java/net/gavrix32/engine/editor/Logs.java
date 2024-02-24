@@ -11,6 +11,7 @@ public class Logs {
             if (msg.contains("[WARNING]")) ImGui.textColored(1.0f, 1.0f, 0.0f, 1f, msg);
             if (msg.contains("[ERROR]")) ImGui.textColored(1.0f, 0.0f, 0.0f, 1f, msg);
         }
+        ImGui.setScrollHereY(1.0f);
         ImGui.end();
     }
 }

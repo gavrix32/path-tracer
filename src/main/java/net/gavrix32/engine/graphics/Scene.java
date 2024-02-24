@@ -61,6 +61,10 @@ public class Scene {
         boxes.add(box);
     }
 
+    public void removeBox(int index) {
+        boxes.remove(index);
+    }
+
     public void addBoxes(Box... boxes) {
         this.boxes.addAll(Arrays.asList(boxes));
     }
@@ -75,6 +79,10 @@ public class Scene {
 
     public void addSphere(Sphere sph) {
         spheres.add(sph);
+    }
+
+    public void removeSphere(int index) {
+        spheres.remove(index);
     }
 
     public void addSpheres(Sphere... spheres) {

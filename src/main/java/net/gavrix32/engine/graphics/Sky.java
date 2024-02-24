@@ -26,15 +26,15 @@ public class Sky {
     protected boolean hasTexture;
 
     public Sky() {
-        this.color = new Vector3f(0);
+        color = new Vector3f(0);
         hasTexture = false;
-        material = new Material(0, 0, false);
+        material = new Material(0, 1, false);
     }
 
     public Sky(Vector3f color) {
         this.color = color;
         hasTexture = false;
-        material = new Material(1, 0, false);
+        material = new Material(1, 1, false);
     }
 
     public Sky(String[] paths) {
@@ -52,8 +52,9 @@ public class Sky {
             if (data == null) Logger.error("Failed to load texture: " + stbi_failure_reason());
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         }
+        color = new Vector3f(0);
         hasTexture = true;
-        material = new Material(1, 0, false);
+        material = new Material(1, 1, false);
     }
 
     public Material getMaterial() {
@@ -64,12 +65,25 @@ public class Sky {
         this.material = material;
     }
 
+    public void setMaterial(float emission, float roughness, boolean isMetal) {
+        this.material.setEmission(emission);
+        this.material.setRoughness(roughness);
+        this.material.setMetal(isMetal);
+    }
+
     public Vector3f getColor() {
         return color;
     }
 
     public Sky setColor(Vector3f color) {
         this.color = color;
+        return this;
+    }
+
+    public Sky setColor(float r, float g, float b) {
+        this.color.x = r;
+        this.color.y = g;
+        this.color.z = b;
         return this;
     }
 }

@@ -2,6 +2,7 @@ package net.gavrix32.app;
 
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.editor.Editor;
+import net.gavrix32.engine.editor.Viewport;
 import net.gavrix32.engine.graphics.Camera;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.io.Input;
@@ -26,7 +27,7 @@ public class Controls {
             }
         });
         glfwSetMouseButtonCallback(Window.get(), (window, button, action, mods) -> {
-            if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE) Window.toggleCursor();
+            if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE && Viewport.cursorInViewport()) Window.toggleCursor();
         });
     }
 

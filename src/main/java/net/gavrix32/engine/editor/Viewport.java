@@ -2,12 +2,15 @@ package net.gavrix32.engine.editor;
 
 import imgui.ImGui;
 import imgui.ImVec2;
+import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
+import net.gavrix32.engine.utils.Logger;
 
 import static org.lwjgl.opengl.GL30C.*;
 
 public class Viewport {
     private static int frameBuffer, viewportTexture, renderBuffer, width, height, widthDelta, heightDelta;
+    private static boolean cursorInViewport;
 
     static {
         frameBuffer = glGenFramebuffers();
@@ -55,10 +58,11 @@ public class Viewport {
         ImGui.getWindowDrawList().addImage(viewportTexture,
                 pos.x, pos.y,pos.x + width, pos.y + height,
                 0, 1, 1, 0);
+        cursorInViewport = Input.getCursorX() >= pos.x && Input.getCursorY() >= pos.y &&
+                Window.getWidth() - pos.x - width < Window.getWidth() - Input.getCursorX() &&
+                Window.getHeight() - pos.y - height < Window.getHeight() - Input.getCursorY();
         ImGui.end();
     }
-
-    public static void toggle() {}
 
     public static int getWidth() {
         return width;
@@ -82,5 +86,10 @@ public class Viewport {
 
     public static void unbindFramebuffer() {
         if (Editor.status) glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    public static boolean cursorInViewport() {
+        if (!Window.isCursorVisible()) return true;
+        return cursorInViewport;
     }
 }
