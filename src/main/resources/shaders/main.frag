@@ -255,7 +255,14 @@ void main() {
     color /= u_samples;
 
     vec3 worldPos = ray.origin + ray.dir * minD;
-    vec3 projPos = project2Screen(old_view, proj, worldPos);
+    /*vec3 projPos = project2Screen(old_view, proj, worldPos);*/
+
+    vec3 cpos = ((old_view * vec4(worldPos, 1))).xyz;
+    vec2 npos = cpos.xy / cpos.z;
+    vec2 spos = 0.5 + 0.5 * npos * vec2(u_resolution.y / u_resolution.x, 1.0);
+    vec2 rpos = spos * u_resolution.xy - .5;
+    ivec2 ipos = ivec2(floor(rpos));
+    vec2 fuv = rpos - vec2(ipos);
 
     if (u_show_depth == 1 || u_show_albedo == 1 || u_show_normals == 1) {
         vec3 n;
@@ -271,11 +278,12 @@ void main() {
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
         if (u_reproj == 1) {
-            vec3 old_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy/* - projPos.xy*/)).rgb;
+            vec3 old_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy/* - fuv * u_resolution*/)).rgb;
             color = mix(color, old_color, 0.8);
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
     }
     color = post_process(color);
-    out_color.rgb = color;
+    //out_color.rgb = vec3(fuv * u_resolution, 0);
+    out_color.rgb = vec3(color);
 }

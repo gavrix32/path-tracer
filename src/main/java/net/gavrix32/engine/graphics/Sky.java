@@ -2,7 +2,9 @@ package net.gavrix32.engine.graphics;
 
 import net.gavrix32.app.Main;
 import net.gavrix32.engine.utils.Logger;
+import net.gavrix32.engine.utils.Utils;
 import org.joml.Vector3f;
+import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
 
@@ -16,8 +18,7 @@ import static org.lwjgl.opengl.GL11C.glGenTextures;
 import static org.lwjgl.opengl.GL11C.glTexImage2D;
 import static org.lwjgl.opengl.GL11C.glTexParameteri;
 import static org.lwjgl.opengl.GL13C.*;
-import static org.lwjgl.stb.STBImage.stbi_failure_reason;
-import static org.lwjgl.stb.STBImage.stbi_load;
+import static org.lwjgl.stb.STBImage.*;
 
 public class Sky {
     private Vector3f color;
@@ -46,10 +47,12 @@ public class Sky {
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         for (int i = 0; i < 6; i++) {
             int[] width = new int[1], height = new int[1];
-            ByteBuffer data;
-            data = stbi_load(Main.class.getClassLoader().getResource(paths[i]).getPath(), width, height,  new int[1], 3);
-            //data = stbi_load_from_memory(ByteBuffer.wrap(Utils.loadBytes(skyBoxPaths[i])), width, height,  new int[1], 3);
-            if (data == null) Logger.error("Failed to load texture: " + stbi_failure_reason());
+            byte[] bytes = Utils.loadBytes(paths[i]);
+            ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
+            buffer.put(bytes);
+            buffer.flip();
+            ByteBuffer data = stbi_load_from_memory(buffer, width, height,  new int[1], 3);
+            if (data == null) Logger.error("Failed to load texture: " + paths[i] + " " + stbi_failure_reason());
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         }
         color = new Vector3f(0);

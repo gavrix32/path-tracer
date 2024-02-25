@@ -29,15 +29,12 @@ public class Render {
             showDepth = new ImBoolean(false);
 
     private static final ImInt
-            syncType = new ImInt(),
-            sceneID = new ImInt();
+            syncType = new ImInt();
 
     private static final String[] syncTypes = {"Off", "VSync", "Adaptive"};
-    private static final String[] sceneNames = {"Cornell Box", "RGB Room", "RGB Spheres", "Spheres", "Liminal"};
-    private static Scene[] scenes;
 
     public static void update() {
-        ImGui.begin("Renderer");
+        ImGui.begin("Render");
         ImGui.text((int) (1 / Engine.getDelta()) + " fps");
         ImGui.text("Frame time: " + Engine.getDelta() * 1000 + " ms");
         //ImGui.text("ImGui time: " + guiTime * 1000 + " ms");
