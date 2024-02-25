@@ -8,7 +8,6 @@ import imgui.glfw.ImGuiImplGlfw;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.utils.Logger;
 import net.gavrix32.engine.utils.Utils;
 
 import java.util.ArrayList;
@@ -25,6 +24,8 @@ public class Editor {
     static {
         ImGui.createContext();
         ImGuiIO io = ImGui.getIO();
+        io.setIniFilename(null);
+        ImGui.loadIniSettingsFromMemory(Utils.loadString("imgui.ini"));
         io.getFonts().addFontFromMemoryTTF(Utils.loadBytes(fontPath), 15);
         io.addConfigFlags(ImGuiConfigFlags.DockingEnable);
         imGuiImplGlfw.init(Window.get(), true);
