@@ -6,6 +6,9 @@ import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
+
+import java.util.ArrayList;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
@@ -27,7 +30,7 @@ public class Renderer {
     private static int samples = 1, bounces = 3, AASize = 128;
     private static boolean
             accumulation = true, reproj = true, randNoise = false, gammaCorrection = true, ACESFilm = false,
-            showAlbedo = false, showNormals = false, showDepth = false, cursorInViewport;
+            showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
     private static float gamma = 2.2f;
     private static Matrix4f proj, view;
@@ -59,7 +62,7 @@ public class Renderer {
         view = new Matrix4f();
     }
 
-    public static void render() {
+    public static void render(/*ArrayList<Float> positions, ArrayList<Float> normals*/) {
         glClear(GL_COLOR_BUFFER_BIT);
         quadShader.setMat4("old_view", scene.getCamera().getView());
         quadShader.setVec3("u_old_camera_position", scene.getCamera().getPos());

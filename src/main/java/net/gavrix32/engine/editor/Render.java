@@ -5,10 +5,8 @@ import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.graphics.Renderer;
-import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.io.Sync;
 import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.utils.Logger;
 
 public class Render {
     private static final int[]
@@ -45,7 +43,7 @@ public class Render {
                 case 2 -> Window.sync(Sync.ADAPTIVE);
             }
         }
-        if (ImGui.sliderInt("Samples", samples, 1, 32)) {
+        if (ImGui.sliderInt("SPP", samples, 1, 32)) {
             Renderer.resetAccFrames();
             Renderer.setSamples(samples[0]);
         }

@@ -6,11 +6,13 @@ import net.gavrix32.engine.IApp;
 import net.gavrix32.engine.editor.Editor;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
-import net.gavrix32.engine.utils.Logger;
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.assimp.AIMesh;
+import org.lwjgl.assimp.AIScene;
+import org.lwjgl.assimp.AIVector3D;
+import org.lwjgl.assimp.Assimp;
 
 import java.util.ArrayList;
-
-import static org.lwjgl.glfw.GLFW.*;
 
 public class Main implements IApp {
     private ArrayList<Scene> scenes = new ArrayList<>();
@@ -20,6 +22,11 @@ public class Main implements IApp {
     private RGBSpheres rgbSpheres;
     private Spheres spheres;
     private Liminal liminal;
+
+    /*private AIScene aiScene;
+    private AIMesh mesh;
+    private ArrayList<Float> positions = new ArrayList<>();
+    private ArrayList<Float> normals = new ArrayList<>();*/
 
     @Override
     public void init() {
@@ -43,12 +50,31 @@ public class Main implements IApp {
         names.add("Liminal");
         Renderer.init();
         Renderer.setScene(cornellBox.getScene());
+
+        /*aiScene = Assimp.aiImportFile("/home/gavrix32/IdeaProjects/ray-tracing-engine/src/main/resources/toilet_paper/scene.gltf", Assimp.aiProcess_Triangulate);
+        PointerBuffer buffer = aiScene.mMeshes();
+        for (int i = 0; i < buffer.limit(); i++) mesh = AIMesh.create(buffer.get(i));
+        AIVector3D.Buffer positionBuffer = mesh.mVertices();
+        System.out.println(positionBuffer.limit());
+        for (int i = 0; i < positionBuffer.limit(); i++) {
+            AIVector3D vector = positionBuffer.get(i);
+            positions.add(vector.x());
+            positions.add(vector.y());
+            positions.add(vector.z());
+        }
+        AIVector3D.Buffer normalBuffer = mesh.mNormals();
+        for (int i = 0; i < normalBuffer.limit(); i++) {
+            AIVector3D normal = normalBuffer.get(i);
+            normals.add(normal.x());
+            normals.add(normal.y());
+            normals.add(normal.z());
+        }*/
     }
 
     @Override
     public void update() {
         Controls.update(Renderer.getScene().getCamera());
-        Renderer.render();
+        Renderer.render(/*positions, normals*/);
         Editor.update(scenes, names);
         Window.update();
     }
