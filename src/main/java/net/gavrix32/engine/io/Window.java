@@ -49,7 +49,7 @@ public class Window {
             Window.height = h;
             glViewport(0, 0, w, h);
             Renderer.resetAccFrames();
-            Renderer.resetFramebufferTexture();
+            Renderer.resetAccTexture();
         });
     }
 

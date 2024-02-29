@@ -34,8 +34,8 @@ struct Sky {
 #define MAX_BOXES 50
 
 uniform vec2 u_resolution;
-uniform vec3 u_camera_position, u_old_camera_position, u_plane_color;
-uniform mat4 proj, view, old_view;
+uniform vec3 u_camera_position, prev_camera_position, u_plane_color;
+uniform mat4 view, prev_view;
 uniform int u_samples, u_bounces, u_aa_size, u_random_noise, u_gamma_correction, u_aces, u_reproj,
             u_show_albedo, u_show_depth, u_show_normals, sky_has_texture,
             u_spheres_count, u_boxes_count, u_plane_checkerboard, u_plane_is_dielectric;
@@ -49,7 +49,6 @@ layout(binding = 0, rgba32f) uniform image2D frame_image;
 
 uint seed = 0;
 vec2 uv = (2 * gl_FragCoord.xy - u_resolution) / u_resolution.y;
-vec3 hitPos;
 float minD;
 
 // source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
@@ -219,29 +218,9 @@ vec3 post_process(vec3 col) {
 
 vec3 reproject(mat3 pcam_mat, vec3 pcam_pos, vec2 iRes, vec3 p) {
     float td = distance(pcam_pos, p);
-    vec3 dir = (p - pcam_pos)/td;
-    vec3 screen = dir*pcam_mat;
-    return vec3(screen.xy * iRes.y / (screen.z) + 0.5 * iRes.xy, td);
-}
-
-vec3 project2Screen(const mat4 view, const mat4 proj, vec3 v) {
-    vec4 p = proj * (view * vec4(v, 1.0));
-    p /= p.w;
-    p.xy += 0.5;
-    p.z *= 2.0;
-    p.z -= 1.0;
-    return p.xyz;
-}
-
-mat4 getProjMatrix(vec2 size, float near, float far) {
-    float fn = far + near;
-    float f_n = far - near;
-
-    return mat4(
-        1.0,      0.0,    0.0,                         0.0,
-        0.0,      1.0,    0.0,                         0.0,
-        0.0,      0.0,    fn / f_n,                    1.0,
-        0.0,      0.0,    (2.0 * far * near) / f_n,    0.0);
+    vec3 dir = (p - pcam_pos) / td;
+    vec3 screen = inverse(pcam_mat) * dir;
+    return vec3(screen.yz * iRes.y / (screen.x) + 0.5 * iRes.xy, td);
 }
 
 void main() {
@@ -257,9 +236,7 @@ void main() {
         uv.y += (random() - 0.5) / 100000 * u_aa_size;
     }
 
-    //vec3 dir = normalize(vec3(uv, 1) * mat3(view));
-    mat4 proj = getProjMatrix(u_resolution, 1, 100);
-    vec3 dir = normalize(vec3(uv, 1) * mat3(proj) * mat3(view));
+    vec3 dir = normalize(vec3(uv, 1) * mat3(view));
     Ray ray = Ray(u_camera_position, dir);
 
     vec3 color;
@@ -268,15 +245,34 @@ void main() {
     }
     color /= u_samples;
 
-    vec3 worldPos = ray.origin + ray.dir * minD;
-    /*vec3 projPos = project2Screen(old_view, proj, worldPos);*/
+    vec3 hitpos = ray.origin + ray.dir * minD;
 
-    vec3 cpos = ((old_view * vec4(worldPos, 1))).xyz;
-    vec2 npos = cpos.xy / cpos.z;
-    vec2 spos = 0.5 + 0.5 * npos * vec2(u_resolution.y / u_resolution.x, 1.0);
-    vec2 rpos = spos * u_resolution.xy - .5;
-    ivec2 ipos = ivec2(floor(rpos));
-    vec2 fuv = rpos - vec2(ipos);
+    /*vec4 clipPosition = view * vec4(hitpos, 1);
+    vec4 prevClipPosition = prev_view * vec4(hitpos, 1);
+    vec2 texCoord = clipPosition.xy / clipPosition.z;
+    vec2 prevTexCoord = prevClipPosition.xy / prevClipPosition.z;
+    vec2 velocity = texCoord - prevTexCoord;*/
+
+   /* // world space
+    vec4 wpos = vec4(ray.origin + ray.dir * minD, 1.0);
+    // camera space
+    vec3 cpos = (wpos * prev_view).xyz; // note inverse multiply
+    // ndc space
+    vec2 npos = 1 * cpos.xy / cpos.z;
+    // screen space
+    vec2 spos = 0.5 + 0.5 * npos * vec2(u_resolution.y / u_resolution.x, 1.0);*/
+
+    /*vec3 rep = reproject(mat3(prev_view), hitpos, u_resolution, ray.origin);
+    vec2 puv = rep.xy / u_resolution.xy;
+    vec2 p = (u_resolution * puv - 0.5);
+    vec2 dpuv = abs(puv - vec2(0.5));*/
+
+    /*vec4 point = view * vec4(hitpos, 1.0);
+    vec4 prev_point = prev_view * vec4(hitpos, 1.0);
+    vec3 p = (point.xyz / point.w) - (prev_point.xyz / point.w);
+    vec2 prevFragCoord = p.xy * u_resolution.y + u_resolution.xy/2.0;
+    vec2 puv = prevFragCoord/u_resolution.xy;
+    puv = (puv * u_resolution.y + u_resolution) / 2;*/
 
     if (u_show_depth == 1 || u_show_albedo == 1 || u_show_normals == 1) {
         vec3 n;
@@ -292,12 +288,12 @@ void main() {
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
         if (u_reproj == 1) {
-            vec3 old_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy/* - fuv * u_resolution*/)).rgb;
-            color = mix(color, old_color, 0.8);
+            vec3 prev_color = imageLoad(frame_image, ivec2(gl_FragCoord.xyx)).rgb;
+            color = mix(color, prev_color, 0.8);
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
     }
     color = post_process(color);
-    //out_color.rgb = vec3(fuv * u_resolution, 0);
     out_color.rgb = vec3(color);
+    //out_color.rgb = vec3((uv * u_resolution.y + u_resolution) / 2, 0);
 }

@@ -1,6 +1,7 @@
 package net.gavrix32.engine.editor;
 
 import imgui.ImGui;
+import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import net.gavrix32.engine.Engine;
@@ -32,7 +33,7 @@ public class Render {
     private static final String[] syncTypes = {"Off", "VSync", "Adaptive"};
 
     public static void update() {
-        ImGui.begin("Render");
+        ImGui.begin("Render", ImGuiWindowFlags.NoMove);
         ImGui.text((int) (1 / Engine.getDelta()) + " fps");
         ImGui.text("Frame time: " + Engine.getDelta() * 1000 + " ms");
         //ImGui.text("ImGui time: " + guiTime * 1000 + " ms");

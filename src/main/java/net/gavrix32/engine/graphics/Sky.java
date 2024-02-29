@@ -1,6 +1,5 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.app.Main;
 import net.gavrix32.engine.utils.Logger;
 import net.gavrix32.engine.utils.Utils;
 import org.joml.Vector3f;
@@ -8,16 +7,7 @@ import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
 
-import static org.lwjgl.opengl.GL11C.GL_LINEAR;
-import static org.lwjgl.opengl.GL11C.GL_RGB;
-import static org.lwjgl.opengl.GL11C.GL_TEXTURE_MAG_FILTER;
-import static org.lwjgl.opengl.GL11C.GL_TEXTURE_MIN_FILTER;
-import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11C.glBindTexture;
-import static org.lwjgl.opengl.GL11C.glGenTextures;
-import static org.lwjgl.opengl.GL11C.glTexImage2D;
-import static org.lwjgl.opengl.GL11C.glTexParameteri;
-import static org.lwjgl.opengl.GL13C.*;
+import static org.lwjgl.opengl.GL46C.*;
 import static org.lwjgl.stb.STBImage.*;
 
 public class Sky {

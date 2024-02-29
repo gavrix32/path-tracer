@@ -2,9 +2,9 @@ package net.gavrix32.engine.editor;
 
 import imgui.ImGui;
 import imgui.ImVec2;
+import imgui.flag.ImGuiWindowFlags;
 import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.utils.Logger;
 
 import static org.lwjgl.opengl.GL30C.*;
 
@@ -34,7 +34,7 @@ public class Viewport {
     }
 
     protected static void update() {
-        ImGui.begin("Viewport");
+        ImGui.begin("Viewport", ImGuiWindowFlags.NoMove);
         widthDelta = width - (int) ImGui.getContentRegionAvail().x;
         heightDelta = height - (int) ImGui.getContentRegionAvail().y;
         width = (int) ImGui.getContentRegionAvail().x;
@@ -90,6 +90,7 @@ public class Viewport {
 
     public static boolean cursorInViewport() {
         if (!Window.isCursorVisible()) return true;
+        if (!Editor.isEnabled()) return true;
         return cursorInViewport;
     }
 }

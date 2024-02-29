@@ -28,6 +28,7 @@ public class Editor {
         ImGui.loadIniSettingsFromMemory(Utils.loadString("imgui.ini"));
         io.getFonts().addFontFromMemoryTTF(Utils.loadBytes(fontPath), 15);
         io.addConfigFlags(ImGuiConfigFlags.DockingEnable);
+        Style.apply();
         imGuiImplGlfw.init(Window.get(), true);
         imGuiImplGl3.init();
     }
@@ -59,5 +60,9 @@ public class Editor {
     public static void toggle() {
         status = !status;
         Renderer.resetAccFrames();
+    }
+
+    public static boolean isEnabled() {
+        return status;
     }
 }

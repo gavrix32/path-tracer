@@ -1,6 +1,7 @@
 package net.gavrix32.engine.editor;
 
 import imgui.ImGui;
+import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import net.gavrix32.engine.graphics.Material;
@@ -17,7 +18,7 @@ public class Scenes {
     private static ImInt sceneID = new ImInt();
 
     protected static void update(ArrayList<Scene> scenes, ArrayList<String> sceneNames) {
-        ImGui.begin("Scene");
+        ImGui.begin("Scene", ImGuiWindowFlags.NoMove);
         String[] names = new String[sceneNames.size()];
         if (ImGui.combo("Select scene", sceneID, sceneNames.toArray(names))) {
             Renderer.resetAccFrames();

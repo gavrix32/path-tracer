@@ -6,6 +6,7 @@ import net.gavrix32.engine.IApp;
 import net.gavrix32.engine.editor.Editor;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
+import net.gavrix32.engine.utils.Logger;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.AIMesh;
 import org.lwjgl.assimp.AIScene;
