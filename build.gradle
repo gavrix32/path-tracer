@@ -1,6 +1,5 @@
 plugins {
     id 'java'
-    id 'application'
 }
 
 import org.gradle.internal.os.OperatingSystem
@@ -36,19 +35,13 @@ dependencies {
     implementation platform("org.lwjgl:lwjgl-bom:3.3.3")
 
     implementation "org.lwjgl:lwjgl"
-    implementation "org.lwjgl:lwjgl-assimp"
     implementation "org.lwjgl:lwjgl-glfw"
     implementation "org.lwjgl:lwjgl-opengl"
     implementation "org.lwjgl:lwjgl-stb"
     runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
     implementation "org.joml:joml:1.10.5"
     implementation "io.github.spair:imgui-java-app:1.86.11"
-}
-
-application {
-    mainClass = 'net.gavrix32.app.Main'
 }

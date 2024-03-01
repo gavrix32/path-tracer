@@ -48,7 +48,7 @@ public class Renderer {
         quadShader.use();
     }
 
-    public static void render(/*ArrayList<Float> positions, ArrayList<Float> normals*/) {
+    public static void render() {
         glClear(GL_COLOR_BUFFER_BIT);
         quadShader.setMat4("prev_view", scene.getCamera().getView());
         quadShader.setVec3("prev_camera_position", scene.getCamera().getPos());
