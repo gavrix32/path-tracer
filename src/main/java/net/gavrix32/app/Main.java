@@ -6,8 +6,11 @@ import net.gavrix32.engine.IApp;
 import net.gavrix32.engine.editor.Editor;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
+import org.lwjgl.opengl.GLUtil;
 
 import java.util.ArrayList;
+
+import static org.lwjgl.stb.STBImage.stbi_set_flip_vertically_on_load;
 
 public class Main implements IApp {
     private ArrayList<Scene> scenes = new ArrayList<>();

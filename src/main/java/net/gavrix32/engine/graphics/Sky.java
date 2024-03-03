@@ -6,6 +6,7 @@ import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 
 import static org.lwjgl.opengl.GL46C.*;
 import static org.lwjgl.stb.STBImage.*;
@@ -13,8 +14,9 @@ import static org.lwjgl.stb.STBImage.*;
 public class Sky {
     private Vector3f color;
     private Material material;
-    private String[] paths;
+    private String path;
     protected boolean hasTexture;
+    private int texture;
 
     public Sky() {
         color = new Vector3f(0);
@@ -28,26 +30,34 @@ public class Sky {
         material = new Material(1, 1, false);
     }
 
-    public Sky(String[] paths) {
-        this.paths = paths;
-        int texture = glGenTextures();
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        for (int i = 0; i < 6; i++) {
-            int[] width = new int[1], height = new int[1];
-            byte[] bytes = Utils.loadBytes(paths[i]);
-            ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
-            buffer.put(bytes);
-            buffer.flip();
-            ByteBuffer data = stbi_load_from_memory(buffer, width, height,  new int[1], 3);
-            if (data == null) Logger.error("Failed to load texture: " + paths[i] + " " + stbi_failure_reason());
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        }
+    public Sky(String path) {
+        this.path = path;
+        texture = glGenTextures();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        int[] width = new int[1], height = new int[1];
+        byte[] bytes = Utils.loadBytes(path);
+        ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
+        buffer.put(bytes);
+        buffer.flip();
+        stbi_set_flip_vertically_on_load(true);
+        FloatBuffer data = stbi_loadf_from_memory(buffer, width, height,  new int[1], 3);
+        if (data == null) Logger.error("Failed to load texture: " + path + " " + stbi_failure_reason());
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width[0], height[0], 0, GL_RGB, GL_FLOAT, data);
+        glBindTexture(GL_TEXTURE_2D, 0);
         color = new Vector3f(0);
         hasTexture = true;
         material = new Material(1, 1, false);
+    }
+
+    public void bindTexture() {
+        glBindTexture(GL_TEXTURE_2D, texture);
+    }
+
+    public void unbindTexture() {
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     public Material getMaterial() {

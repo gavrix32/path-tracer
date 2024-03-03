@@ -4,13 +4,10 @@ import imgui.ImGui;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
-import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.graphics.Scene;
-import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.shapes.Box;
 import net.gavrix32.engine.shapes.Sphere;
-import org.joml.Vector3f;
 
 import java.util.ArrayList;
 

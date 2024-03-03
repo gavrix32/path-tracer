@@ -11,7 +11,6 @@ public class Camera {
         pos = new Vector3f(0);
         rot = new Vector3f(0);
         view = new Matrix4f();
-//        view.setLookAt(pos, new Vector3f(0.0f, 1.0f, 0.0f), new Vector3f(0.0f, 1.0f, 0.0f));
     }
 
     public void update() {

@@ -19,7 +19,6 @@ public class Scene {
         name = "Unnamed scene";
         camera = new Camera();
         sky = new Sky();
-        plane = new Plane();
         spheres = new ArrayList<>();
         boxes = new ArrayList<>();
     }
@@ -44,8 +43,8 @@ public class Scene {
         return sky;
     }
 
-    public Sky setSky(Sky sky) {
-        this.sky = sky;
+    public Sky setSky(String path) {
+        this.sky = new Sky(path);
         return sky;
     }
 

@@ -12,17 +12,17 @@ import net.gavrix32.engine.io.Window;
 public class Render {
     private static final int[]
             samples = new int[] {1},
-            bounces = new int[] {3},
-            AASize = new int[] {128};
+            bounces = new int[] {3};
 
-    private static final float[] gamma = new float[] {2.2f};
+    private static final float[] gamma = new float[] {1.8f}, exposure = new float[] {1};
 
     private static final ImBoolean
             accumulation = new ImBoolean(true),
             reproj = new ImBoolean(true),
             randNoise = new ImBoolean(false),
             gammaCorrection = new ImBoolean(true),
-            aces = new ImBoolean(false),
+            tonemapping = new ImBoolean(true),
+            taa = new ImBoolean(true),
             showAlbedo = new ImBoolean(false),
             showNormals = new ImBoolean(false),
             showDepth = new ImBoolean(false);
@@ -52,18 +52,21 @@ public class Render {
             Renderer.resetAccFrames();
             Renderer.setBounces(bounces[0]);
         }
-        if (ImGui.dragInt("UV Blur", AASize, 1, 0, 256000)) {
+        if (ImGui.checkbox("TAA", taa)) {
             Renderer.resetAccFrames();
-            Renderer.setAASize(AASize[0]);
+            Renderer.useTAA(taa.get());
         }
         ImGui.text("Accumulated frames: " + Renderer.getAccFrames());
         if (ImGui.checkbox("Accumulation", accumulation)) Renderer.useAccumulation(accumulation.get());
         if (ImGui.checkbox("Gamma Correction", gammaCorrection) || gammaCorrection.get()) {
             Renderer.useGammaCorrection(gammaCorrection.get(), gamma[0]);
-            ImGui.sliderFloat("Gamma", gamma, 0, 5, "%.1f");
+            ImGui.sliderFloat("Gamma", gamma, 0, 10, "%.1f");
         }
-        if (ImGui.checkbox("ACES Tone Mapping", aces)) Renderer.useACESFilm(aces.get());
-        if (ImGui.checkbox("Temporal Reprojection", reproj)) Renderer.useReprojection(reproj.get());
+        if (ImGui.checkbox("Tone Mapping", tonemapping) || tonemapping.get()) {
+            Renderer.useToneMapping(tonemapping.get(), exposure[0]);
+            ImGui.sliderFloat("Exposure", exposure, 0, 5, "%.1f");
+        }
+        if (ImGui.checkbox("Temporal mixing", reproj)) Renderer.useFrameMixing(reproj.get());
         if (ImGui.checkbox("Random Noise", randNoise)) Renderer.useRandomNoise(randNoise.get());;
         if (ImGui.checkbox("Show Albedo", showAlbedo)) Renderer.showAlbedo(showAlbedo.get());
         if (ImGui.checkbox("Show Normals", showNormals)) Renderer.showNormals(showNormals.get());

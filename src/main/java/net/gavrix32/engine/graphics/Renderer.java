@@ -4,7 +4,11 @@ import net.gavrix32.engine.editor.Editor;
 import net.gavrix32.engine.editor.Viewport;
 import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
+import net.gavrix32.engine.shapes.Plane;
+import net.gavrix32.engine.utils.Logger;
 import org.joml.Vector2f;
+
+import java.util.Objects;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
@@ -23,12 +27,12 @@ public class Renderer {
     private static Scene scene;
     private static Shader quadShader;
     private static int accFrames = 0;
-    private static int samples = 1, bounces = 3, AASize = 128;
+    private static int samples = 1, bounces = 3;
     private static boolean
-            accumulation = true, reproj = true, randNoise = false, gammaCorrection = true, ACESFilm = false,
-            showAlbedo = false, showNormals = false, showDepth = false;
+            accumulation = true, frameMixing = true, randNoise = false, gammaCorrection = true, tonemapping = false,
+            taa = true, showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
-    private static float gamma = 2.2f;
+    private static float gamma = 1.8f, exposure = 1.0f;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -50,8 +54,6 @@ public class Renderer {
 
     public static void render() {
         glClear(GL_COLOR_BUFFER_BIT);
-        quadShader.setMat4("prev_view", scene.getCamera().getView());
-        quadShader.setVec3("prev_camera_position", scene.getCamera().getPos());
         scene.getCamera().update();
         if (!Window.isCursorVisible()) {
             scene.getCamera().rotateX(Input.getDeltaY() * -0.003f);
@@ -74,15 +76,17 @@ public class Renderer {
         quadShader.setInt("u_samples", samples);
         quadShader.setInt("u_bounces", bounces);
         quadShader.setInt("u_random_noise", randNoise ? 1 : 0);
-        quadShader.setInt("u_reproj", reproj ? 1 : 0);
-        quadShader.setInt("u_aa_size", AASize);
+        quadShader.setInt("u_reproj", frameMixing ? 1 : 0);
+        quadShader.setInt("taa", taa ? 1 : 0);
         quadShader.setFloat("u_gamma", gamma);
         quadShader.setInt("u_gamma_correction", gammaCorrection ? 1 : 0);
-        quadShader.setInt("u_aces", ACESFilm ? 1 : 0);
-
+        quadShader.setInt("tonemapping", tonemapping ? 1 : 0);
+        quadShader.setFloat("exposure", exposure);
         quadShader.setInt("sky_has_texture", scene.getSky().hasTexture ? 1 : 0);
         if (scene.getSky().hasTexture) {
-            quadShader.setInt("sky_texture", 1);
+            scene.getSky().bindTexture();
+            quadShader.setInt("sky_texture", 0);
+
         } else {
             quadShader.setVec3("sky.color", scene.getSky().getColor());
         }
@@ -90,12 +94,15 @@ public class Renderer {
         quadShader.setFloat("sky.material.roughness", scene.getSky().getMaterial().getRoughness());
         quadShader.setFloat("sky.material.isMetal", scene.getSky().getMaterial().isMetal() ? 1 : 0);
         // Plane
-        {
+        if (scene.getPlane() != null) {
+            quadShader.setInt("u_plane", 1);
             quadShader.setVec3("u_plane_color", scene.getPlane().getColor());
             quadShader.setFloat("u_plane_emission", scene.getPlane().getMaterial().getEmission());
             quadShader.setFloat("u_plane_roughness", scene.getPlane().getMaterial().getRoughness());
             quadShader.setFloat("u_plane_is_dielectric", scene.getPlane().getMaterial().isMetal() ? 1 : 0);
             quadShader.setInt("u_plane_checkerboard", scene.getPlane().isCheckerBoard() ? 1 : 0);
+        } else {
+            quadShader.setInt("u_plane", 0);
         }
         // Spheres
         quadShader.setInt("u_spheres_count", scene.getSpheres().size());
@@ -118,11 +125,13 @@ public class Renderer {
             quadShader.setFloat("boxes[" + i + "].material.roughness", scene.getBoxes().get(i).getMaterial().getRoughness());
             quadShader.setFloat("boxes[" + i + "].material.isMetal", scene.getBoxes().get(i).getMaterial().isMetal() ? 1 : 0);
         }
-        if (accumulation || reproj) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
-        if (accFrames == 0 && !reproj) resetAccTexture();
+        if (accumulation || frameMixing) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+        if (accFrames == 0 && !frameMixing) resetAccTexture();
         if (!Editor.status) glViewport(0, 0, Window.getWidth(), Window.getHeight());
         Viewport.bindFramebuffer();
+        scene.getSky().bindTexture();
         glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
+        scene.getSky().unbindTexture();
         Viewport.unbindFramebuffer();
         if (accumulation) accFrames++;
     }
@@ -148,8 +157,8 @@ public class Renderer {
         accumulation = value;
     }
 
-    public static void useReprojection(boolean value) {
-        reproj = value;
+    public static void useFrameMixing(boolean value) {
+        frameMixing = value;
     }
 
     public static void resetAccFrames() {
@@ -177,12 +186,13 @@ public class Renderer {
         Renderer.gamma = gamma;
     }
 
-    public static void useACESFilm(boolean value) {
-        ACESFilm = value;
+    public static void useToneMapping(boolean value, float exposure) {
+        tonemapping = value;
+        Renderer.exposure = exposure;
     }
 
-    public static void setAASize(int aaSize) {
-        AASize = aaSize;
+    public static void useTAA(boolean value) {
+        taa = value;
     }
 
     public static void showAlbedo(boolean value) {
