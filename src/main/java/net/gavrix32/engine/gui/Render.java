@@ -11,11 +11,11 @@ import net.gavrix32.engine.io.Window;
 
 public class Render {
     private static final int[]
-            samples = new int[] {1},
-            bounces = new int[] {3},
-            fov = new int[] {70};
+            samples = new int[] {Renderer.getSamples()},
+            bounces = new int[] {Renderer.getBounces()},
+            fov = new int[] {Renderer.getFOV()};
 
-    private static final float[] gamma = new float[] {2.2f}, exposure = new float[] {1};
+    private static final float[] gamma = new float[] {Renderer.getGamma()}, exposure = new float[] {Renderer.getExposure()};
 
     private static final ImBoolean
             accumulation = new ImBoolean(true),

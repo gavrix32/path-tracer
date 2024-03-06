@@ -25,7 +25,7 @@ public class Renderer {
     private static Scene scene;
     private static Shader quadShader;
     private static int accFrames = 0;
-    private static int samples = 1, bounces = 3, fov = 90;
+    private static int samples = 1, bounces = 3, fov = 70;
     private static boolean
             accumulation = true, frameMixing = true, randNoise = false, gammaCorrection = true, tonemapping = false,
             taa = true, showAlbedo = false, showNormals = false, showDepth = false;
@@ -152,8 +152,16 @@ public class Renderer {
         return scene;
     }
 
+    public static int getSamples() {
+        return samples;
+    }
+
     public static void setSamples(int samples) {
         Renderer.samples = samples;
+    }
+
+    public static int getBounces() {
+        return bounces;
     }
 
     public static void setBounces(int bounces) {
@@ -197,9 +205,25 @@ public class Renderer {
         randNoise = value;
     }
 
+    public static float getGamma() {
+        return gamma;
+    }
+
+    public static void setGamma(float gamma) {
+        Renderer.gamma = gamma;
+    }
+
     public static void useGammaCorrection(boolean value, float gamma) {
         gammaCorrection = value;
         Renderer.gamma = gamma;
+    }
+
+    public static float getExposure() {
+        return exposure;
+    }
+
+    public static void setExposure(float exposure) {
+        Renderer.exposure = exposure;
     }
 
     public static void useToneMapping(boolean value, float exposure) {
