@@ -42,14 +42,14 @@ struct Plane {
 #define MAX_SPHERES 50
 #define MAX_BOXES 50
 
-uniform vec2 u_resolution;
-uniform vec3 u_camera_position;
+uniform vec2 resolution;
+uniform vec3 camera_position;
 uniform mat4 view;
-uniform int u_samples, u_bounces, taa, u_random_noise, u_gamma_correction, tonemapping, u_reproj,
-            u_show_albedo, u_show_depth, u_show_normals, sky_has_texture,
-            u_spheres_count, u_boxes_count, u_plane, u_plane_checkerboard, u_plane_is_dielectric;
+uniform int samples, bounces, taa, random_noise, gamma_correction, tonemapping, frame_mixing,
+            show_albedo, show_depth, show_normals, sky_has_texture, spheres_count, boxes_count,
+            fov;
 uniform sampler2D sky_texture;
-uniform float u_acc_frames, u_time, u_gamma, exposure;
+uniform float acc_frames, time, gamma, exposure;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
 uniform Sky sky;
@@ -83,7 +83,7 @@ vec3 random_cosine_weighted_hemisphere(vec3 normal) {
 void update_seed() {
     seed = pcg_hash(uint(gl_FragCoord.x));
     seed = pcg_hash(seed + uint(gl_FragCoord.y));
-    seed = pcg_hash(seed + uint(u_time * 1000));
+    seed = pcg_hash(seed + uint(time * 1000));
 }
 
 float infinite_plane(Ray ray, vec4 p) {
@@ -163,7 +163,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
             normal = vec3(0, 1, 0);
         }
     }
-    for (int i = 0; i < u_spheres_count; i++) {
+    for (int i = 0; i < spheres_count; i++) {
         dist = sphere(ray, spheres[i].position, spheres[i].radius);
         if (dist > 0 && dist < minDist) {
             hit = true;
@@ -173,7 +173,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
             normal = normalize(ray.origin + ray.dir * dist - spheres[i].position);
         }
     }
-    for (int i = 0; i < u_boxes_count; i++) {
+    for (int i = 0; i < boxes_count; i++) {
         vec3 norm;
         dist = box(Ray(ray.origin - boxes[i].position, ray.dir), boxes[i].scale, norm, boxes[i].rotation).x;
         if (dist > 0 && dist < minDist) {
@@ -216,7 +216,7 @@ Ray brdf(Ray ray, vec3 normal, Material material, float minIt) {
 
 vec3 raytrace(Ray ray) {
     vec3 energy = vec3(1);
-    for(int i = 0; i <= u_bounces; i++) {
+    for(int i = 0; i <= bounces; i++) {
         Material material;
         vec3 color, normal;
         float minIt;
@@ -237,12 +237,12 @@ vec3 raytrace(Ray ray) {
 
 vec3 post_process(vec3 col) {
     if (tonemapping == 1) col = vec3(1.0) - exp(-col * exposure);
-    if (u_gamma_correction == 1) col = pow(col, vec3(1.0 / u_gamma));
+    if (gamma_correction == 1) col = pow(col, vec3(1.0 / gamma));
     return col;
 }
 
 void main() {
-    if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0 && (u_acc_frames > 0 || u_random_noise == 1 || u_reproj == 1)) {
+    if (show_depth == 0 && show_albedo == 0 && show_normals == 0 && (acc_frames > 0 || random_noise == 1 || frame_mixing == 1)) {
         update_seed();
     } else {
         seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
@@ -250,41 +250,42 @@ void main() {
 
     vec2 uv;
 
-    if (u_show_depth == 0 && u_show_albedo == 0 && u_show_normals == 0) {
-        uv = (2 * gl_FragCoord.xy - u_resolution) / u_resolution.y;
+    if (show_depth == 0 && show_albedo == 0 && show_normals == 0) {
+        uv = (2 * gl_FragCoord.xy - resolution) / resolution.y;
     } else {
-        uv = (2 * gl_FragCoord.xy - u_resolution) / u_resolution.y;
+        uv = (2 * gl_FragCoord.xy - resolution) / resolution.y;
     }
 
     // TAA
     if (taa == 1) {
-        uv.x += (random() - 0.5) / (u_resolution.x * 0.5);
-        uv.y += (random() - 0.5) / (u_resolution.y * 0.5);
+        uv.x += (random() - 0.5) / (resolution.x * 0.5);
+        uv.y += (random() - 0.5) / (resolution.y * 0.5);
     }
 
-    vec3 dir = normalize(vec3(uv, 1) * mat3(view));
-    Ray ray = Ray(u_camera_position, dir);
+    //vec3 dir = normalize(vec3(uv, 1) * mat3(view));
+    vec3 dir = normalize(vec3(uv, 1.0 / tan(fov * (PI / 180) * 0.5)) * mat3(view));
+    Ray ray = Ray(camera_position, dir);
 
     vec3 color;
-    for(int i = 0; i < u_samples; i++) {
+    for(int i = 0; i < samples; i++) {
         color += raytrace(ray);
     }
-    color /= u_samples;
+    color /= samples;
 
-    if (u_show_depth == 1 || u_show_albedo == 1 || u_show_normals == 1) {
+    if (show_depth == 1 || show_albedo == 1 || show_normals == 1) {
         vec3 n;
         float depth;
         Material m;
         raycast(ray, color, n, depth, m);
-        if (u_show_normals == 1) color = n * 0.5 + 0.5;
-        if (u_show_depth == 1) color = vec3(depth) * 0.001;
+        if (show_normals == 1) color = n * 0.5 + 0.5;
+        if (show_depth == 1) color = vec3(depth) * 0.001;
     } else {
-        if (u_acc_frames > 0) {
+        if (acc_frames > 0) {
             vec3 prev_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy)).rgb;
-            color = mix(color, prev_color, u_acc_frames / (u_acc_frames + 1));
+            color = mix(color, prev_color, acc_frames / (acc_frames + 1));
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
-        if (u_reproj == 1) {
+        if (frame_mixing == 1) {
             vec3 prev_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy)).rgb;
             color = mix(color, prev_color, 0.8);
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));

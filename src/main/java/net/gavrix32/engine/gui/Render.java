@@ -12,7 +12,8 @@ import net.gavrix32.engine.io.Window;
 public class Render {
     private static final int[]
             samples = new int[] {1},
-            bounces = new int[] {3};
+            bounces = new int[] {3},
+            fov = new int[] {70};
 
     private static final float[] gamma = new float[] {1.8f}, exposure = new float[] {1};
 
@@ -51,6 +52,10 @@ public class Render {
         if (ImGui.sliderInt("Bounces", bounces, 0, 8)) {
             Renderer.resetAccFrames();
             Renderer.setBounces(bounces[0]);
+        }
+        if (ImGui.dragInt("FOV", fov, 1, 0, 180)) {
+            Renderer.resetAccFrames();
+            Renderer.setFOV(fov[0]);
         }
         if (ImGui.checkbox("TAA", taa)) {
             Renderer.resetAccFrames();

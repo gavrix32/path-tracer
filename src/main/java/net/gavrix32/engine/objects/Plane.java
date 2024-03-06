@@ -1,8 +1,7 @@
-package net.gavrix32.engine.shapes;
+package net.gavrix32.engine.objects;
 
 import net.gavrix32.engine.graphics.Material;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 public class Plane {
     private Vector3f color;

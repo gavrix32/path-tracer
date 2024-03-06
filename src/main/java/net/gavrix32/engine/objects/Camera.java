@@ -1,4 +1,4 @@
-package net.gavrix32.engine.graphics;
+package net.gavrix32.engine.objects;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;

@@ -74,16 +74,16 @@ public class Viewport {
     }
 
     public static void bindFramebuffer() {
-        if (Editor.status) glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+        if (GUI.status) glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
     }
 
     public static void unbindFramebuffer() {
-        if (Editor.status) glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        if (GUI.status) glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     public static boolean cursorInViewport() {
         if (!Window.isCursorVisible()) return true;
-        if (!Editor.isEnabled()) return true;
+        if (!GUI.isEnabled()) return true;
         return cursorInViewport;
     }
 }

@@ -1,4 +1,4 @@
-package net.gavrix32.engine.shapes;
+package net.gavrix32.engine.objects;
 
 import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.utils.Logger;

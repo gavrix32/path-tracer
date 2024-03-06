@@ -12,10 +12,9 @@ import net.gavrix32.engine.utils.Utils;
 
 import java.util.ArrayList;
 
-import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
+import static org.lwjgl.glfw.GLFW.*;
 
-public class Editor {
+public class GUI {
     public static boolean status = true;
     private static final ImGuiImplGl3 imGuiImplGl3 = new ImGuiImplGl3();
     private static final ImGuiImplGlfw imGuiImplGlfw = new ImGuiImplGlfw();
@@ -41,7 +40,7 @@ public class Editor {
             ImGui.beginDisabled(!Window.isCursorVisible());
 
             Render.update();
-            Scenes.update(scenes, sceneNames);
+            SceneEditor.update(scenes, sceneNames);
             Logs.update();
             Viewport.update();
 
@@ -60,6 +59,7 @@ public class Editor {
     public static void toggle() {
         status = !status;
         Renderer.resetAccFrames();
+        Renderer.resetAccTexture();
     }
 
     public static boolean isEnabled() {

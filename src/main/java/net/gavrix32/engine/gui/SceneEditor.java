@@ -6,22 +6,19 @@ import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.graphics.Scene;
-import net.gavrix32.engine.shapes.Box;
-import net.gavrix32.engine.shapes.Plane;
-import net.gavrix32.engine.shapes.Sphere;
-import net.gavrix32.engine.utils.Logger;
+import net.gavrix32.engine.objects.Box;
+import net.gavrix32.engine.objects.Plane;
+import net.gavrix32.engine.objects.Sphere;
 
 import java.util.ArrayList;
 
-public class Scenes {
-    private static final ImInt sceneID = new ImInt(3);
+public class SceneEditor {
+    private static final ImInt sceneID = new ImInt();
 
     protected static void update(ArrayList<Scene> scenes, ArrayList<String> sceneNames) {
         ImGui.begin("Scene", ImGuiWindowFlags.NoMove);
         String[] names = new String[sceneNames.size()];
-        if (ImGui.combo("Select scene", sceneID, sceneNames.toArray(names))) {
-            Renderer.resetAccFrames();
-        }
+        if (ImGui.combo("Select scene", sceneID, sceneNames.toArray(names))) Renderer.resetAccFrames();
         switch (sceneID.get()) {
             case 0: {
                 Renderer.setScene(scenes.get(0));

@@ -1,13 +1,10 @@
 package net.gavrix32.app.scenes;
 
-import net.gavrix32.engine.graphics.Camera;
+import net.gavrix32.engine.objects.Camera;
 import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.graphics.Scene;
-import net.gavrix32.engine.shapes.Box;
-import net.gavrix32.engine.shapes.Plane;
+import net.gavrix32.engine.objects.Box;
 import org.joml.Vector3f;
-
-import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
 
 public class RGBRoom {
     private final Scene scene;

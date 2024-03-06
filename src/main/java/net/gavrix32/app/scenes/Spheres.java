@@ -1,11 +1,10 @@
 package net.gavrix32.app.scenes;
 
-import net.gavrix32.engine.graphics.Camera;
+import net.gavrix32.engine.objects.Camera;
 import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.graphics.Scene;
-import net.gavrix32.engine.shapes.Box;
-import net.gavrix32.engine.shapes.Plane;
-import net.gavrix32.engine.shapes.Sphere;
+import net.gavrix32.engine.objects.Box;
+import net.gavrix32.engine.objects.Sphere;
 import org.joml.Vector3f;
 
 public class Spheres {

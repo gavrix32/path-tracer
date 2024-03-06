@@ -1,5 +1,6 @@
-package net.gavrix32.engine.graphics;
+package net.gavrix32.engine.objects;
 
+import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.utils.Logger;
 import net.gavrix32.engine.utils.Utils;
 import org.joml.Vector3f;
@@ -15,7 +16,7 @@ public class Sky {
     private Vector3f color;
     private Material material;
     private String path;
-    protected boolean hasTexture;
+    private boolean hasTexture;
     private int texture;
 
     public Sky() {
@@ -89,5 +90,9 @@ public class Sky {
         this.color.y = g;
         this.color.z = b;
         return this;
+    }
+
+    public boolean hasTexture() {
+        return hasTexture;
     }
 }

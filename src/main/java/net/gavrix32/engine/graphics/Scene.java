@@ -1,8 +1,6 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.shapes.Box;
-import net.gavrix32.engine.shapes.Plane;
-import net.gavrix32.engine.shapes.Sphere;
+import net.gavrix32.engine.objects.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;

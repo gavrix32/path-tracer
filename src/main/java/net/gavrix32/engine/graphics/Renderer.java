@@ -1,9 +1,11 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.gui.Editor;
+import net.gavrix32.engine.gui.GUI;
 import net.gavrix32.engine.gui.Viewport;
 import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
+import net.gavrix32.engine.objects.Camera;
+import net.gavrix32.engine.utils.Logger;
 import org.joml.Vector2f;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -23,12 +25,12 @@ public class Renderer {
     private static Scene scene;
     private static Shader quadShader;
     private static int accFrames = 0;
-    private static int samples = 1, bounces = 3;
+    private static int samples = 1, bounces = 3, fov = 90;
     private static boolean
             accumulation = true, frameMixing = true, randNoise = false, gammaCorrection = true, tonemapping = false,
             taa = true, showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
-    private static float gamma = 1.8f, exposure = 1.0f;
+    private static float gamma = 2.2f, exposure = 1.0f;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -57,29 +59,30 @@ public class Renderer {
             if (Input.getDeltaX() != 0 || Input.getDeltaY() != 0) Renderer.resetAccFrames();
         }
         quadShader.setMat4("view", scene.getCamera().getView());
-        quadShader.setVec3("u_camera_position", scene.getCamera().getPos());
-        if (Editor.status) {
+        quadShader.setVec3("camera_position", scene.getCamera().getPos());
+        if (GUI.status) {
             if (Viewport.getWidthDelta() != 0 || Viewport.getHeightDelta() != 0) resetAccFrames();
-            quadShader.setVec2("u_resolution", new Vector2f(Viewport.getWidth(), Viewport.getHeight()));
+            quadShader.setVec2("resolution", new Vector2f(Viewport.getWidth(), Viewport.getHeight()));
         } else {
-            quadShader.setVec2("u_resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
+            quadShader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
         }
-        quadShader.setFloat("u_time", (float) glfwGetTime());
-        quadShader.setFloat("u_acc_frames", accFrames);
-        quadShader.setInt("u_show_albedo", showAlbedo ? 1 : 0);
-        quadShader.setInt("u_show_normals", showNormals ? 1 : 0);
-        quadShader.setInt("u_show_depth", showDepth ? 1 : 0);
-        quadShader.setInt("u_samples", samples);
-        quadShader.setInt("u_bounces", bounces);
-        quadShader.setInt("u_random_noise", randNoise ? 1 : 0);
-        quadShader.setInt("u_reproj", frameMixing ? 1 : 0);
+        quadShader.setFloat("time", (float) glfwGetTime());
+        quadShader.setFloat("acc_frames", accFrames);
+        quadShader.setInt("show_albedo", showAlbedo ? 1 : 0);
+        quadShader.setInt("show_normals", showNormals ? 1 : 0);
+        quadShader.setInt("show_depth", showDepth ? 1 : 0);
+        quadShader.setInt("samples", samples);
+        quadShader.setInt("bounces", bounces);
+        quadShader.setInt("fov", fov);
+        quadShader.setInt("random_noise", randNoise ? 1 : 0);
+        quadShader.setInt("frame_mixing", frameMixing ? 1 : 0);
         quadShader.setInt("taa", taa ? 1 : 0);
-        quadShader.setFloat("u_gamma", gamma);
-        quadShader.setInt("u_gamma_correction", gammaCorrection ? 1 : 0);
+        quadShader.setFloat("gamma", gamma);
+        quadShader.setInt("gamma_correction", gammaCorrection ? 1 : 0);
         quadShader.setInt("tonemapping", tonemapping ? 1 : 0);
         quadShader.setFloat("exposure", exposure);
-        quadShader.setInt("sky_has_texture", scene.getSky().hasTexture ? 1 : 0);
-        if (scene.getSky().hasTexture) {
+        quadShader.setInt("sky_has_texture", scene.getSky().hasTexture() ? 1 : 0);
+        if (scene.getSky().hasTexture()) {
             scene.getSky().bindTexture();
             quadShader.setInt("sky_texture", 0);
 
@@ -108,7 +111,7 @@ public class Renderer {
             quadShader.setInt("plane.exists", 0);
         }
         // Spheres
-        quadShader.setInt("u_spheres_count", scene.getSpheres().size());
+        quadShader.setInt("spheres_count", scene.getSpheres().size());
         for (int i = 0; i < scene.getSpheres().size(); i++) {
             quadShader.setVec3("spheres[" + i + "].position", scene.getSpheres().get(i).getPos());
             quadShader.setFloat("spheres[" + i + "].radius", scene.getSpheres().get(i).getRadius());
@@ -119,7 +122,7 @@ public class Renderer {
             quadShader.setFloat("spheres[" + i + "].material.IOR", scene.getSpheres().get(i).getMaterial().getIOR());
         }
         // Boxes
-        quadShader.setInt("u_boxes_count", scene.getBoxes().size());
+        quadShader.setInt("boxes_count", scene.getBoxes().size());
         for (int i = 0; i < scene.getBoxes().size(); i++) {
             quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes().get(i).getPos());
             quadShader.setVec3("boxes[" + i + "].rotation", scene.getBoxes().get(i).getRot());
@@ -132,7 +135,7 @@ public class Renderer {
         }
         if (accumulation || frameMixing) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
         if (accFrames == 0 && !frameMixing) resetAccTexture();
-        if (!Editor.status) glViewport(0, 0, Window.getWidth(), Window.getHeight());
+        if (!GUI.status) glViewport(0, 0, Window.getWidth(), Window.getHeight());
         Viewport.bindFramebuffer();
         scene.getSky().bindTexture();
         glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
@@ -155,6 +158,14 @@ public class Renderer {
 
     public static void setBounces(int bounces) {
         Renderer.bounces = bounces;
+    }
+
+    public static int getFOV() {
+        return Renderer.fov;
+    }
+
+    public static void setFOV(int fov) {
+        Renderer.fov = fov;
     }
 
     public static void useAccumulation(boolean value) {
