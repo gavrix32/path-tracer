@@ -1,8 +1,8 @@
 package net.gavrix32.app;
 
 import net.gavrix32.engine.Engine;
-import net.gavrix32.engine.editor.Editor;
-import net.gavrix32.engine.editor.Viewport;
+import net.gavrix32.engine.gui.Editor;
+import net.gavrix32.engine.gui.Viewport;
 import net.gavrix32.engine.graphics.Camera;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.io.Input;

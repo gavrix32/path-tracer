@@ -1,4 +1,4 @@
-package net.gavrix32.engine.editor;
+package net.gavrix32.engine.gui;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiWindowFlags;

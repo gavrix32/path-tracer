@@ -1,4 +1,4 @@
-package net.gavrix32.engine.editor;
+package net.gavrix32.engine.gui;
 
 import imgui.ImGui;
 import imgui.ImVec2;
@@ -9,7 +9,13 @@ import net.gavrix32.engine.io.Window;
 import static org.lwjgl.opengl.GL30C.*;
 
 public class Viewport {
-    private static int frameBuffer, viewportTexture, renderBuffer, width, height, widthDelta, heightDelta;
+    private static final int frameBuffer;
+    private static final int viewportTexture;
+    private static final int renderBuffer;
+    private static int width;
+    private static int height;
+    private static int widthDelta;
+    private static int heightDelta;
     private static boolean cursorInViewport;
 
     static {

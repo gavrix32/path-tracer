@@ -1,4 +1,4 @@
-#version 460 core
+#version 420 core
 
 out vec4 out_color;
 
@@ -7,48 +7,57 @@ struct Ray {
 };
 
 struct Material {
-    float emission, roughness;
-    bool isMetal;
+    vec3 color;
+    bool is_metal;
+    float emission;
+    float roughness;
+    float IOR;
 };
 
 struct Sphere {
     vec3 position;
     float radius;
-    vec3 color;
     Material material;
 };
 
 struct Box {
-    vec3 position, rotation, scale, color;
+    vec3 position, rotation, scale;
     Material material;
 };
 
 struct Sky {
-    vec3 color;
+    Material material;
+};
+
+struct Plane {
+    bool exists;
+    bool checkerboard;
+    vec3 color1, color2;
     Material material;
 };
 
 #define PI 3.14159
+#define EPSILON 0.001
 #define MAX_DISTANCE 999999999
 #define MAX_SPHERES 50
 #define MAX_BOXES 50
 
 uniform vec2 u_resolution;
-uniform vec3 u_camera_position, u_plane_color;
+uniform vec3 u_camera_position;
 uniform mat4 view;
 uniform int u_samples, u_bounces, taa, u_random_noise, u_gamma_correction, tonemapping, u_reproj,
             u_show_albedo, u_show_depth, u_show_normals, sky_has_texture,
             u_spheres_count, u_boxes_count, u_plane, u_plane_checkerboard, u_plane_is_dielectric;
 uniform sampler2D sky_texture;
-uniform float u_acc_frames, u_time, u_gamma, u_plane_emission, u_plane_roughness, exposure;
+uniform float u_acc_frames, u_time, u_gamma, exposure;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
 uniform Sky sky;
+uniform Plane plane;
 
 layout(binding = 0, rgba32f) uniform image2D frame_image;
 
 uint seed = 0;
-float minD;
 
 // source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
 uint pcg_hash(uint seed) {
@@ -77,7 +86,7 @@ void update_seed() {
     seed = pcg_hash(seed + uint(u_time * 1000));
 }
 
-float plane(Ray ray, vec4 p) {
+float infinite_plane(Ray ray, vec4 p) {
     return -(dot(ray.origin, p.xyz) + p.w) / dot(ray.dir, p.xyz);
 }
 
@@ -140,14 +149,17 @@ vec3 triangle(in vec3 ro, in vec3 rd, in vec3 v0, in vec3 v1, in vec3 v2) {
 bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance, out Material material) {
     bool hit = false;
     float dist, minDist = MAX_DISTANCE;
-    if (u_plane == 1) {
-        dist = plane(ray, vec4(0, 1, 0, 0));
+    if (plane.exists) {
+        dist = infinite_plane(ray, vec4(0, 1, 0, 0));
         if (dist > 0 && dist < minDist) {
-            material.emission = u_plane_emission;
-            material.roughness = u_plane_roughness;
             hit = true;
             minDist = dist;
-            col = u_plane_checkerboard == 1 ? vec3(u_plane_color * checkerboard(vec3(ray.dir * dist + ray.origin).xz * (0.06))) : u_plane_color;
+            material = plane.material;
+            float cb = checkerboard(vec3(ray.dir * dist + ray.origin).xz * (0.06));
+            if (vec3(plane.color1 * cb) != vec3(0))
+                col = plane.color1;
+            else
+                col = plane.color2;
             normal = vec3(0, 1, 0);
         }
     }
@@ -156,7 +168,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
         if (dist > 0 && dist < minDist) {
             hit = true;
             minDist = dist;
-            col = spheres[i].color;
+            col = spheres[i].material.color;
             material = spheres[i].material;
             normal = normalize(ray.origin + ray.dir * dist - spheres[i].position);
         }
@@ -167,7 +179,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
         if (dist > 0 && dist < minDist) {
             hit = true;
             minDist = dist;
-            col = boxes[i].color;
+            col = boxes[i].material.color;
             material = boxes[i].material;
             normal = normalize(norm);
         }
@@ -180,7 +192,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
                 col = texture(sky_texture, uv_).rgb;
                 break;
             case 0:
-                col = sky.color;;
+                col = sky.material.color;
                 break;
         }
         material = sky.material;
@@ -190,15 +202,16 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
     return hit;
 }
 
-vec3 brdf(vec3 dir, vec3 normal, Material material) {
+Ray brdf(Ray ray, vec3 normal, Material material, float minIt) {
     vec3 diffused = random_cosine_weighted_hemisphere(normal);
-    vec3 reflected = reflect(dir, normal);
-    if (material.isMetal) {
-        dir = mix(reflected, diffused, material.roughness);
+    vec3 reflected = reflect(ray.dir, normal);
+    vec3 refracted = refract(ray.dir, normal, material.IOR);
+    if (material.is_metal) {
+        ray.dir = mix(reflected, diffused, material.roughness);
     } else {
-        dir = mix(reflected, diffused, random() < material.roughness ? 1 : 0);
+        ray.dir = mix(reflected, diffused, random() < material.roughness ? 1 : 0);
     }
-    return dir;
+    return ray;
 }
 
 vec3 raytrace(Ray ray) {
@@ -208,9 +221,13 @@ vec3 raytrace(Ray ray) {
         vec3 color, normal;
         float minIt;
         if (raycast(ray, color, normal, minIt, material)) {
-            minD = minIt;
-            ray.origin += ray.dir * (minIt - 0.001);
-            ray.dir = brdf(ray.dir, normal, material);
+            /*if (material.roughness < 1) {
+                ray.origin += ray.dir * (minIt + EPSILON);
+            } else {
+                ray.origin += ray.dir * (minIt - EPSILON);
+            }*/
+            ray.origin += ray.dir * (minIt - EPSILON);
+            ray = brdf(ray, normal, material, minIt);
             energy *= color;
             if (material.emission > 0) return energy * material.emission;
         }
@@ -253,8 +270,6 @@ void main() {
         color += raytrace(ray);
     }
     color /= u_samples;
-
-    vec3 hitpos = ray.origin + ray.dir * minD;
 
     if (u_show_depth == 1 || u_show_albedo == 1 || u_show_normals == 1) {
         vec3 n;

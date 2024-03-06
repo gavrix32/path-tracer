@@ -21,13 +21,13 @@ public class Sky {
     public Sky() {
         color = new Vector3f(0);
         hasTexture = false;
-        material = new Material(0, 1, false);
+        material = new Material(false, 0, 1, 1);
     }
 
     public Sky(Vector3f color) {
         this.color = color;
         hasTexture = false;
-        material = new Material(1, 1, false);
+        material = new Material(false, 1, 1, 1);
     }
 
     public Sky(String path) {
@@ -35,8 +35,8 @@ public class Sky {
         texture = glGenTextures();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         int[] width = new int[1], height = new int[1];
         byte[] bytes = Utils.loadBytes(path);
         ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
@@ -49,7 +49,7 @@ public class Sky {
         glBindTexture(GL_TEXTURE_2D, 0);
         color = new Vector3f(0);
         hasTexture = true;
-        material = new Material(1, 1, false);
+        material = new Material(false, 1, 1, 1);
     }
 
     public void bindTexture() {
@@ -68,10 +68,11 @@ public class Sky {
         this.material = material;
     }
 
-    public void setMaterial(float emission, float roughness, boolean isMetal) {
+    public void setMaterial(boolean isMetal, float emission, float roughness, float IOR) {
+        this.material.setMetal(isMetal);
         this.material.setEmission(emission);
         this.material.setRoughness(roughness);
-        this.material.setMetal(isMetal);
+        this.material.setIOR(IOR);
     }
 
     public Vector3f getColor() {

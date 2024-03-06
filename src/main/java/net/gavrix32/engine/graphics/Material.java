@@ -1,13 +1,24 @@
 package net.gavrix32.engine.graphics;
 
 public class Material {
-    private float emission, roughness;
     private boolean isMetal;
+    private float emission;
+    private float roughness;
+    private float IOR; // Index Of Refraction
 
-    public Material(float emission, float roughness, boolean isMetal) {
+    public Material(boolean isMetal, float emission, float roughness, float IOR) {
+        this.isMetal = isMetal;
         this.emission = emission;
         this.roughness = roughness;
-        this.isMetal = isMetal;
+        this.IOR = IOR;
+    }
+
+    public boolean isMetal() {
+        return isMetal;
+    }
+
+    public void setMetal(boolean metal) {
+        isMetal = metal;
     }
 
     public float getEmission() {
@@ -26,11 +37,11 @@ public class Material {
         this.roughness = roughness;
     }
 
-    public boolean isMetal() {
-        return isMetal;
+    public float getIOR() {
+        return IOR;
     }
 
-    public void setMetal(boolean metal) {
-        isMetal = metal;
+    public void setIOR(float ior) {
+        this.IOR = ior;
     }
 }

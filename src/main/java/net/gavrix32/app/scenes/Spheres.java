@@ -9,7 +9,7 @@ import net.gavrix32.engine.shapes.Sphere;
 import org.joml.Vector3f;
 
 public class Spheres {
-    private Scene scene;
+    private final Scene scene;
 
     public Spheres() {
         scene = new Scene();
@@ -19,7 +19,7 @@ public class Spheres {
                 new Vector3f(),
                 new Vector3f(),
                 new Vector3f(1),
-                new Material(0, 1, true),
+                new Material(true, 0, 1, 1),
                 new Vector3f(250, 0, 100)
         ));
         scene.addSpheres(
@@ -27,17 +27,17 @@ public class Spheres {
                         new Vector3f(-120, 50, 0),
                         new Vector3f(0, 0, 0),
                         new Vector3f(1),
-                        new Material(0, 1, true), 50),
+                        new Material(true, 0, 1, 1), 50),
                 new Sphere(
                         new Vector3f(0, 50, 0),
                         new Vector3f(0, 0, 0),
                         new Vector3f(1),
-                        new Material(0, 0.3f, true), 50),
+                        new Material(true, 0, 0.3f, 1), 50),
                 new Sphere(
                         new Vector3f(120, 50, 0),
                         new Vector3f(0, 0, 0),
                         new Vector3f(1),
-                        new Material(0, 0, true), 50)
+                        new Material(true, 0, 0, 1), 50)
         );
     }
     public Scene getScene() {

@@ -1,14 +1,10 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.editor.Editor;
-import net.gavrix32.engine.editor.Viewport;
+import net.gavrix32.engine.gui.Editor;
+import net.gavrix32.engine.gui.Viewport;
 import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.shapes.Plane;
-import net.gavrix32.engine.utils.Logger;
 import org.joml.Vector2f;
-
-import java.util.Objects;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
@@ -88,31 +84,39 @@ public class Renderer {
             quadShader.setInt("sky_texture", 0);
 
         } else {
-            quadShader.setVec3("sky.color", scene.getSky().getColor());
+            quadShader.setVec3("sky.material.color", scene.getSky().getColor());
         }
+        quadShader.setFloat("sky.material.is_metal", scene.getSky().getMaterial().isMetal() ? 1 : 0);
         quadShader.setFloat("sky.material.emission", scene.getSky().getMaterial().getEmission());
         quadShader.setFloat("sky.material.roughness", scene.getSky().getMaterial().getRoughness());
-        quadShader.setFloat("sky.material.isMetal", scene.getSky().getMaterial().isMetal() ? 1 : 0);
+        quadShader.setFloat("sky.material.IOR", scene.getSky().getMaterial().getIOR());
         // Plane
         if (scene.getPlane() != null) {
-            quadShader.setInt("u_plane", 1);
-            quadShader.setVec3("u_plane_color", scene.getPlane().getColor());
-            quadShader.setFloat("u_plane_emission", scene.getPlane().getMaterial().getEmission());
-            quadShader.setFloat("u_plane_roughness", scene.getPlane().getMaterial().getRoughness());
-            quadShader.setFloat("u_plane_is_dielectric", scene.getPlane().getMaterial().isMetal() ? 1 : 0);
-            quadShader.setInt("u_plane_checkerboard", scene.getPlane().isCheckerBoard() ? 1 : 0);
+            quadShader.setInt("plane.exists", 1);
+            quadShader.setInt("plane.checkerboard", scene.getPlane().isCheckerBoard() ? 1 : 0);
+            if (scene.getPlane().isCheckerBoard()) {
+                quadShader.setVec3("plane.color1", scene.getPlane().getColor1());
+                quadShader.setVec3("plane.color2", scene.getPlane().getColor2());
+            } else {
+                quadShader.setVec3("plane.material.color", scene.getPlane().getColor());
+            }
+            quadShader.setFloat("plane.material.emission", scene.getPlane().getMaterial().getEmission());
+            quadShader.setFloat("plane.material.roughness", scene.getPlane().getMaterial().getRoughness());
+            quadShader.setFloat("plane.material.IOR", scene.getPlane().getMaterial().getIOR());
+            quadShader.setFloat("plane.material.is_metal", scene.getPlane().getMaterial().isMetal() ? 1 : 0);
         } else {
-            quadShader.setInt("u_plane", 0);
+            quadShader.setInt("plane.exists", 0);
         }
         // Spheres
         quadShader.setInt("u_spheres_count", scene.getSpheres().size());
         for (int i = 0; i < scene.getSpheres().size(); i++) {
             quadShader.setVec3("spheres[" + i + "].position", scene.getSpheres().get(i).getPos());
             quadShader.setFloat("spheres[" + i + "].radius", scene.getSpheres().get(i).getRadius());
-            quadShader.setVec3("spheres[" + i + "].color", scene.getSpheres().get(i).getColor());
+            quadShader.setVec3("spheres[" + i + "].material.color", scene.getSpheres().get(i).getColor());
+            quadShader.setFloat("spheres[" + i + "].material.is_metal", scene.getSpheres().get(i).getMaterial().isMetal() ? 1 : 0);
             quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres().get(i).getMaterial().getEmission());
             quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres().get(i).getMaterial().getRoughness());
-            quadShader.setFloat("spheres[" + i + "].material.isMetal", scene.getSpheres().get(i).getMaterial().isMetal() ? 1 : 0);
+            quadShader.setFloat("spheres[" + i + "].material.IOR", scene.getSpheres().get(i).getMaterial().getIOR());
         }
         // Boxes
         quadShader.setInt("u_boxes_count", scene.getBoxes().size());
@@ -120,10 +124,11 @@ public class Renderer {
             quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes().get(i).getPos());
             quadShader.setVec3("boxes[" + i + "].rotation", scene.getBoxes().get(i).getRot());
             quadShader.setVec3("boxes[" + i + "].scale", scene.getBoxes().get(i).getScale());
-            quadShader.setVec3("boxes[" + i + "].color", scene.getBoxes().get(i).getColor());
+            quadShader.setVec3("boxes[" + i + "].material.color", scene.getBoxes().get(i).getColor());
+            quadShader.setFloat("boxes[" + i + "].material.is_metal", scene.getBoxes().get(i).getMaterial().isMetal() ? 1 : 0);
             quadShader.setFloat("boxes[" + i + "].material.emission", scene.getBoxes().get(i).getMaterial().getEmission());
             quadShader.setFloat("boxes[" + i + "].material.roughness", scene.getBoxes().get(i).getMaterial().getRoughness());
-            quadShader.setFloat("boxes[" + i + "].material.isMetal", scene.getBoxes().get(i).getMaterial().isMetal() ? 1 : 0);
+            quadShader.setFloat("boxes[" + i + "].material.IOR", scene.getBoxes().get(i).getMaterial().getIOR());
         }
         if (accumulation || frameMixing) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
         if (accFrames == 0 && !frameMixing) resetAccTexture();

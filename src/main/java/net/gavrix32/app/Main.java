@@ -3,18 +3,15 @@ package net.gavrix32.app;
 import net.gavrix32.app.scenes.*;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.IApp;
-import net.gavrix32.engine.editor.Editor;
+import net.gavrix32.engine.gui.Editor;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
-import org.lwjgl.opengl.GLUtil;
 
 import java.util.ArrayList;
 
-import static org.lwjgl.stb.STBImage.stbi_set_flip_vertically_on_load;
-
 public class Main implements IApp {
-    private ArrayList<Scene> scenes = new ArrayList<>();
-    private ArrayList<String> names = new ArrayList<>();
+    private final ArrayList<Scene> scenes = new ArrayList<>();
+    private final ArrayList<String> names = new ArrayList<>();
     private CornellBox cornellBox;
     private RGBRoom rgbRoom;
     private RGBSpheres rgbSpheres;

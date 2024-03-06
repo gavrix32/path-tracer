@@ -13,7 +13,7 @@ public class Sphere extends Shape {
     }
 
     public Sphere() {
-        super(new Vector3f(), new Vector3f(), new Vector3f(1), new Material(0, 1, true));
+        super(new Vector3f(), new Vector3f(), new Vector3f(1), new Material(true, 0, 1, 1));
         this.radius = 10;
     }
 

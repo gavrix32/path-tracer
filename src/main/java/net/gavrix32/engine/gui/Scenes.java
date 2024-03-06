@@ -1,4 +1,4 @@
-package net.gavrix32.engine.editor;
+package net.gavrix32.engine.gui;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiWindowFlags;
@@ -7,12 +7,14 @@ import imgui.type.ImInt;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.shapes.Box;
+import net.gavrix32.engine.shapes.Plane;
 import net.gavrix32.engine.shapes.Sphere;
+import net.gavrix32.engine.utils.Logger;
 
 import java.util.ArrayList;
 
 public class Scenes {
-    private static ImInt sceneID = new ImInt();
+    private static final ImInt sceneID = new ImInt(3);
 
     protected static void update(ArrayList<Scene> scenes, ArrayList<String> sceneNames) {
         ImGui.begin("Scene", ImGuiWindowFlags.NoMove);
@@ -59,26 +61,93 @@ public class Scenes {
             };
             float[] emission = new float[] {scene.getSky().getMaterial().getEmission()};
             float[] roughness = new float[] {scene.getSky().getMaterial().getRoughness()};
+            float[] IOR = new float[] {scene.getSky().getMaterial().getIOR()};
             ImBoolean isMetal = new ImBoolean(scene.getSky().getMaterial().isMetal());
 
+            if (ImGui.checkbox("isMetal", isMetal)) {
+                Renderer.resetAccFrames();
+                scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
+            }
             if (ImGui.colorEdit3("Color", color)) {
                 Renderer.resetAccFrames();
                 scene.getSky().setColor(color[0], color[1], color[2]);
             }
             if (ImGui.dragFloat("Emission", emission, 0.01f, 0, 9999, "%.2f")) {
                 Renderer.resetAccFrames();
-                scene.getSky().setMaterial(emission[0], roughness[0], isMetal.get());
+                scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
             }
             if (ImGui.sliderFloat("Roughness", roughness, 0, 1, "%.2f")) {
                 Renderer.resetAccFrames();
-                scene.getSky().setMaterial(emission[0], roughness[0], isMetal.get());
+                scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
             }
-            if (ImGui.checkbox("isMetal", isMetal)) {
+            if (ImGui.sliderFloat("IOR", IOR, 0, 1, "%.2f")) {
                 Renderer.resetAccFrames();
-                scene.getSky().setMaterial(emission[0], roughness[0], isMetal.get());
+                scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
             }
             ImGui.treePop();
         }
+        if (scene.getPlane() != null) {
+            if (ImGui.treeNode("Plane")) {
+                float[] color = new float[] {
+                        scene.getPlane().getColor().x,
+                        scene.getPlane().getColor().y,
+                        scene.getPlane().getColor().z
+                };
+                float[] color1 = new float[] {
+                        scene.getPlane().getColor1().x,
+                        scene.getPlane().getColor1().y,
+                        scene.getPlane().getColor1().z
+                };
+                float[] color2 = new float[] {
+                        scene.getPlane().getColor2().x,
+                        scene.getPlane().getColor2().y,
+                        scene.getPlane().getColor2().z
+                };
+                float[] emission = new float[] {scene.getPlane().getMaterial().getEmission()};
+                float[] roughness = new float[] {scene.getPlane().getMaterial().getRoughness()};
+                float[] IOR = new float[] {scene.getPlane().getMaterial().getIOR()};
+                ImBoolean isMetal = new ImBoolean(scene.getPlane().getMaterial().isMetal());
+                ImBoolean checkerBoard = new ImBoolean(scene.getPlane().isCheckerBoard());
+
+                if (ImGui.checkbox("isMetal", isMetal)) {
+                    Renderer.resetAccFrames();
+                    scene.getPlane().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
+                }
+                if (checkerBoard.get()) {
+                    if (ImGui.colorEdit3("Color 1", color1)) {
+                        Renderer.resetAccFrames();
+                        scene.getPlane().setColor1(color1[0], color1[1], color1[2]);
+                    }
+                    if (ImGui.colorEdit3("Color 2", color2)) {
+                        Renderer.resetAccFrames();
+                        scene.getPlane().setColor2(color2[0], color2[1], color2[2]);
+                    }
+                } else {
+                    if (ImGui.colorEdit3("Color", color)) {
+                        Renderer.resetAccFrames();
+                        scene.getPlane().setColor(color[0], color[1], color[2]);
+                    }
+                }
+                if (ImGui.dragFloat("Emission", emission, 0.01f, 0, 9999, "%.2f")) {
+                    Renderer.resetAccFrames();
+                    scene.getPlane().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
+                }
+                if (ImGui.sliderFloat("Roughness", roughness, 0, 1, "%.2f")) {
+                    Renderer.resetAccFrames();
+                    scene.getPlane().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
+                }
+                if (ImGui.sliderFloat("IOR", IOR, 0, 1, "%.2f")) {
+                    Renderer.resetAccFrames();
+                    scene.getPlane().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
+                }
+                if (ImGui.button("Remove")) {
+                    Renderer.resetAccFrames();
+                    scene.setPlane(null);
+                }
+                ImGui.treePop();
+            }
+        }
+
         if (ImGui.treeNode("Boxes")) {
             for (int i = 0; i < scene.getBoxes().size(); i++) {
                 float[] color = new float[] {
@@ -86,9 +155,10 @@ public class Scenes {
                         scene.getBox(i).getColor().y,
                         scene.getBox(i).getColor().z
                 };
+                ImBoolean isMetal = new ImBoolean(scene.getBox(i).getMaterial().isMetal());
                 float[] emission = new float[] {scene.getBox(i).getMaterial().getEmission()};
                 float[] roughness = new float[] {scene.getBox(i).getMaterial().getRoughness()};
-                ImBoolean isMetal = new ImBoolean(scene.getBox(i).getMaterial().isMetal());
+                float[] IOR = new float[] {scene.getBox(i).getMaterial().getIOR()};
                 float[] position = new float[] {
                         scene.getBox(i).getPos().x,
                         scene.getBox(i).getPos().y,
@@ -105,17 +175,21 @@ public class Scenes {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setColor(color[0], color[1], color[2]);
                 }
+                if (ImGui.checkbox("isMetal", isMetal)) {
+                    Renderer.resetAccFrames();
+                    scene.getBox(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
+                }
                 if (ImGui.dragFloat("Emission", emission, 0.01f, 0, 9999, "%.2f")) {
                     Renderer.resetAccFrames();
-                    scene.getBox(i).setMaterial(emission[0], roughness[0], isMetal.get());
+                    scene.getBox(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
                 }
                 if (ImGui.sliderFloat("Roughness", roughness, 0, 1, "%.2f")) {
                     Renderer.resetAccFrames();
-                    scene.getBox(i).setMaterial(emission[0], roughness[0], isMetal.get());
+                    scene.getBox(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
                 }
-                if (ImGui.checkbox("isMetal", isMetal)) {
+                if (ImGui.sliderFloat("IOR", IOR, 0, 1, "%.2f")) {
                     Renderer.resetAccFrames();
-                    scene.getBox(i).setMaterial(emission[0], roughness[0], isMetal.get());
+                    scene.getBox(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
                 }
                 if (ImGui.dragFloat3("Position", position)) {
                     Renderer.resetAccFrames();
@@ -141,9 +215,10 @@ public class Scenes {
                         scene.getSphere(i).getColor().y,
                         scene.getSphere(i).getColor().z
                 };
+                ImBoolean isMetal = new ImBoolean(scene.getSphere(i).getMaterial().isMetal());
                 float[] emission = new float[] {scene.getSphere(i).getMaterial().getEmission()};
                 float[] roughness = new float[] {scene.getSphere(i).getMaterial().getRoughness()};
-                ImBoolean isMetal = new ImBoolean(scene.getSphere(i).getMaterial().isMetal());
+                float[] IOR = new float[] {scene.getSphere(i).getMaterial().getIOR()};
                 float[] position = new float[] {
                         scene.getSphere(i).getPos().x,
                         scene.getSphere(i).getPos().y,
@@ -156,17 +231,21 @@ public class Scenes {
                     Renderer.resetAccFrames();
                     scene.getSphere(i).setColor(color[0], color[1], color[2]);
                 }
+                if (ImGui.checkbox("isMetal", isMetal)) {
+                    Renderer.resetAccFrames();
+                    scene.getSphere(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
+                }
                 if (ImGui.dragFloat("Emission", emission, 0.01f, 0, 9999, "%.2f")) {
                     Renderer.resetAccFrames();
-                    scene.getSphere(i).setMaterial(emission[0], roughness[0], isMetal.get());
+                    scene.getSphere(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
                 }
                 if (ImGui.sliderFloat("Roughness", roughness, 0, 1, "%.2f")) {
                     Renderer.resetAccFrames();
-                    scene.getSphere(i).setMaterial(emission[0], roughness[0], isMetal.get());
+                    scene.getSphere(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
                 }
-                if (ImGui.checkbox("isMetal", isMetal)) {
+                if (ImGui.sliderFloat("IOR", IOR, 0, 1, "%.2f")) {
                     Renderer.resetAccFrames();
-                    scene.getSphere(i).setMaterial(emission[0], roughness[0], isMetal.get());
+                    scene.getSphere(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0]);
                 }
                 if (ImGui.dragFloat3("Position", position)) {
                     Renderer.resetAccFrames();
@@ -193,6 +272,13 @@ public class Scenes {
         if (ImGui.button("Add Sphere")) {
             scene.addSpheres(new Sphere());
             Renderer.resetAccFrames();
+        }
+        if (scene.getPlane() == null) {
+            ImGui.sameLine();
+            if (ImGui.button("Add Plane")) {
+                scene.setPlane(new Plane());
+                Renderer.resetAccFrames();
+            }
         }
     }
 }

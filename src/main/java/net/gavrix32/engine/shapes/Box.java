@@ -13,7 +13,7 @@ public class Box extends Shape {
     }
 
     public Box() {
-        super(new Vector3f(), new Vector3f(), new Vector3f(1), new Material(0, 1, true));
+        super(new Vector3f(), new Vector3f(), new Vector3f(1), new Material(true, 0, 1, 1));
         this.scale = new Vector3f(10);
     }
 

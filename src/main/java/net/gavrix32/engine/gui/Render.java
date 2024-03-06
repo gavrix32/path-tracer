@@ -1,4 +1,4 @@
-package net.gavrix32.engine.editor;
+package net.gavrix32.engine.gui;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiWindowFlags;
@@ -67,7 +67,7 @@ public class Render {
             ImGui.sliderFloat("Exposure", exposure, 0, 5, "%.1f");
         }
         if (ImGui.checkbox("Temporal mixing", reproj)) Renderer.useFrameMixing(reproj.get());
-        if (ImGui.checkbox("Random Noise", randNoise)) Renderer.useRandomNoise(randNoise.get());;
+        if (ImGui.checkbox("Random Noise", randNoise)) Renderer.useRandomNoise(randNoise.get());
         if (ImGui.checkbox("Show Albedo", showAlbedo)) Renderer.showAlbedo(showAlbedo.get());
         if (ImGui.checkbox("Show Normals", showNormals)) Renderer.showNormals(showNormals.get());
         if (ImGui.checkbox("Show Depth", showDepth)) Renderer.showDepth(showDepth.get());

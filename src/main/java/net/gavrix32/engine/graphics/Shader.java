@@ -10,7 +10,7 @@ import org.joml.Vector4f;
 import static org.lwjgl.opengl.GL20.*;
 
 public class Shader {
-    private int program;
+    private final int program;
 
     public Shader(String vertexPath, String fragmentPath) {
         int vertex = glCreateShader(GL_VERTEX_SHADER);
