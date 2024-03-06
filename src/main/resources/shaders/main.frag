@@ -155,11 +155,13 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
             hit = true;
             minDist = dist;
             material = plane.material;
-            float cb = checkerboard(vec3(ray.dir * dist + ray.origin).xz * (0.06));
-            if (vec3(plane.color1 * cb) != vec3(0))
+            if (plane.checkerboard) {
+                float cb = checkerboard(vec3(ray.dir * dist + ray.origin).xz * (0.06));
+                if (vec3(plane.color1 * cb) != vec3(0))
                 col = plane.color1;
-            else
+                else
                 col = plane.color2;
+            } else col = plane.material.color;
             normal = vec3(0, 1, 0);
         }
     }

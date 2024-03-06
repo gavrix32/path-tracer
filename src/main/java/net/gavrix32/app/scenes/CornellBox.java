@@ -15,7 +15,7 @@ public class CornellBox {
         scene = new Scene();
         scene.setCamera(new Camera().setPos(50, 100, -99));
         // scene.setSky("textures/sky/quarry_cloudy_4k.hdr");
-        scene.setPlane(new Plane());
+        scene.setPlane(new Plane(true));
         scene.addBoxes(
                 new Box(new Vector3f(50, 100, 200), // Front wall
                         new Vector3f(0, 0, 0),

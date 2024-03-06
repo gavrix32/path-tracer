@@ -12,7 +12,7 @@ public class Liminal {
     public Liminal() {
         scene = new Scene();
         scene.setCamera(new Camera().setPos(0, 100, 50));
-        scene.setPlane(new Plane());
+        scene.setPlane(new Plane(true));
         scene.addBoxes(
                 new Box(new Vector3f(0, 200, 10000), // Roof
                         new Vector3f(),

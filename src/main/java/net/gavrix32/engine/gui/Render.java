@@ -15,7 +15,7 @@ public class Render {
             bounces = new int[] {3},
             fov = new int[] {70};
 
-    private static final float[] gamma = new float[] {1.8f}, exposure = new float[] {1};
+    private static final float[] gamma = new float[] {2.2f}, exposure = new float[] {1};
 
     private static final ImBoolean
             accumulation = new ImBoolean(true),

@@ -18,7 +18,10 @@ public class SceneEditor {
     protected static void update(ArrayList<Scene> scenes, ArrayList<String> sceneNames) {
         ImGui.begin("Scene", ImGuiWindowFlags.NoMove);
         String[] names = new String[sceneNames.size()];
-        if (ImGui.combo("Select scene", sceneID, sceneNames.toArray(names))) Renderer.resetAccFrames();
+        if (ImGui.combo("Select scene", sceneID, sceneNames.toArray(names))) {
+            Renderer.resetAccFrames();
+            Renderer.resetAccTexture();
+        }
         switch (sceneID.get()) {
             case 0: {
                 Renderer.setScene(scenes.get(0));
@@ -273,7 +276,7 @@ public class SceneEditor {
         if (scene.getPlane() == null) {
             ImGui.sameLine();
             if (ImGui.button("Add Plane")) {
-                scene.setPlane(new Plane());
+                scene.setPlane(new Plane(true));
                 Renderer.resetAccFrames();
             }
         }

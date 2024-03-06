@@ -10,12 +10,12 @@ public class Plane {
     private Material material;
     private boolean checkerBoard;
 
-    public Plane() {
+    public Plane(boolean checkerBoard) {
         this.color = new Vector3f(1);
         this.color1 = new Vector3f(1);
         this.color2 = new Vector3f(0);
         this.material = new Material(false, 0, 1, 1);
-        this.checkerBoard = true;
+        this.checkerBoard = checkerBoard;
     }
 
     public Plane(Vector3f color, Material material) {

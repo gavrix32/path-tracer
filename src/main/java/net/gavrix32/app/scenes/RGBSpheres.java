@@ -3,6 +3,7 @@ package net.gavrix32.app.scenes;
 import net.gavrix32.engine.objects.Camera;
 import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.graphics.Scene;
+import net.gavrix32.engine.objects.Plane;
 import net.gavrix32.engine.objects.Sphere;
 import org.joml.Vector3f;
 
@@ -12,7 +13,7 @@ public class RGBSpheres {
     public RGBSpheres() {
         scene = new Scene();
         scene.setCamera(new Camera().setPos(50, 20, -80));
-        //scene.setPlane(new Plane(new Vector3f(1), new Material(false, 0, 1, 1), false));
+        scene.setPlane(new Plane(false));
         scene.addSpheres(
                 new Sphere(
                         new Vector3f(0, 20, 0),
