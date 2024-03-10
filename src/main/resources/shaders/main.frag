@@ -41,8 +41,8 @@ struct Plane {
 #define PI 3.14159
 #define EPSILON 0.001
 #define MAX_DISTANCE 999999999
-#define MAX_SPHERES 50
-#define MAX_BOXES 50
+#define MAX_SPHERES 32
+#define MAX_BOXES 32
 
 uniform vec2 resolution;
 uniform vec3 camera_position;
@@ -193,16 +193,35 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
     return hit;
 }
 
+float fresnel(vec3 dir, vec3 n, float ior) {
+    float cosi = dot(dir, n);
+    float etai = 1.0;
+    float etat = ior;
+    if (cosi > 0.0) {
+        float tmp = etai;
+        etai = etat;
+        etat = tmp;
+    }
+    float sint = etai / etat * sqrt(max(0.0, 1.0 - cosi * cosi));
+    if (sint >= 1.0) return 1.0;
+    float cost = sqrt(max(0.0, 1.0 - sint * sint));
+    cosi = abs(cosi);
+    float sqrtRs = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
+    float sqrtRp = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
+    return (sqrtRs * sqrtRs + sqrtRp * sqrtRp) / 2.0;
+}
+
 Ray brdf(Ray ray, vec3 normal, Material material, float minIt) {
     vec3 diffused = random_cosine_weighted_hemisphere(normal);
+    vec3 reflected = reflect(ray.dir, normal);
+    vec3 refracted = refract(ray.dir, normal, 1 / material.IOR);
     if (material.is_glass) {
-        vec3 refracted = refract(ray.dir, normal, 1 / material.IOR);
+        if (fresnel(ray.dir, normal, material.IOR) > random()) refracted = reflected;
         if (material.is_metal)
             ray.dir = mix(refracted, diffused, material.roughness > 0.5 ? 0.5 : material.roughness);
         else
             ray.dir = mix(refracted, diffused, random() < material.roughness ? 1 : 0);
     } else {
-        vec3 reflected = reflect(ray.dir, normal);
         if (material.is_metal)
             ray.dir = mix(reflected, diffused, material.roughness);
         else
@@ -237,19 +256,17 @@ vec3 post_process(vec3 col) {
 }
 
 void main() {
-    if (show_depth == 0 && show_albedo == 0 && show_normals == 0 && (acc_frames > 0 || random_noise == 1 || frame_mixing == 1)) {
+    if (show_depth == 0 && show_albedo == 0 && show_normals == 0 && (acc_frames > 0 || random_noise == 1 || frame_mixing == 1))
         update_seed();
-    } else {
+    else
         seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
-    }
 
     vec2 uv;
 
-    if (show_depth == 0 && show_albedo == 0 && show_normals == 0) {
+    if (show_depth == 0 && show_albedo == 0 && show_normals == 0)
         uv = (2 * gl_FragCoord.xy - resolution) / resolution.y;
-    } else {
+    else
         uv = (2 * gl_FragCoord.xy - resolution) / resolution.y;
-    }
 
     // TAA
     if (taa == 1) {
