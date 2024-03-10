@@ -19,17 +19,17 @@ public class RGBSpheres {
                         new Vector3f(0, 20, 0),
                         new Vector3f(0),
                         new Vector3f(1, 0, 0),
-                        new Material(true, 1, 1, 1), 20),
+                        new Material(true, 1, 1, 1, false), 20),
                 new Sphere(
                         new Vector3f(50, 20, 0),
                         new Vector3f(0),
                         new Vector3f(0, 1, 0),
-                        new Material(true, 1, 0, 1), 20),
+                        new Material(true, 1, 0, 1, false), 20),
                 new Sphere(
                         new Vector3f(100, 20, 0),
                         new Vector3f(0),
                         new Vector3f(0, 0, 1),
-                        new Material(true, 1, 1, 1), 20)
+                        new Material(true, 1, 1, 1, false), 20)
         );
     }
     public Scene getScene() {

@@ -11,6 +11,7 @@ struct Material {
     bool is_metal;
     float emission;
     float roughness;
+    bool is_glass;
     float IOR;
 };
 
@@ -21,7 +22,8 @@ struct Sphere {
 };
 
 struct Box {
-    vec3 position, rotation, scale;
+    vec3 position, scale;
+    mat4 rotation;
     Material material;
 };
 
@@ -44,7 +46,7 @@ struct Plane {
 
 uniform vec2 resolution;
 uniform vec3 camera_position;
-uniform mat4 view;
+uniform mat4 view, rot;
 uniform int samples, bounces, taa, random_noise, gamma_correction, tonemapping, frame_mixing,
             show_albedo, show_depth, show_normals, sky_has_texture, spheres_count, boxes_count,
             fov;
@@ -103,22 +105,9 @@ float sphere(Ray ray, vec3 ce, float ra) {
     return -b - sqrt(h);
 }
 
-/*mat4 rotation_axis_angle(vec3 v, float angle) {
-    float s = sin(angle);
-    float c = cos(angle);
-    float ic = 1.0 - c;
-    return mat4(v.x*v.x*ic + c,     v.y*v.x*ic - s*v.z, v.z*v.x*ic + s*v.y, 0.0,
-                v.x*v.y*ic + s*v.z, v.y*v.y*ic + c,     v.z*v.y*ic - s*v.x, 0.0,
-                v.x*v.z*ic - s*v.y, v.y*v.z*ic + s*v.x, v.z*v.z*ic + c,     0.0,
-                0.0,                0.0,                0.0,                1.0);
-}*/
-
-float box(in Ray ray, vec3 boxSize, out vec3 outNormal, vec3 rotation) {
-    /*mat4 rot = rotationAxisAngle(vec3(normalize(rotation.x), 0, 0), rotation.x)
-    * rotationAxisAngle(vec3(0, normalize(rotation.y), 0), rotation.y)
-    * rotationAxisAngle(vec3(0, 0, normalize(rotation.z)), rotation.z);*/
-    vec3 ro = (/*rot **/ vec4(ray.origin, 1)).xyz;
-    vec3 rd = (/*rot **/ vec4(ray.dir, 0)).xyz;
+float box(in Ray ray, vec3 boxSize, out vec3 outNormal, mat4 rotation) {
+    vec3 ro = (rotation * vec4(ray.origin, 1)).xyz;
+    vec3 rd = (rotation * vec4(ray.dir, 0)).xyz;
     vec3 m = 1 / rd;
     vec3 n = m * ro;
     vec3 k = abs(m) * boxSize;
@@ -128,7 +117,7 @@ float box(in Ray ray, vec3 boxSize, out vec3 outNormal, vec3 rotation) {
     float tF = min(min(t2.x, t2.y), t2.z);
     if(tN > tF || tF < 0) return -1;
     outNormal = (tN > 0) ? step(vec3(tN), t1) : step(t2, vec3(tF));
-    outNormal *= -sign(rd);
+    outNormal *= -sign(ray.dir);
     return tN;
 }
 
@@ -154,7 +143,6 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
         if (dist > 0 && dist < minDist) {
             hit = true;
             minDist = dist;
-            material = plane.material;
             if (plane.checkerboard) {
                 float cb = checkerboard(vec3(ray.dir * dist + ray.origin).xz * (0.06));
                 if (vec3(plane.color1 * cb) != vec3(0))
@@ -162,6 +150,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
                 else
                 col = plane.color2;
             } else col = plane.material.color;
+            material = plane.material;
             normal = vec3(0, 1, 0);
         }
     }
@@ -206,29 +195,33 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
 
 Ray brdf(Ray ray, vec3 normal, Material material, float minIt) {
     vec3 diffused = random_cosine_weighted_hemisphere(normal);
-    vec3 reflected = reflect(ray.dir, normal);
-    vec3 refracted = refract(ray.dir, normal, material.IOR);
-    if (material.is_metal) {
-        ray.dir = mix(reflected, diffused, material.roughness);
+    if (material.is_glass) {
+        vec3 refracted = refract(ray.dir, normal, 1 / material.IOR);
+        if (material.is_metal)
+            ray.dir = mix(refracted, diffused, material.roughness > 0.5 ? 0.5 : material.roughness);
+        else
+            ray.dir = mix(refracted, diffused, random() < material.roughness ? 1 : 0);
     } else {
-        ray.dir = mix(reflected, diffused, random() < material.roughness ? 1 : 0);
+        vec3 reflected = reflect(ray.dir, normal);
+        if (material.is_metal)
+            ray.dir = mix(reflected, diffused, material.roughness);
+        else
+            ray.dir = mix(reflected, diffused, random() < material.roughness ? 1 : 0);
     }
     return ray;
 }
 
-vec3 raytrace(Ray ray) {
+vec3 trace(Ray ray) {
     vec3 energy = vec3(1);
     for(int i = 0; i <= bounces; i++) {
         Material material;
         vec3 color, normal;
         float minIt;
         if (raycast(ray, color, normal, minIt, material)) {
-            /*if (material.roughness < 1) {
+            if (material.is_glass)
                 ray.origin += ray.dir * (minIt + EPSILON);
-            } else {
+            else
                 ray.origin += ray.dir * (minIt - EPSILON);
-            }*/
-            ray.origin += ray.dir * (minIt - EPSILON);
             ray = brdf(ray, normal, material, minIt);
             energy *= color;
             if (material.emission > 0) return energy * material.emission;
@@ -270,7 +263,7 @@ void main() {
 
     vec3 color;
     for(int i = 0; i < samples; i++) {
-        color += raytrace(ray);
+        color += trace(ray);
     }
     color /= samples;
 

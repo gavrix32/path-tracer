@@ -6,7 +6,7 @@ import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.graphics.Renderer;
-import net.gavrix32.engine.io.Sync;
+import net.gavrix32.engine.io.VSync;
 import net.gavrix32.engine.io.Window;
 
 public class Render {
@@ -31,18 +31,17 @@ public class Render {
     private static final ImInt
             syncType = new ImInt();
 
-    private static final String[] syncTypes = {"Off", "VSync", "Adaptive"};
+    private static final String[] syncTypes = {"Off", "On", "Adaptive"};
 
     public static void update() {
         ImGui.begin("Render", ImGuiWindowFlags.NoMove);
         ImGui.text((int) (1 / Engine.getDelta()) + " fps");
         ImGui.text("Frame time: " + Engine.getDelta() * 1000 + " ms");
-        //ImGui.text("ImGui time: " + guiTime * 1000 + " ms");
         if (ImGui.combo("Sync", syncType, syncTypes)) {
             switch (syncType.get()) {
-                case 0 -> Window.sync(Sync.OFF);
-                case 1 -> Window.sync(Sync.VSYNC);
-                case 2 -> Window.sync(Sync.ADAPTIVE);
+                case 0 -> Window.sync(VSync.OFF);
+                case 1 -> Window.sync(VSync.ON);
+                case 2 -> Window.sync(VSync.ADAPTIVE);
             }
         }
         if (ImGui.sliderInt("SPP", samples, 1, 32)) {

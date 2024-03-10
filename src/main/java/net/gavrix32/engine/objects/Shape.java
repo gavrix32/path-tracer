@@ -68,7 +68,7 @@ public class Shape {
         this.material = material;
     }
 
-    public void setMaterial(boolean isMetal, float emission, float roughness, float IOR) {
-        this.material = new Material(isMetal, emission, roughness, IOR);
+    public void setMaterial(boolean isMetal, float emission, float roughness, float IOR, boolean glass) {
+        this.material = new Material(isMetal, emission, roughness, IOR, glass);
     }
 }

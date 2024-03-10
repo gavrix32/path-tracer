@@ -34,6 +34,10 @@ public class Shader {
         glUniform1i(glGetUniformLocation(program, name), value);
     }
 
+    public void setBool(String name, boolean value) {
+        glUniform1i(glGetUniformLocation(program, name), value ? 1 : 0);
+    }
+
     public void setFloat(String name, float value) {
         glUniform1f(glGetUniformLocation(program, name), value);
     }

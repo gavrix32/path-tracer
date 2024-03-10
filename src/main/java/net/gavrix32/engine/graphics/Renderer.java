@@ -6,6 +6,7 @@ import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.objects.Camera;
 import net.gavrix32.engine.utils.Logger;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -68,20 +69,20 @@ public class Renderer {
         }
         quadShader.setFloat("time", (float) glfwGetTime());
         quadShader.setFloat("acc_frames", accFrames);
-        quadShader.setInt("show_albedo", showAlbedo ? 1 : 0);
-        quadShader.setInt("show_normals", showNormals ? 1 : 0);
-        quadShader.setInt("show_depth", showDepth ? 1 : 0);
+        quadShader.setBool("show_albedo", showAlbedo);
+        quadShader.setBool("show_normals", showNormals);
+        quadShader.setBool("show_depth", showDepth);
         quadShader.setInt("samples", samples);
         quadShader.setInt("bounces", bounces);
         quadShader.setInt("fov", fov);
-        quadShader.setInt("random_noise", randNoise ? 1 : 0);
-        quadShader.setInt("frame_mixing", frameMixing ? 1 : 0);
-        quadShader.setInt("taa", taa ? 1 : 0);
+        quadShader.setBool("random_noise", randNoise);
+        quadShader.setBool("frame_mixing", frameMixing);
+        quadShader.setBool("taa", taa);
         quadShader.setFloat("gamma", gamma);
-        quadShader.setInt("gamma_correction", gammaCorrection ? 1 : 0);
-        quadShader.setInt("tonemapping", tonemapping ? 1 : 0);
+        quadShader.setBool("gamma_correction", gammaCorrection);
+        quadShader.setBool("tonemapping", tonemapping);
         quadShader.setFloat("exposure", exposure);
-        quadShader.setInt("sky_has_texture", scene.getSky().hasTexture() ? 1 : 0);
+        quadShader.setBool("sky_has_texture", scene.getSky().hasTexture());
         if (scene.getSky().hasTexture()) {
             scene.getSky().bindTexture();
             quadShader.setInt("sky_texture", 0);
@@ -89,14 +90,15 @@ public class Renderer {
         } else {
             quadShader.setVec3("sky.material.color", scene.getSky().getColor());
         }
-        quadShader.setFloat("sky.material.is_metal", scene.getSky().getMaterial().isMetal() ? 1 : 0);
+        quadShader.setBool("sky.material.is_metal", scene.getSky().getMaterial().isMetal());
         quadShader.setFloat("sky.material.emission", scene.getSky().getMaterial().getEmission());
         quadShader.setFloat("sky.material.roughness", scene.getSky().getMaterial().getRoughness());
+        quadShader.setBool("sky.material.is_glass", scene.getSky().getMaterial().isGlass());
         quadShader.setFloat("sky.material.IOR", scene.getSky().getMaterial().getIOR());
         // Plane
         if (scene.getPlane() != null) {
             quadShader.setInt("plane.exists", 1);
-            quadShader.setInt("plane.checkerboard", scene.getPlane().isCheckerBoard() ? 1 : 0);
+            quadShader.setBool("plane.checkerboard", scene.getPlane().isCheckerBoard());
             if (scene.getPlane().isCheckerBoard()) {
                 quadShader.setVec3("plane.color1", scene.getPlane().getColor1());
                 quadShader.setVec3("plane.color2", scene.getPlane().getColor2());
@@ -105,8 +107,9 @@ public class Renderer {
             }
             quadShader.setFloat("plane.material.emission", scene.getPlane().getMaterial().getEmission());
             quadShader.setFloat("plane.material.roughness", scene.getPlane().getMaterial().getRoughness());
+            quadShader.setBool("plane.material.is_glass", scene.getPlane().getMaterial().isGlass());
             quadShader.setFloat("plane.material.IOR", scene.getPlane().getMaterial().getIOR());
-            quadShader.setFloat("plane.material.is_metal", scene.getPlane().getMaterial().isMetal() ? 1 : 0);
+            quadShader.setBool("plane.material.is_metal", scene.getPlane().getMaterial().isMetal());
         } else {
             quadShader.setInt("plane.exists", 0);
         }
@@ -116,21 +119,28 @@ public class Renderer {
             quadShader.setVec3("spheres[" + i + "].position", scene.getSpheres().get(i).getPos());
             quadShader.setFloat("spheres[" + i + "].radius", scene.getSpheres().get(i).getRadius());
             quadShader.setVec3("spheres[" + i + "].material.color", scene.getSpheres().get(i).getColor());
-            quadShader.setFloat("spheres[" + i + "].material.is_metal", scene.getSpheres().get(i).getMaterial().isMetal() ? 1 : 0);
+            quadShader.setBool("spheres[" + i + "].material.is_metal", scene.getSpheres().get(i).getMaterial().isMetal());
             quadShader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres().get(i).getMaterial().getEmission());
             quadShader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres().get(i).getMaterial().getRoughness());
+            quadShader.setBool("spheres[" + i + "].material.is_glass", scene.getSpheres().get(i).getMaterial().isGlass());
             quadShader.setFloat("spheres[" + i + "].material.IOR", scene.getSpheres().get(i).getMaterial().getIOR());
         }
         // Boxes
         quadShader.setInt("boxes_count", scene.getBoxes().size());
         for (int i = 0; i < scene.getBoxes().size(); i++) {
             quadShader.setVec3("boxes[" + i + "].position", scene.getBoxes().get(i).getPos());
-            quadShader.setVec3("boxes[" + i + "].rotation", scene.getBoxes().get(i).getRot());
+            scene.getBoxes().get(i).getRotationMatrix().setRotationXYZ(
+                    (float) Math.toRadians(scene.getBoxes().get(i).getRot().x),
+                    (float) Math.toRadians(scene.getBoxes().get(i).getRot().y),
+                    (float) Math.toRadians(scene.getBoxes().get(i).getRot().z)
+            );
+            quadShader.setMat4("boxes[" + i + "].rotation", scene.getBoxes().get(i).getRotationMatrix());
             quadShader.setVec3("boxes[" + i + "].scale", scene.getBoxes().get(i).getScale());
             quadShader.setVec3("boxes[" + i + "].material.color", scene.getBoxes().get(i).getColor());
-            quadShader.setFloat("boxes[" + i + "].material.is_metal", scene.getBoxes().get(i).getMaterial().isMetal() ? 1 : 0);
+            quadShader.setBool("boxes[" + i + "].material.is_metal", scene.getBoxes().get(i).getMaterial().isMetal());
             quadShader.setFloat("boxes[" + i + "].material.emission", scene.getBoxes().get(i).getMaterial().getEmission());
             quadShader.setFloat("boxes[" + i + "].material.roughness", scene.getBoxes().get(i).getMaterial().getRoughness());
+            quadShader.setBool("boxes[" + i + "].material.is_glass", scene.getBoxes().get(i).getMaterial().isGlass());
             quadShader.setFloat("boxes[" + i + "].material.IOR", scene.getBoxes().get(i).getMaterial().getIOR());
         }
         if (accumulation || frameMixing) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);

@@ -14,7 +14,7 @@ public class Plane {
         this.color = new Vector3f(1);
         this.color1 = new Vector3f(1);
         this.color2 = new Vector3f(0);
-        this.material = new Material(false, 0, 1, 1);
+        this.material = new Material(false, 0, 1, 1, false);
         this.checkerBoard = checkerBoard;
     }
 
@@ -80,10 +80,11 @@ public class Plane {
         return material;
     }
 
-    public void setMaterial(boolean isMetal, float emission, float roughness, float IOR) {
+    public void setMaterial(boolean isMetal, float emission, float roughness, float IOR, boolean glass) {
         this.material.setMetal(isMetal);
         this.material.setEmission(emission);
         this.material.setRoughness(roughness);
+        this.material.setGlass(glass);
         this.material.setIOR(IOR);
     }
 

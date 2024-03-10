@@ -22,13 +22,13 @@ public class Sky {
     public Sky() {
         color = new Vector3f(0);
         hasTexture = false;
-        material = new Material(false, 0, 1, 1);
+        material = new Material(false, 0, 1, 1, false);
     }
 
     public Sky(Vector3f color) {
         this.color = color;
         hasTexture = false;
-        material = new Material(false, 1, 1, 1);
+        material = new Material(false, 1, 1, 1, false);
     }
 
     public Sky(String path) {
@@ -45,12 +45,12 @@ public class Sky {
         buffer.flip();
         stbi_set_flip_vertically_on_load(true);
         FloatBuffer data = stbi_loadf_from_memory(buffer, width, height,  new int[1], 3);
-        if (data == null) Logger.error("Failed to load texture: " + path + " " + stbi_failure_reason());
+        if (data == null) Logger.error("Failed to load texture: \"\"" + path + " " + stbi_failure_reason());
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width[0], height[0], 0, GL_RGB, GL_FLOAT, data);
         glBindTexture(GL_TEXTURE_2D, 0);
         color = new Vector3f(0);
         hasTexture = true;
-        material = new Material(false, 1, 1, 1);
+        material = new Material(false, 1, 1, 1, false);
     }
 
     public void bindTexture() {
@@ -69,10 +69,11 @@ public class Sky {
         this.material = material;
     }
 
-    public void setMaterial(boolean isMetal, float emission, float roughness, float IOR) {
+    public void setMaterial(boolean isMetal, float emission, float roughness, float IOR, boolean glass) {
         this.material.setMetal(isMetal);
         this.material.setEmission(emission);
         this.material.setRoughness(roughness);
+        this.material.setGlass(glass);
         this.material.setIOR(IOR);
     }
 

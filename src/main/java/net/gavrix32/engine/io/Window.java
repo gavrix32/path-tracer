@@ -110,10 +110,10 @@ public class Window {
         }
     }
 
-    public static void sync(Sync type) {
+    public static void sync(VSync type) {
         switch (type) {
+            case ON -> glfwSwapInterval(1);
             case OFF -> glfwSwapInterval(0);
-            case VSYNC -> glfwSwapInterval(1);
             case ADAPTIVE -> glfwSwapInterval(-1);
         }
     }
