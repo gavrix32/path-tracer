@@ -3,7 +3,7 @@
 out vec4 out_color;
 
 struct Ray {
-    vec3 origin, dir;
+    vec3 pos, dir;
 };
 
 struct Material {
@@ -89,15 +89,15 @@ void update_seed() {
 }
 
 float infinite_plane(Ray ray, vec4 p) {
-    return -(dot(ray.origin, p.xyz) + p.w) / dot(ray.dir, p.xyz);
+    return -(dot(ray.pos, p.xyz) + p.w) / dot(ray.dir, p.xyz);
 }
 
 float checkerboard(vec2 p) {
     return mod(floor(p.x) + floor(p.y), 2);
 }
 
-float sphere(Ray ray, vec3 ce, float ra) {
-    vec3 oc = ray.origin - ce;
+float intersect_sphere(Ray ray, vec3 ce, float ra) {
+    vec3 oc = ray.pos - ce;
     float b = dot(oc, ray.dir);
     float c = dot(oc, oc) - ra * ra;
     float h = b * b - c;
@@ -105,23 +105,24 @@ float sphere(Ray ray, vec3 ce, float ra) {
     return -b - sqrt(h);
 }
 
-float box(in Ray ray, vec3 boxSize, out vec3 outNormal, mat4 rotation) {
-    vec3 ro = (rotation * vec4(ray.origin, 1)).xyz;
+float intersect_box(Ray ray, vec3 scale, out vec3 normal, mat4 rotation) {
+    vec3 ro = (rotation * vec4(ray.pos, 1)).xyz;
     vec3 rd = (rotation * vec4(ray.dir, 0)).xyz;
     vec3 m = 1 / rd;
     vec3 n = m * ro;
-    vec3 k = abs(m) * boxSize;
+    vec3 k = abs(m) * scale;
     vec3 t1 = -n - k;
     vec3 t2 = -n + k;
     float tN = max(max(t1.x, t1.y), t1.z);
     float tF = min(min(t2.x, t2.y), t2.z);
     if(tN > tF || tF < 0) return -1;
-    outNormal = (tN > 0) ? step(vec3(tN), t1) : step(t2, vec3(tF));
-    outNormal *= -sign(ray.dir);
+    normal = (tN > 0) ? step(vec3(tN), t1) : step(t2, vec3(tF));
+    normal *= -sign(rd);
+    normal *= mat3(rotation);
     return tN;
 }
 
-vec3 triangle(in vec3 ro, in vec3 rd, in vec3 v0, in vec3 v1, in vec3 v2) {
+vec3 intersect_triangle(in vec3 ro, in vec3 rd, in vec3 v0, in vec3 v1, in vec3 v2) {
     vec3 v1v0 = v1 - v0;
     vec3 v2v0 = v2 - v0;
     vec3 rov0 = ro - v0;
@@ -144,7 +145,7 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
             hit = true;
             minDist = dist;
             if (plane.checkerboard) {
-                float cb = checkerboard(vec3(ray.dir * dist + ray.origin).xz * (0.06));
+                float cb = checkerboard(vec3(ray.dir * dist + ray.pos).xz * (0.06));
                 if (vec3(plane.color1 * cb) != vec3(0))
                 col = plane.color1;
                 else
@@ -155,18 +156,18 @@ bool raycast(inout Ray ray, out vec3 col, out vec3 normal, out float minDistance
         }
     }
     for (int i = 0; i < spheres_count; i++) {
-        dist = sphere(ray, spheres[i].position, spheres[i].radius);
+        dist = intersect_sphere(ray, spheres[i].position, spheres[i].radius);
         if (dist > 0 && dist < minDist) {
             hit = true;
             minDist = dist;
             col = spheres[i].material.color;
             material = spheres[i].material;
-            normal = normalize(ray.origin + ray.dir * dist - spheres[i].position);
+            normal = normalize(ray.pos + ray.dir * dist - spheres[i].position);
         }
     }
     for (int i = 0; i < boxes_count; i++) {
         vec3 norm;
-        dist = box(Ray(ray.origin - boxes[i].position, ray.dir), boxes[i].scale, norm, boxes[i].rotation).x;
+        dist = intersect_box(Ray(ray.pos - boxes[i].position, ray.dir), boxes[i].scale, norm, boxes[i].rotation).x;
         if (dist > 0 && dist < minDist) {
             hit = true;
             minDist = dist;
@@ -238,9 +239,9 @@ vec3 trace(Ray ray) {
         float minIt;
         if (raycast(ray, color, normal, minIt, material)) {
             if (material.is_glass)
-                ray.origin += ray.dir * (minIt + EPSILON);
+                ray.pos += ray.dir * (minIt + EPSILON);
             else
-                ray.origin += ray.dir * (minIt - EPSILON);
+                ray.pos += ray.dir * (minIt - EPSILON);
             ray = brdf(ray, normal, material, minIt);
             energy *= color;
             if (material.emission > 0) return energy * material.emission;
@@ -277,6 +278,11 @@ void main() {
     //vec3 dir = normalize(vec3(uv, 1) * mat3(view));
     vec3 dir = normalize(vec3(uv, 1.0 / tan(fov * (PI / 180) * 0.5)) * mat3(view));
     Ray ray = Ray(camera_position, dir);
+
+    /*float focal_distance = 3;
+    vec3 focal_point = ray.dir * focal_distance;
+    ray.pos = vec3(random() * focal_distance, random() * focal_distance, 0);
+    ray.dir = normalize(focal_point - ray.pos);*/
 
     vec3 color;
     for(int i = 0; i < samples; i++) {

@@ -7,18 +7,18 @@ import org.joml.Vector3f;
 
 public class Box extends Shape {
     private Vector3f scale;
-    private Matrix4f rotationMatrix;
+    private final Matrix4f rotationMatrix;
 
     public Box(Vector3f pos, Vector3f rotation, Vector3f col, Material material, Vector3f scale) {
         super(pos, rotation, col, material);
         this.scale = scale;
-        rotationMatrix = new Matrix4f();
+        rotationMatrix = new Matrix4f().identity();
     }
 
     public Box() {
         super(new Vector3f(), new Vector3f(), new Vector3f(1), new Material(true, 0, 1, 1, false));
         this.scale = new Vector3f(10);
-        rotationMatrix = new Matrix4f();
+        rotationMatrix = new Matrix4f().identity();
     }
 
     public Vector3f getScale() {
