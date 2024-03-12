@@ -34,11 +34,10 @@ public class Controls {
     public static void update(Camera camera) {
         Input.update();
         float speed;
-        if (Input.isKeyDown(GLFW_KEY_LEFT_CONTROL)) {
+        if (Input.isKeyDown(GLFW_KEY_LEFT_CONTROL))
             speed = 256f * Engine.getDelta();
-        } else {
+        else
             speed = 128 * Engine.getDelta();
-        }
         if (Input.isKeyDown(GLFW_KEY_W)) {
             camera.move(0, 0, speed);
             Renderer.resetAccFrames();

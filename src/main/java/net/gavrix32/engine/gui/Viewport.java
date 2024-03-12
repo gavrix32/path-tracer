@@ -33,7 +33,7 @@ public class Viewport {
     }
 
     protected static void update() {
-        ImGui.begin("Viewport", ImGuiWindowFlags.NoMove);
+        ImGui.begin("viewport", ImGuiWindowFlags.NoMove);
         widthDelta = width - (int) ImGui.getContentRegionAvail().x;
         heightDelta = height - (int) ImGui.getContentRegionAvail().y;
         width = (int) ImGui.getContentRegionAvail().x;

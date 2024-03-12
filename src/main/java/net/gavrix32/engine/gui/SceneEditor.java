@@ -17,9 +17,9 @@ public class SceneEditor {
     private static final ImInt sceneID = new ImInt();
 
     protected static void update(ArrayList<Scene> scenes, ArrayList<String> sceneNames) {
-        ImGui.begin("Scene", ImGuiWindowFlags.NoMove);
+        ImGui.begin("scene", ImGuiWindowFlags.NoMove);
         String[] names = new String[sceneNames.size()];
-        if (ImGui.combo("Select scene", sceneID, sceneNames.toArray(names))) {
+        if (ImGui.combo("select scene", sceneID, sceneNames.toArray(names))) {
             Renderer.resetAccFrames();
             Renderer.resetAccTexture();
         }
@@ -54,7 +54,25 @@ public class SceneEditor {
     }
 
     private static void showSceneObjectProps(Scene scene) {
-        if (ImGui.treeNode("Sky")) {
+        float[] pos = new float[] {
+                scene.getCamera().getPos().x,
+                scene.getCamera().getPos().y,
+                scene.getCamera().getPos().z
+        };
+        if (ImGui.dragFloat3("camera position", pos)) {
+            scene.getCamera().setPos(pos[0], pos[1], pos[2]);
+            Renderer.resetAccFrames();
+        }
+        float[] rot = new float[] {
+                scene.getCamera().getRot().x,
+                scene.getCamera().getRot().y,
+                scene.getCamera().getRot().z
+        };
+        if (ImGui.dragFloat3("camera rotation", rot)) {
+            scene.getCamera().setRot(rot[0], rot[1], rot[2]);
+            Renderer.resetAccFrames();
+        }
+        if (ImGui.treeNode("sky")) {
             float[] color = new float[] {
                     scene.getSky().getColor().x,
                     scene.getSky().getColor().y,
@@ -66,28 +84,28 @@ public class SceneEditor {
             ImBoolean isMetal = new ImBoolean(scene.getSky().getMaterial().isMetal());
             ImBoolean isGlass = new ImBoolean(scene.getSky().getMaterial().isGlass());
 
-            if (ImGui.checkbox("Metal", isMetal)) {
+            if (ImGui.checkbox("metal", isMetal)) {
                 Renderer.resetAccFrames();
                 scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
             }
-            if (ImGui.colorEdit3("Color", color)) {
+            if (ImGui.colorEdit3("color", color)) {
                 Renderer.resetAccFrames();
                 scene.getSky().setColor(color[0], color[1], color[2]);
             }
-            if (ImGui.dragFloat("Emission", emission, 0.01f, 0, Float.MAX_VALUE, "%.2f")) {
+            if (ImGui.dragFloat("emission", emission, 0.01f, 0, Float.MAX_VALUE, "%.2f")) {
                 Renderer.resetAccFrames();
                 scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
             }
-            if (ImGui.sliderFloat("Roughness", roughness, 0, 1, "%.2f")) {
+            if (ImGui.sliderFloat("roughness", roughness, 0, 1, "%.2f")) {
                 Renderer.resetAccFrames();
                 scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
             }
-            if (ImGui.checkbox("Glass", isGlass)) {
+            if (ImGui.checkbox("glass", isGlass)) {
                 Renderer.resetAccFrames();
                 scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
             }
             ImGui.beginDisabled(!isGlass.get());
-            if (ImGui.dragFloat("IOR", IOR, 0.01f, 1, Float.MAX_VALUE, "%.2f")) {
+            if (ImGui.dragFloat("ior", IOR, 0.01f, 1, Float.MAX_VALUE, "%.2f")) {
                 Renderer.resetAccFrames();
                 scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
             }
@@ -95,7 +113,7 @@ public class SceneEditor {
             ImGui.treePop();
         }
         if (scene.getPlane() != null) {
-            if (ImGui.treeNode("Plane")) {
+            if (ImGui.treeNode("plane")) {
                 float[] color = new float[] {
                         scene.getPlane().getColor().x,
                         scene.getPlane().getColor().y,
@@ -118,44 +136,44 @@ public class SceneEditor {
                 ImBoolean isGlass = new ImBoolean(scene.getPlane().getMaterial().isGlass());
                 ImBoolean checkerBoard = new ImBoolean(scene.getPlane().isCheckerBoard());
 
-                if (ImGui.checkbox("isMetal", isMetal)) {
+                if (ImGui.checkbox("is metal", isMetal)) {
                     Renderer.resetAccFrames();
                     scene.getPlane().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
                 if (checkerBoard.get()) {
-                    if (ImGui.colorEdit3("Color 1", color1)) {
+                    if (ImGui.colorEdit3("color 1", color1)) {
                         Renderer.resetAccFrames();
                         scene.getPlane().setColor1(color1[0], color1[1], color1[2]);
                     }
-                    if (ImGui.colorEdit3("Color 2", color2)) {
+                    if (ImGui.colorEdit3("color 2", color2)) {
                         Renderer.resetAccFrames();
                         scene.getPlane().setColor2(color2[0], color2[1], color2[2]);
                     }
                 } else {
-                    if (ImGui.colorEdit3("Color", color)) {
+                    if (ImGui.colorEdit3("color", color)) {
                         Renderer.resetAccFrames();
                         scene.getPlane().setColor(color[0], color[1], color[2]);
                     }
                 }
-                if (ImGui.dragFloat("Emission", emission, 0.01f, 0, Float.MAX_VALUE, "%.2f")) {
+                if (ImGui.dragFloat("emission", emission, 0.01f, 0, Float.MAX_VALUE, "%.2f")) {
                     Renderer.resetAccFrames();
                     scene.getPlane().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
-                if (ImGui.sliderFloat("Roughness", roughness, 0, 1, "%.2f")) {
+                if (ImGui.sliderFloat("roughness", roughness, 0, 1, "%.2f")) {
                     Renderer.resetAccFrames();
                     scene.getPlane().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
-                if (ImGui.checkbox("Glass", isGlass)) {
+                if (ImGui.checkbox("glass", isGlass)) {
                     Renderer.resetAccFrames();
                     scene.getPlane().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
                 ImGui.beginDisabled(!isGlass.get());
-                if (ImGui.dragFloat("IOR", IOR, 0.01f, 1, Float.MAX_VALUE, "%.2f")) {
+                if (ImGui.dragFloat("ior", IOR, 0.01f, 1, Float.MAX_VALUE, "%.2f")) {
                     Renderer.resetAccFrames();
                     scene.getPlane().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
                 ImGui.endDisabled();
-                if (ImGui.button("Remove")) {
+                if (ImGui.button("remove")) {
                     Renderer.resetAccFrames();
                     scene.setPlane(null);
                 }
@@ -163,7 +181,7 @@ public class SceneEditor {
             }
         }
 
-        if (ImGui.treeNode("Boxes")) {
+        if (ImGui.treeNode("boxes")) {
             for (int i = 0; i < scene.getBoxes().size(); i++) {
                 float[] color = new float[] {
                         scene.getBox(i).getColor().x,
@@ -192,45 +210,45 @@ public class SceneEditor {
                 };
 
                 ImGui.pushID(i);
-                if (ImGui.colorEdit3("Box " + i + " color", color)) {
+                if (ImGui.colorEdit3("box " + i + " color", color)) {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setColor(color[0], color[1], color[2]);
                 }
-                if (ImGui.checkbox("isMetal", isMetal)) {
+                if (ImGui.checkbox("is metal", isMetal)) {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
-                if (ImGui.dragFloat("Emission", emission, 0.01f, 0, Float.MAX_VALUE, "%.2f")) {
+                if (ImGui.dragFloat("emission", emission, 0.01f, 0, Float.MAX_VALUE, "%.2f")) {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
-                if (ImGui.sliderFloat("Roughness", roughness, 0, 1, "%.2f")) {
+                if (ImGui.sliderFloat("roughness", roughness, 0, 1, "%.2f")) {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
-                if (ImGui.checkbox("Glass", isGlass)) {
+                if (ImGui.checkbox("glass", isGlass)) {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
                 ImGui.beginDisabled(!isGlass.get());
-                if (ImGui.dragFloat("IOR", IOR, 0.01f, 1, Float.MAX_VALUE, "%.2f")) {
+                if (ImGui.dragFloat("ior", IOR, 0.01f, 1, Float.MAX_VALUE, "%.2f")) {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
                 ImGui.endDisabled();
-                if (ImGui.dragFloat3("Position", position)) {
+                if (ImGui.dragFloat3("position", position)) {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setPos(position[0], position[1], position[2]);
                 }
-                if (ImGui.dragFloat3("Rotation", rotation)) {
+                if (ImGui.dragFloat3("rotation", rotation)) {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setRot(rotation[0], rotation[1], rotation[2]);
                 }
-                if (ImGui.dragFloat3("Scale", scale, 1, 0, Float.MAX_VALUE)) {
+                if (ImGui.dragFloat3("scale", scale, 1, 0, Float.MAX_VALUE)) {
                     Renderer.resetAccFrames();
                     scene.getBox(i).setScale(scale[0], scale[1], scale[2]);
                 }
-                if (ImGui.button("Remove")) {
+                if (ImGui.button("remove")) {
                     Renderer.resetAccFrames();
                     scene.removeBox(i);
                 }
@@ -239,7 +257,7 @@ public class SceneEditor {
             }
             ImGui.treePop();
         }
-        if (ImGui.treeNode("Spheres")) {
+        if (ImGui.treeNode("spheres")) {
             for (int i = 0; i < scene.getSpheres().size(); i++) {
                 float[] color = new float[] {
                         scene.getSphere(i).getColor().x,
@@ -259,33 +277,33 @@ public class SceneEditor {
                 float[] radius = new float[] {scene.getSphere(i).getRadius()};
 
                 ImGui.pushID(i);
-                if (ImGui.colorEdit3("Sphere " + i + " color", color)) {
+                if (ImGui.colorEdit3("sphere " + i + " color", color)) {
                     Renderer.resetAccFrames();
                     scene.getSphere(i).setColor(color[0], color[1], color[2]);
                 }
-                if (ImGui.checkbox("isMetal", isMetal)) {
+                if (ImGui.checkbox("is metal", isMetal)) {
                     Renderer.resetAccFrames();
                     scene.getSphere(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
-                if (ImGui.dragFloat("Emission", emission, 0.01f, 0, Float.MAX_VALUE, "%.2f")) {
+                if (ImGui.dragFloat("emission", emission, 0.01f, 0, Float.MAX_VALUE, "%.2f")) {
                     Renderer.resetAccFrames();
                     scene.getSphere(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
-                if (ImGui.sliderFloat("Roughness", roughness, 0, 1, "%.2f")) {
+                if (ImGui.sliderFloat("roughness", roughness, 0, 1, "%.2f")) {
                     Renderer.resetAccFrames();
                     scene.getSphere(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
-                if (ImGui.checkbox("Glass", isGlass)) {
+                if (ImGui.checkbox("glass", isGlass)) {
                     Renderer.resetAccFrames();
                     scene.getSphere(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
                 ImGui.beginDisabled(!isGlass.get());
-                if (ImGui.dragFloat("IOR", IOR, 0.01f, 1, Float.MAX_VALUE, "%.2f")) {
+                if (ImGui.dragFloat("ior", IOR, 0.01f, 1, Float.MAX_VALUE, "%.2f")) {
                     Renderer.resetAccFrames();
                     scene.getSphere(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
                 }
                 ImGui.endDisabled();
-                if (ImGui.dragFloat3("Position", position)) {
+                if (ImGui.dragFloat3("position", position)) {
                     Renderer.resetAccFrames();
                     scene.getSphere(i).setPos(position[0], position[1], position[2]);
                 }
@@ -293,7 +311,7 @@ public class SceneEditor {
                     Renderer.resetAccFrames();
                     scene.getSphere(i).setRadius(radius[0]);
                 }
-                if (ImGui.button("Remove")) {
+                if (ImGui.button("remove")) {
                     Renderer.resetAccFrames();
                     scene.removeSphere(i);
                 }
@@ -302,18 +320,18 @@ public class SceneEditor {
             }
             ImGui.treePop();
         }
-        if (ImGui.button("Add box")) {
+        if (ImGui.button("add box")) {
             scene.addBox(new Box());
             Renderer.resetAccFrames();
         }
         ImGui.sameLine();
-        if (ImGui.button("Add Sphere")) {
+        if (ImGui.button("add sphere")) {
             scene.addSpheres(new Sphere());
             Renderer.resetAccFrames();
         }
         if (scene.getPlane() == null) {
             ImGui.sameLine();
-            if (ImGui.button("Add Plane")) {
+            if (ImGui.button("add Plane")) {
                 scene.setPlane(new Plane(true));
                 Renderer.resetAccFrames();
             }

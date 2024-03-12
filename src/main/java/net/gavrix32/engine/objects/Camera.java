@@ -16,9 +16,9 @@ public class Camera {
 
     public void update() {
         view.identity();
-        view.rotateX(rot.x);
-        view.rotateY(rot.y);
-        view.rotateZ(rot.z);
+        view.rotateX((float) Math.toRadians(rot.x));
+        view.rotateY((float) Math.toRadians(rot.y));
+        view.rotateZ((float) Math.toRadians(rot.z));
     }
 
     public Vector3f getPos() {
@@ -36,6 +36,10 @@ public class Camera {
 
     public void setRot(Vector3f rot) {
         this.rot = rot;
+    }
+
+    public void setRot(float x, float y, float z) {
+        this.rot.set(x, y, z);
     }
 
     public void move(float x, float y, float z) {
