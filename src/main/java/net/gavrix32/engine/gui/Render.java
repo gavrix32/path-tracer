@@ -13,29 +13,30 @@ public class Render {
     private static final int[]
             samples = new int[] {Renderer.getSamples()},
             bounces = new int[] {Renderer.getBounces()},
-            fov = new int[] {Renderer.getFOV()},
+            fov = new int[] {Renderer.getFov()},
             fpsLimit = new int[] {Engine.getFpsLimit()};
-
-    private static final float[] gamma = new float[] {Renderer.getGamma()}, exposure = new float[] {Renderer.getExposure()};
-
+    private static final float[]
+            gamma = new float[] {Renderer.getGamma()},
+            exposure = new float[] {Renderer.getExposure()},
+            focusDistance = new float[] {Renderer.getFocusDistance()},
+            defocusBlur = new float[] {Renderer.getDefocusBlur()};
     private static final ImBoolean
-            accumulation = new ImBoolean(true),
-            reproj = new ImBoolean(true),
-            randNoise = new ImBoolean(false),
-            gammaCorrection = new ImBoolean(true),
-            tonemapping = new ImBoolean(true),
-            taa = new ImBoolean(true),
-            showAlbedo = new ImBoolean(false),
-            showNormals = new ImBoolean(false),
-            showDepth = new ImBoolean(false);
-
-    private static final ImInt
-            syncType = new ImInt();
-
+            accumulation = new ImBoolean(Renderer.isAccumulation()),
+            frameMixing = new ImBoolean(Renderer.isFrameMixing()),
+            randNoise = new ImBoolean(Renderer.isRandNoise()),
+            gammaCorrection = new ImBoolean(Renderer.isGammaCorrection()),
+            tonemapping = new ImBoolean(Renderer.isTonemapping()),
+            taa = new ImBoolean(Renderer.isTaa()),
+            dof = new ImBoolean(Renderer.isDof()),
+            autofocus = new ImBoolean(Renderer.isDof()),
+            showAlbedo = new ImBoolean(Renderer.isShowAlbedo()),
+            showNormals = new ImBoolean(Renderer.isShowNormals()),
+            showDepth = new ImBoolean(Renderer.isShowDepth());
+    private static final ImInt syncType = new ImInt();
     private static final String[] syncTypes = {"off", "on", "adaptive"};
 
     public static void update() {
-        ImGui.begin("render", ImGuiWindowFlags.NoMove);
+        ImGui.begin("Render", ImGuiWindowFlags.NoMove);
         ImGui.text((int) (1 / Engine.getDelta()) + " fps");
         ImGui.text("frame time: " + Engine.getDelta() * 1000 + " ms");
         if (ImGui.sliderInt("fps limit", fpsLimit, 1, 255, fpsLimit[0] < 255 ? String.valueOf(fpsLimit[0]) : "unlimited")) Engine.setFpsLimit(fpsLimit[0]);
@@ -47,34 +48,32 @@ public class Render {
                 case 2 -> Window.sync(VSync.ADAPTIVE);
             }
         }
-        if (ImGui.sliderInt("spp", samples, 1, 32)) {
-            Renderer.resetAccFrames();
-            Renderer.setSamples(samples[0]);
-        }
-        if (ImGui.sliderInt("Bounces", bounces, 0, 8)) {
-            Renderer.resetAccFrames();
-            Renderer.setBounces(bounces[0]);
-        }
-        if (ImGui.dragInt("fov", fov, 1, 0, 180)) {
-            Renderer.resetAccFrames();
-            Renderer.setFOV(fov[0]);
-        }
-        if (ImGui.checkbox("taa", taa)) {
-            Renderer.resetAccFrames();
-            Renderer.useTAA(taa.get());
-        }
+        if (ImGui.sliderInt("spp", samples, 1, 32)) Renderer.setSamples(samples[0]);
+        if (ImGui.sliderInt("bounces", bounces, 0, 8)) Renderer.setBounces(bounces[0]);
+        if (ImGui.dragInt("fov", fov, 1, 0, 180)) Renderer.setFov(fov[0]);
+        if (ImGui.checkbox("taa", taa)) Renderer.useTaa(taa.get());
+        if (ImGui.checkbox("dof", dof)) Renderer.setDof(dof.get());
+        ImGui.beginDisabled(!dof.get());
+        if (ImGui.checkbox("autofocus", autofocus)) Renderer.setAutofocus(autofocus.get());
+        ImGui.endDisabled();
+        ImGui.beginDisabled(autofocus.get());
+        if (ImGui.dragFloat("focus distance", focusDistance, 1, 0, Float.MAX_VALUE, "%.1f")) Renderer.setFocusDistance(focusDistance[0]);
+        ImGui.endDisabled();
+        ImGui.beginDisabled(!dof.get());
+        if (ImGui.sliderFloat("defocus blur", defocusBlur, 0, 10, "%.1f")) Renderer.setDefocusBlur(defocusBlur[0]);
+        ImGui.endDisabled();
         ImGui.text("accumulated frames: " + Renderer.getAccFrames());
-        if (ImGui.checkbox("accumulation", accumulation)) Renderer.useAccumulation(accumulation.get());
-        if (ImGui.checkbox("gamma Correction", gammaCorrection) || gammaCorrection.get()) {
-            Renderer.useGammaCorrection(gammaCorrection.get(), gamma[0]);
-            ImGui.sliderFloat("gamma", gamma, 0, 10, "%.1f");
-        }
-        if (ImGui.checkbox("tone Mapping", tonemapping) || tonemapping.get()) {
-            Renderer.useToneMapping(tonemapping.get(), exposure[0]);
-            ImGui.sliderFloat("exposure", exposure, 0, 5, "%.1f");
-        }
-        if (ImGui.checkbox("temporal mixing", reproj)) Renderer.useFrameMixing(reproj.get());
-        if (ImGui.checkbox("random noise", randNoise)) Renderer.useRandomNoise(randNoise.get());
+        if (ImGui.checkbox("accumulation", accumulation)) Renderer.setAccumulation(accumulation.get());
+        if (ImGui.checkbox("gamma Correction", gammaCorrection) || gammaCorrection.get()) Renderer.useGammaCorrection(gammaCorrection.get(), gamma[0]);
+        ImGui.beginDisabled(!gammaCorrection.get());
+        ImGui.sliderFloat("gamma", gamma, 0, 10, "%.1f");
+        ImGui.endDisabled();
+        if (ImGui.checkbox("tone Mapping", tonemapping) || tonemapping.get()) Renderer.setToneMapping(tonemapping.get(), exposure[0]);
+        ImGui.beginDisabled(!tonemapping.get());
+        ImGui.sliderFloat("exposure", exposure, 0, 5, "%.1f");
+        ImGui.endDisabled();
+        if (ImGui.checkbox("temporal mixing", frameMixing)) Renderer.setFrameMixing(frameMixing.get());
+        if (ImGui.checkbox("random noise", randNoise)) Renderer.setRandomNoise(randNoise.get());
         if (ImGui.checkbox("show albedo", showAlbedo)) Renderer.showAlbedo(showAlbedo.get());
         if (ImGui.checkbox("show normals", showNormals)) Renderer.showNormals(showNormals.get());
         if (ImGui.checkbox("show depth", showDepth)) Renderer.showDepth(showDepth.get());

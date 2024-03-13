@@ -1,6 +1,6 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.gui.GUI;
+import net.gavrix32.engine.gui.Gui;
 import net.gavrix32.engine.gui.Viewport;
 import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
@@ -25,10 +25,10 @@ public class Renderer {
     private static int accFrames = 0;
     private static int samples = 1, bounces = 3, fov = 70;
     private static boolean
-            accumulation = true, frameMixing = true, randNoise = false, gammaCorrection = true, tonemapping = false,
-            taa = true, showAlbedo = false, showNormals = false, showDepth = false;
+            accumulation = true, frameMixing = true, randNoise = false, gammaCorrection = true, tonemapping = true,
+            taa = true, dof = false, autofocus = true, showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
-    private static float gamma = 2.2f, exposure = 1.0f;
+    private static float gamma = 2.2f, exposure = 1.0f, focusDistance = 50.0f, defocusBlur = 3.0f;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -58,7 +58,7 @@ public class Renderer {
         }
         rt_shader.setMat4("view", scene.getCamera().getView());
         rt_shader.setVec3("camera_position", scene.getCamera().getPos());
-        if (GUI.status) {
+        if (Gui.status) {
             if (Viewport.getWidthDelta() != 0 || Viewport.getHeightDelta() != 0) resetAccFrames();
             rt_shader.setVec2("resolution", new Vector2f(Viewport.getWidth(), Viewport.getHeight()));
         } else rt_shader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
@@ -73,6 +73,10 @@ public class Renderer {
         rt_shader.setBool("random_noise", randNoise);
         rt_shader.setBool("frame_mixing", frameMixing);
         rt_shader.setBool("taa", taa);
+        rt_shader.setBool("dof", dof);
+        rt_shader.setBool("autofocus", autofocus);
+        rt_shader.setFloat("focus_distance", focusDistance);
+        rt_shader.setFloat("defocus_blur", defocusBlur);
         rt_shader.setFloat("gamma", gamma);
         rt_shader.setBool("gamma_correction", gammaCorrection);
         rt_shader.setBool("tonemapping", tonemapping);
@@ -134,7 +138,7 @@ public class Renderer {
         }
         if (accumulation || frameMixing) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
         if (accFrames == 0 && !frameMixing) resetAccTexture();
-        if (!GUI.status) glViewport(0, 0, Window.getWidth(), Window.getHeight());
+        if (!Gui.status) glViewport(0, 0, Window.getWidth(), Window.getHeight());
         Viewport.bindFramebuffer();
         scene.getSky().bindTexture();
         glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
@@ -156,6 +160,7 @@ public class Renderer {
     }
 
     public static void setSamples(int samples) {
+        resetAccFrames();
         Renderer.samples = samples;
     }
 
@@ -164,24 +169,34 @@ public class Renderer {
     }
 
     public static void setBounces(int bounces) {
+        resetAccFrames();
         Renderer.bounces = bounces;
     }
 
-    public static int getFOV() {
+    public static int getFov() {
         return Renderer.fov;
     }
 
-    public static void setFOV(int fov) {
+    public static void setFov(int fov) {
+        resetAccFrames();
         Renderer.fov = fov;
     }
 
-    public static void useAccumulation(boolean value) {
+    public static void setAccumulation(boolean value) {
         if (!value) resetAccFrames();
         accumulation = value;
     }
 
-    public static void useFrameMixing(boolean value) {
+    public static boolean isAccumulation() {
+        return accumulation;
+    }
+
+    public static void setFrameMixing(boolean value) {
         frameMixing = value;
+    }
+
+    public static boolean isFrameMixing() {
+        return frameMixing;
     }
 
     public static void resetAccFrames() {
@@ -200,12 +215,20 @@ public class Renderer {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    public static void useRandomNoise(boolean value) {
+    public static void setRandomNoise(boolean value) {
         randNoise = value;
+    }
+
+    public static boolean isRandNoise() {
+        return randNoise;
     }
 
     public static float getGamma() {
         return gamma;
+    }
+
+    public static boolean isGammaCorrection() {
+        return gammaCorrection;
     }
 
     public static void setGamma(float gamma) {
@@ -225,21 +248,74 @@ public class Renderer {
         Renderer.exposure = exposure;
     }
 
-    public static void useToneMapping(boolean value, float exposure) {
+    public static boolean isTonemapping() {
+        return tonemapping;
+    }
+
+    public static void setToneMapping(boolean value, float exposure) {
         tonemapping = value;
         Renderer.exposure = exposure;
     }
 
-    public static void useTAA(boolean value) {
+    public static boolean isTaa() {
+        return taa;
+    }
+
+    public static void useTaa(boolean value) {
+        resetAccFrames();
         taa = value;
+    }
+
+    public static boolean isDof() {
+        return dof;
+    }
+
+    public static void setDof(boolean value) {
+        resetAccFrames();
+        dof = value;
+    }
+
+    public static float getFocusDistance() {
+        return focusDistance;
+    }
+
+    public static void setFocusDistance(float focusDistance) {
+        resetAccFrames();
+        Renderer.focusDistance = focusDistance;
+    }
+
+    public static float getDefocusBlur() {
+        return defocusBlur;
+    }
+
+    public static void setDefocusBlur(float defocusBlur) {
+        resetAccFrames();
+        Renderer.defocusBlur = defocusBlur;
+    }
+
+    public static void setAutofocus(boolean value) {
+        resetAccFrames();
+        autofocus = value;
+    }
+
+    public static boolean isShowAlbedo() {
+        return showAlbedo;
     }
 
     public static void showAlbedo(boolean value) {
         showAlbedo = value;
     }
 
+    public static boolean isShowNormals() {
+        return showNormals;
+    }
+
     public static void showNormals(boolean value) {
         showNormals = value;
+    }
+
+    public static boolean isShowDepth() {
+        return showDepth;
     }
 
     public static void showDepth(boolean value) {

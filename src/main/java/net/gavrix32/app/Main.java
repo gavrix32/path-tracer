@@ -3,7 +3,7 @@ package net.gavrix32.app;
 import net.gavrix32.app.scenes.*;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.IApp;
-import net.gavrix32.engine.gui.GUI;
+import net.gavrix32.engine.gui.Gui;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
 
@@ -46,7 +46,7 @@ public class Main implements IApp {
     public void update() {
         Controls.update(Renderer.getScene().getCamera());
         Renderer.render();
-        GUI.update(scenes, names);
+        Gui.update(scenes, names);
         Window.update();
     }
 

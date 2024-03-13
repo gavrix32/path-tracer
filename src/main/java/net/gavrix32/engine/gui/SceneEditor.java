@@ -17,7 +17,7 @@ public class SceneEditor {
     private static final ImInt sceneID = new ImInt();
 
     protected static void update(ArrayList<Scene> scenes, ArrayList<String> sceneNames) {
-        ImGui.begin("scene", ImGuiWindowFlags.NoMove);
+        ImGui.begin("Scene", ImGuiWindowFlags.NoMove);
         String[] names = new String[sceneNames.size()];
         if (ImGui.combo("select scene", sceneID, sceneNames.toArray(names))) {
             Renderer.resetAccFrames();

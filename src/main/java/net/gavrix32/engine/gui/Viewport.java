@@ -33,7 +33,7 @@ public class Viewport {
     }
 
     protected static void update() {
-        ImGui.begin("viewport", ImGuiWindowFlags.NoMove);
+        ImGui.begin("Viewport", ImGuiWindowFlags.NoMove);
         widthDelta = width - (int) ImGui.getContentRegionAvail().x;
         heightDelta = height - (int) ImGui.getContentRegionAvail().y;
         width = (int) ImGui.getContentRegionAvail().x;
@@ -74,16 +74,16 @@ public class Viewport {
     }
 
     public static void bindFramebuffer() {
-        if (GUI.status) glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+        if (Gui.status) glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
     }
 
     public static void unbindFramebuffer() {
-        if (GUI.status) glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        if (Gui.status) glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     public static boolean cursorInViewport() {
         if (!Window.isCursorVisible()) return true;
-        if (!GUI.isEnabled()) return true;
+        if (!Gui.isEnabled()) return true;
         return cursorInViewport;
     }
 }

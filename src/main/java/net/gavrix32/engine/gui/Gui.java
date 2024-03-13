@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-public class GUI {
+public class Gui {
     public static boolean status = true;
     private static final ImGuiImplGl3 imGuiImplGl3 = new ImGuiImplGl3();
     private static final ImGuiImplGlfw imGuiImplGlfw = new ImGuiImplGlfw();
