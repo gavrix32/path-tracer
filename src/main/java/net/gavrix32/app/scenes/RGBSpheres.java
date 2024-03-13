@@ -12,7 +12,7 @@ public class RGBSpheres {
 
     public RGBSpheres() {
         scene = new Scene();
-        scene.setCamera(new Camera().setPos(50, 20, -80));
+        scene.setCamera(new Camera().setPosition(50, 20, -80));
         scene.setPlane(new Plane(false));
         scene.addSpheres(
                 new Sphere(

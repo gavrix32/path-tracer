@@ -9,7 +9,7 @@ public class Box extends Shape {
     private Vector3f scale;
     private final Matrix4f rotationMatrix;
 
-    public Box(Vector3f pos, Vector3f rotation, Vector3f col, Material material, Vector3f scale) {
+    public Box(Vector3f pos, Vector3f rotation, Vector3f col, Vector3f scale, Material material) {
         super(pos, rotation, col, material);
         this.scale = scale;
         rotationMatrix = new Matrix4f().identity();

@@ -54,10 +54,9 @@ uniform vec2 resolution;
 uniform vec3 camera_position;
 uniform mat4 view, rot;
 uniform int samples, bounces, taa, dof, autofocus, random_noise, gamma_correction, tonemapping, frame_mixing,
-            show_albedo, show_depth, show_normals, sky_has_texture, spheres_count, boxes_count,
-            fov;
+            show_albedo, show_depth, show_normals, sky_has_texture, spheres_count, boxes_count;
 uniform sampler2D sky_texture;
-uniform float acc_frames, time, gamma, exposure, focus_distance, defocus_blur;
+uniform float acc_frames, time, gamma, exposure, fov, focus_distance, defocus_blur;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
 uniform Sky sky;
@@ -277,7 +276,7 @@ void main() {
         uv = (2 * gl_FragCoord.xy - resolution) / resolution.y;
 
     // taa
-    if (taa == 1) {
+    if (taa == 1 && show_depth == 0 && show_albedo == 0 && show_normals == 0) {
         uv.x += (random() - 0.5) * 0.002;
         uv.y += (random() - 0.5) * 0.002;
     }

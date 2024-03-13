@@ -6,7 +6,6 @@ import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.graphics.Scene;
-import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.objects.Box;
 import net.gavrix32.engine.objects.Plane;
 import net.gavrix32.engine.objects.Sphere;
@@ -23,54 +22,34 @@ public class SceneEditor {
             Renderer.resetAccFrames();
             Renderer.resetAccTexture();
         }
-        switch (sceneID.get()) {
-            case 0: {
-                Renderer.setScene(scenes.get(0));
-                showSceneObjectProps(scenes.get(0));
-                break;
-            }
-            case 1: {
-                Renderer.setScene(scenes.get(1));
-                showSceneObjectProps(scenes.get(1));
-                break;
-            }
-            case 2: {
-                Renderer.setScene(scenes.get(2));
-                showSceneObjectProps(scenes.get(2));
-                break;
-            }
-            case 3: {
-                Renderer.setScene(scenes.get(3));
-                showSceneObjectProps(scenes.get(3));
-                break;
-            }
-            case 4: {
-                Renderer.setScene(scenes.get(4));
-                showSceneObjectProps(scenes.get(4));
-                break;
-            }
-        }
+        Renderer.setScene(scenes.get(sceneID.get()));
+        showSceneObjectProps(scenes.get(sceneID.get()));
         ImGui.end();
     }
 
     private static void showSceneObjectProps(Scene scene) {
-        float[] pos = new float[] {
-                scene.getCamera().getPos().x,
-                scene.getCamera().getPos().y,
-                scene.getCamera().getPos().z
-        };
-        if (ImGui.dragFloat3("camera position", pos)) {
-            scene.getCamera().setPos(pos[0], pos[1], pos[2]);
-            Renderer.resetAccFrames();
-        }
-        float[] rot = new float[] {
-                scene.getCamera().getRot().x,
-                scene.getCamera().getRot().y,
-                scene.getCamera().getRot().z
-        };
-        if (ImGui.dragFloat3("camera rotation", rot)) {
-            scene.getCamera().setRot(rot[0], rot[1], rot[2]);
-            Renderer.resetAccFrames();
+        if (ImGui.treeNode("camera")) {
+            float[] pos = new float[] {
+                    scene.getCamera().getPosition().x,
+                    scene.getCamera().getPosition().y,
+                    scene.getCamera().getPosition().z
+            };
+            if (ImGui.dragFloat3("camera position", pos)) {
+                scene.getCamera().setPosition(pos[0], pos[1], pos[2]);
+                Renderer.resetAccFrames();
+            }
+            float[] rot = new float[] {
+                    scene.getCamera().getRotation().x,
+                    scene.getCamera().getRotation().y,
+                    scene.getCamera().getRotation().z
+            };
+            if (ImGui.dragFloat3("camera rotation", rot)) {
+                scene.getCamera().setRotation(rot[0], rot[1], rot[2]);
+                Renderer.resetAccFrames();
+            }
+            float[] fov = new float[] {scene.getCamera().getFov()};
+            if (ImGui.dragFloat("fov", fov, 1, 0, 180, "%.2f°")) scene.getCamera().setFov(fov[0]);
+            ImGui.treePop();
         }
         if (ImGui.treeNode("sky")) {
             float[] color = new float[] {
@@ -336,5 +315,9 @@ public class SceneEditor {
                 Renderer.resetAccFrames();
             }
         }
+    }
+
+    public static void setDefaultScene(int numberInList) {
+        sceneID.set(numberInList);
     }
 }

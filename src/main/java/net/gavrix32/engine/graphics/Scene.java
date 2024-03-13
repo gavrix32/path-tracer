@@ -1,6 +1,7 @@
 package net.gavrix32.engine.graphics;
 
 import net.gavrix32.engine.objects.*;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +36,11 @@ public class Scene {
 
     public void setCamera(Camera camera) {
         this.camera = camera;
+    }
+
+    public Camera setCamera(Vector3f position) {
+        camera = new Camera().setPosition(position.x, position.y, position.z);
+        return camera;
     }
 
     public Sky getSky() {

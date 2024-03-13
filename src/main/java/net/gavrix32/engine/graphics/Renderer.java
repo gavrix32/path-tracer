@@ -23,7 +23,7 @@ public class Renderer {
     private static Scene scene;
     private static Shader rt_shader;
     private static int accFrames = 0;
-    private static int samples = 1, bounces = 3, fov = 70;
+    private static int samples = 1, bounces = 3;
     private static boolean
             accumulation = true, frameMixing = true, randNoise = false, gammaCorrection = true, tonemapping = true,
             taa = true, dof = false, autofocus = true, showAlbedo = false, showNormals = false, showDepth = false;
@@ -46,6 +46,8 @@ public class Renderer {
 
         rt_shader = new Shader("shaders/main.vert", "shaders/main.frag");
         rt_shader.use();
+
+        scene = new Scene();
     }
 
     public static void render() {
@@ -57,7 +59,7 @@ public class Renderer {
             if (Input.getDeltaX() != 0 || Input.getDeltaY() != 0) Renderer.resetAccFrames();
         }
         rt_shader.setMat4("view", scene.getCamera().getView());
-        rt_shader.setVec3("camera_position", scene.getCamera().getPos());
+        rt_shader.setVec3("camera_position", scene.getCamera().getPosition());
         if (Gui.status) {
             if (Viewport.getWidthDelta() != 0 || Viewport.getHeightDelta() != 0) resetAccFrames();
             rt_shader.setVec2("resolution", new Vector2f(Viewport.getWidth(), Viewport.getHeight()));
@@ -69,7 +71,7 @@ public class Renderer {
         rt_shader.setBool("show_depth", showDepth);
         rt_shader.setInt("samples", samples);
         rt_shader.setInt("bounces", bounces);
-        rt_shader.setInt("fov", fov);
+        rt_shader.setFloat("fov", scene.getCamera().getFov());
         rt_shader.setBool("random_noise", randNoise);
         rt_shader.setBool("frame_mixing", frameMixing);
         rt_shader.setBool("taa", taa);
@@ -171,15 +173,6 @@ public class Renderer {
     public static void setBounces(int bounces) {
         resetAccFrames();
         Renderer.bounces = bounces;
-    }
-
-    public static int getFov() {
-        return Renderer.fov;
-    }
-
-    public static void setFov(int fov) {
-        resetAccFrames();
-        Renderer.fov = fov;
     }
 
     public static void setAccumulation(boolean value) {
@@ -291,6 +284,10 @@ public class Renderer {
     public static void setDefocusBlur(float defocusBlur) {
         resetAccFrames();
         Renderer.defocusBlur = defocusBlur;
+    }
+
+    public static boolean isAutofocus() {
+        return autofocus;
     }
 
     public static void setAutofocus(boolean value) {

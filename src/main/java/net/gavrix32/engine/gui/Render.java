@@ -13,7 +13,6 @@ public class Render {
     private static final int[]
             samples = new int[] {Renderer.getSamples()},
             bounces = new int[] {Renderer.getBounces()},
-            fov = new int[] {Renderer.getFov()},
             fpsLimit = new int[] {Engine.getFpsLimit()};
     private static final float[]
             gamma = new float[] {Renderer.getGamma()},
@@ -28,7 +27,7 @@ public class Render {
             tonemapping = new ImBoolean(Renderer.isTonemapping()),
             taa = new ImBoolean(Renderer.isTaa()),
             dof = new ImBoolean(Renderer.isDof()),
-            autofocus = new ImBoolean(Renderer.isDof()),
+            autofocus = new ImBoolean(Renderer.isAutofocus()),
             showAlbedo = new ImBoolean(Renderer.isShowAlbedo()),
             showNormals = new ImBoolean(Renderer.isShowNormals()),
             showDepth = new ImBoolean(Renderer.isShowDepth());
@@ -50,7 +49,6 @@ public class Render {
         }
         if (ImGui.sliderInt("spp", samples, 1, 32)) Renderer.setSamples(samples[0]);
         if (ImGui.sliderInt("bounces", bounces, 0, 8)) Renderer.setBounces(bounces[0]);
-        if (ImGui.dragInt("fov", fov, 1, 0, 180)) Renderer.setFov(fov[0]);
         if (ImGui.checkbox("taa", taa)) Renderer.useTaa(taa.get());
         if (ImGui.checkbox("dof", dof)) Renderer.setDof(dof.get());
         ImGui.beginDisabled(!dof.get());

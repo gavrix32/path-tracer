@@ -12,14 +12,13 @@ public class Spheres {
 
     public Spheres() {
         scene = new Scene();
-        scene.setCamera(new Camera().setPos(0, 100, -200));
+        scene.setCamera(new Camera().setPosition(0, 100, -200));
         scene.setSky("textures/sky/lauter_waterfall_2k.hdr");
         scene.addBox(new Box(
                 new Vector3f(),
                 new Vector3f(),
                 new Vector3f(1),
-                new Material(true, 0, 1, 1, false),
-                new Vector3f(250, 0, 100)
+                new Vector3f(250, 0, 100), new Material(true, 0, 1, 1, false)
         ));
         scene.addSpheres(
                 new Sphere(

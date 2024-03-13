@@ -5,6 +5,7 @@ import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.IApp;
 import net.gavrix32.engine.gui.Gui;
 import net.gavrix32.engine.graphics.*;
+import net.gavrix32.engine.gui.SceneEditor;
 import net.gavrix32.engine.io.*;
 
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ public class Main implements IApp {
     private RGBSpheres rgbSpheres;
     private Spheres spheres;
     private Liminal liminal;
+    private OpenBox openBox;
 
     @Override
     public void init() {
@@ -26,20 +28,29 @@ public class Main implements IApp {
         cornellBox = new CornellBox();
         scenes.add(cornellBox.getScene());
         names.add("Cornell Box");
+
         rgbRoom = new RGBRoom();
         scenes.add(rgbRoom.getScene());
         names.add("RGB Room");
+
         rgbSpheres = new RGBSpheres();
         scenes.add(rgbSpheres.getScene());
         names.add("RGB Spheres");
+
         spheres = new Spheres();
         scenes.add(spheres.getScene());
         names.add("Spheres");
+
         liminal = new Liminal();
         scenes.add(liminal.getScene());
         names.add("Liminal");
+
+        openBox = new OpenBox();
+        scenes.add(openBox.getScene());
+        names.add("Open Box");
+
         Renderer.init();
-        Renderer.setScene(cornellBox.getScene());
+        SceneEditor.setDefaultScene(5);
     }
 
     @Override
