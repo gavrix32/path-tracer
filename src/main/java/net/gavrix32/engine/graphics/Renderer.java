@@ -76,8 +76,8 @@ public class Renderer {
         rt_shader.setFloat("fov", scene.getCamera().getFov());
         rt_shader.setBool("random_noise", randNoise);
         rt_shader.setBool("frame_mixing", frameMixing);
-        rt_shader.setBool("taa", taa);
-        rt_shader.setBool("dof", dof);
+        rt_shader.setBool("use_taa", taa);
+        rt_shader.setBool("use_dof", dof);
         rt_shader.setBool("autofocus", autofocus);
         rt_shader.setFloat("focus_distance", focusDistance);
         rt_shader.setFloat("defocus_blur", defocusBlur);

@@ -14,12 +14,12 @@ public class Shader {
 
     public Shader(String vertexPath, String fragmentPath) {
         int vertex = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex, Utils.loadString(vertexPath));
+        glShaderSource(vertex, parseIncludes(Utils.loadString(vertexPath)));
         glCompileShader(vertex);
         if (glGetShaderi(vertex, GL_COMPILE_STATUS) == 0) Logger.error(vertexPath + "\n" + glGetShaderInfoLog(vertex));
 
         int fragment = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment, Utils.loadString(fragmentPath));
+        glShaderSource(fragment, parseIncludes(Utils.loadString(fragmentPath)));
         glCompileShader(fragment);
         if (glGetShaderi(fragment, GL_COMPILE_STATUS) == 0) Logger.error(fragmentPath + "\n" + glGetShaderInfoLog(fragment));
 
@@ -28,6 +28,18 @@ public class Shader {
         glAttachShader(program, fragment);
         glLinkProgram(program);
         if (glGetProgrami(program, GL_LINK_STATUS) == 0) Logger.error("Shader program " + glGetProgramInfoLog(program));
+    }
+
+    private String parseIncludes(String code) {
+        int includeIndex = code.indexOf("#include");
+        while (includeIndex != -1) {
+            String includeLine = code.substring(includeIndex, code.indexOf("\n", includeIndex));
+            String includePath = includeLine.replace("#include", "");
+            includePath = includePath.replace(" ", "");
+            code = code.replace(includeLine, Utils.loadString(includePath));
+            includeIndex = code.indexOf("#include", code.indexOf(includePath));
+        }
+        return code;
     }
 
     public void setInt(String name, int value) {
