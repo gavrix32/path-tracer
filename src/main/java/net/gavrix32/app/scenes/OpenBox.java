@@ -3,6 +3,7 @@ package net.gavrix32.app.scenes;
 import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.objects.Box;
+import net.gavrix32.engine.objects.Triangle;
 import org.joml.Vector3f;
 
 public class OpenBox {
@@ -11,7 +12,7 @@ public class OpenBox {
     public OpenBox() {
         scene = new Scene();
         scene.setCamera(new Vector3f(0, 0, -350)).setFov(45);
-        scene.setSky("textures/sky/HDR_111_Parking_Lot_2_Env.hdr");
+        scene.setSky("textures/sky/HDR_111_Parking_Lot_2_Env.hdr").setMaterial(true, 5, 1, 1, false);
         scene.addBoxes(
                 // Floor
                 new Box(new Vector3f(0, -100, 0),
@@ -63,6 +64,20 @@ public class OpenBox {
                         new Material(true, 0, 1, 1, false)
                 )
         );
+        /*scene.addTriangles(
+                new Triangle(new Vector3f(0, 50, 0), new Vector3f(50, 0, 0), new Vector3f(0, 0, 0)),
+                new Triangle(new Vector3f(50, 50, 0), new Vector3f(50, 0, 0), new Vector3f(0, 50, 0)),
+                new Triangle(new Vector3f(0, 0, 50), new Vector3f(0, 50, 50), new Vector3f(0, 0, 0)),
+                new Triangle(new Vector3f(0, 50, 0), new Vector3f(0, 0, 0), new Vector3f(0, 50, 50)),
+                new Triangle(new Vector3f(50, 50, 50), new Vector3f(50, 0, 0), new Vector3f(50, 50, 0)),
+                new Triangle(new Vector3f(50, 50, 50), new Vector3f(50, 0, 50), new Vector3f(50, 0, 0)),
+                new Triangle(new Vector3f(0, 50, 50), new Vector3f(50, 50, 0), new Vector3f(0, 50, 0)),
+                new Triangle(new Vector3f(0, 50, 50), new Vector3f(50, 50, 50), new Vector3f(50, 50, 0)),
+                new Triangle(new Vector3f(50, 0, 0), new Vector3f(50, 0, 50), new Vector3f(0, 0, 50)),
+                new Triangle(new Vector3f(50, 0, 0), new Vector3f(0, 0, 50), new Vector3f(0, 0, 0)),
+                new Triangle(new Vector3f(50, 0, 50), new Vector3f(0, 50, 50), new Vector3f(0, 0, 50)),
+                new Triangle(new Vector3f(50, 50, 50), new Vector3f(0, 50, 50), new Vector3f(50, 0, 50))
+        );*/
     }
 
     public Scene getScene() {

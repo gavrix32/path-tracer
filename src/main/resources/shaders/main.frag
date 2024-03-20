@@ -17,7 +17,7 @@ struct Material {
 
 struct HitInfo {
     Ray ray;
-    vec3 color, normal;
+    vec3 normal;
     float minDistance;
     Material material;
 };
@@ -30,6 +30,12 @@ struct Sphere {
 
 struct Box {
     vec3 position, scale;
+    mat4 rotation;
+    Material material;
+};
+
+struct Triangle {
+    vec3 v1, v2, v3;
     mat4 rotation;
     Material material;
 };
@@ -49,16 +55,18 @@ struct Plane {
 #define MAX_DISTANCE 999999999
 #define MAX_SPHERES 32
 #define MAX_BOXES 32
+#define MAX_TRIANGLES 32
 
 uniform vec2 resolution;
 uniform vec3 camera_position;
 uniform mat4 view, rot;
 uniform int samples, bounces, taa, dof, autofocus, random_noise, gamma_correction, tonemapping, frame_mixing,
-            show_albedo, show_depth, show_normals, sky_has_texture, spheres_count, boxes_count;
+            show_albedo, show_depth, show_normals, sky_has_texture, spheres_count, boxes_count, triangles_count;
 uniform sampler2D sky_texture;
 uniform float acc_frames, time, gamma, exposure, fov, focus_distance, defocus_blur;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
+uniform Triangle triangles[MAX_TRIANGLES];
 uniform Sky sky;
 uniform Plane plane;
 
@@ -127,7 +135,9 @@ float intersect_box(Ray ray, vec3 scale, out vec3 normal, mat4 rotation) {
     return tN;
 }
 
-vec3 intersect_triangle(in vec3 ro, in vec3 rd, in vec3 v0, in vec3 v1, in vec3 v2) {
+vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 normal, mat4 rotation) {
+    vec3 ro = (rotation * vec4(ray.pos, 1)).xyz;
+    vec3 rd = (rotation * vec4(ray.dir, 0)).xyz;
     vec3 v1v0 = v1 - v0;
     vec3 v2v0 = v2 - v0;
     vec3 rov0 = ro - v0;
@@ -138,6 +148,7 @@ vec3 intersect_triangle(in vec3 ro, in vec3 rd, in vec3 v0, in vec3 v1, in vec3 
     float v = d * dot( q, v1v0);
     float t = d * dot(-n, rov0);
     if (u < 0.0 || v < 0.0 || (u + v) > 1.0) t = -1.0;
+    normal = n * mat3(rotation);
     return vec3(t, u, v);
 }
 
@@ -150,17 +161,17 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
         if (dist > 0 && dist < hitInfo.minDistance) {
             hit = true;
             hitInfo.minDistance = dist;
+            hitInfo.material = plane.material;
+            hitInfo.normal = vec3(0, 1, 0);
             if (plane.checkerboard) {
                 float cb = checkerboard(vec3(ray.dir * dist + ray.pos).xz * (0.06));
                 if (vec3(plane.color1 * cb) != vec3(0))
-                    hitInfo.color = plane.color1;
+                    hitInfo.material.color = plane.color1;
                 else
-                    hitInfo.color = plane.color2;
+                    hitInfo.material.color = plane.color2;
             } else {
-                hitInfo.color = plane.material.color;
+                hitInfo.material.color = plane.material.color;
             }
-            hitInfo.material = plane.material;
-            hitInfo.normal = vec3(0, 1, 0);
         }
     }
     for (int i = 0; i < spheres_count; i++) {
@@ -168,35 +179,44 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
         if (dist > 0 && dist < hitInfo.minDistance) {
             hit = true;
             hitInfo.minDistance = dist;
-            hitInfo.color = spheres[i].material.color;
+            //hitInfo.color = spheres[i].material.color;
             hitInfo.material = spheres[i].material;
             hitInfo.normal = normalize(ray.pos + ray.dir * dist - spheres[i].position);
         }
     }
     for (int i = 0; i < boxes_count; i++) {
-        vec3 norm;
-        dist = intersect_box(Ray(ray.pos - boxes[i].position, ray.dir), boxes[i].scale, norm, boxes[i].rotation).x;
+        vec3 normal;
+        dist = intersect_box(Ray(ray.pos - boxes[i].position, ray.dir), boxes[i].scale, normal, boxes[i].rotation).x;
         if (dist > 0 && dist < hitInfo.minDistance) {
             hit = true;
             hitInfo.minDistance = dist;
-            hitInfo.color = boxes[i].material.color;
             hitInfo.material = boxes[i].material;
-            hitInfo.normal = normalize(norm);
+            hitInfo.normal = normalize(normal);
+        }
+    }
+    for (int i = 0; i < triangles_count; i++) {
+        vec3 normal;
+        dist = intersect_triangle(Ray(ray.pos, ray.dir), triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
+        if (dist > 0 && dist < hitInfo.minDistance) {
+            hit = true;
+            hitInfo.minDistance = dist;
+            hitInfo.material = triangles[i].material;
+            hitInfo.normal = normalize(normal);
         }
     }
     if (!hit) {
+        hitInfo.material = sky.material;
+        hitInfo.minDistance = MAX_DISTANCE;
         switch (sky_has_texture) {
             case 1:
                 vec2 uv_ = vec2(atan(ray.dir.z, ray.dir.x) / PI, asin(ray.dir.y) * 2 / PI);
                 uv_ = uv_ * 0.5 + 0.5;
-                hitInfo.color = texture(sky_texture, uv_).rgb;
+                hitInfo.material.color = texture(sky_texture, uv_).rgb;
                 break;
             case 0:
-                hitInfo.color = sky.material.color;
+                hitInfo.material.color = sky.material.color;
                 break;
         }
-        hitInfo.minDistance = MAX_DISTANCE;
-        hitInfo.material = sky.material;
         return true;
     }
     return hit;
@@ -249,7 +269,7 @@ vec3 trace(Ray ray) {
             else
                 ray.pos += ray.dir * (hitInfo.minDistance - EPSILON);
             ray = brdf(ray, hitInfo);
-            energy *= hitInfo.color;
+            energy *= hitInfo.material.color;
             if (hitInfo.material.emission > 0) return energy * hitInfo.material.emission;
         }
     }
@@ -261,6 +281,19 @@ vec3 post_process(vec3 col) {
     if (gamma_correction == 1) col = pow(col, vec3(1.0 / gamma));
     return col;
 }
+
+/*mat4 perspective(float fov_y) {
+    float far = 100.0;
+    float near = 1.0;
+    float fn = far + near;
+    float f_n = far - near;
+    float t = tan(radians(fov_y) / 2.0f );
+    return mat4(t,     0.0f,  0.0f,                 0.0f,
+                0.0f,  t,     0.0f,                 0.0f,
+                0.0f,  0.0f, fn / f_n,            -1.0f,
+                0.0f,  0.0f, -2.0f*far*near / f_n,  0.0f
+    );
+}*/
 
 void main() {
     if (show_depth == 0 && show_albedo == 0 && show_normals == 0 && (acc_frames > 0 || random_noise == 1 || frame_mixing == 1))
@@ -281,7 +314,9 @@ void main() {
         uv.y += (random() - 0.5) * 0.002;
     }
 
-    vec3 dir = normalize(vec3(uv, 1.0 / tan(fov * (PI / 180) * 0.5)) * mat3(view));
+    vec3 dir = normalize(vec3(uv, 1.0 / tan(radians(fov) / 2))) * mat3(view);
+    //vec3 dir = normalize(vec3(uv, resolution.x / resolution.y / tan(radians(fov) * 0.5))) * mat3(view);
+    //vec3 dir = normalize(vec3(uv, c) * mat3(perspective(fov)) * mat3(view));
     Ray ray = Ray(camera_position, dir);
 
     // depth of field
@@ -308,7 +343,7 @@ void main() {
     if (show_depth == 1 || show_albedo == 1 || show_normals == 1) {
         HitInfo hitInfo;
         raycast(ray, hitInfo);
-        color = hitInfo.color;
+        color = hitInfo.material.color;
         if (show_normals == 1) color = hitInfo.normal * 0.5 + 0.5;
         if (show_depth == 1) color = vec3(hitInfo.minDistance) * 0.001;
     } else {

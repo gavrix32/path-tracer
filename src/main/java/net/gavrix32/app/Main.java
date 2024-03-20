@@ -22,7 +22,7 @@ public class Main implements IApp {
 
     @Override
     public void init() {
-        Window.init("Ray Tracing", 1280, 720);
+        Window.init("Path Tracing", 1280, 720);
         Window.setFullscreen(true);
         //GLUtil.setupDebugMessageCallback();
         cornellBox = new CornellBox();

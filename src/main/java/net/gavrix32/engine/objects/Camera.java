@@ -73,8 +73,9 @@ public class Camera {
         return fov;
     }
 
-    public void setFov(float fov) {
+    public Camera setFov(float fov) {
         Renderer.resetAccFrames();
         this.fov = fov;
+        return this;
     }
 }

@@ -13,6 +13,7 @@ public class Scene {
     private Plane plane;
     private final ArrayList<Sphere> spheres;
     private final ArrayList<Box> boxes;
+    private final ArrayList<Triangle> triangles;
 
     public Scene() {
         name = "Unnamed scene";
@@ -20,6 +21,7 @@ public class Scene {
         sky = new Sky();
         spheres = new ArrayList<>();
         boxes = new ArrayList<>();
+        triangles = new ArrayList<>();
     }
 
     public String getName() {
@@ -64,16 +66,16 @@ public class Scene {
         boxes.add(box);
     }
 
+    public Box getBox(int index) {
+        return boxes.get(index);
+    }
+
     public void removeBox(int index) {
         boxes.remove(index);
     }
 
     public void addBoxes(Box... boxes) {
         this.boxes.addAll(Arrays.asList(boxes));
-    }
-
-    public Box getBox(int index) {
-        return boxes.get(index);
     }
 
     public ArrayList<Box> getBoxes() {
@@ -92,11 +94,31 @@ public class Scene {
         this.spheres.addAll(Arrays.asList(spheres));
     }
 
+    public ArrayList<Sphere> getSpheres() {
+        return spheres;
+    }
+
     public Sphere getSphere(int index) {
         return spheres.get(index);
     }
 
-    public ArrayList<Sphere> getSpheres() {
-        return spheres;
+    public void addTriangle(Triangle triangle) {
+        triangles.add(triangle);
+    }
+
+    public Triangle getTriangle(int index) {
+        return triangles.get(index);
+    }
+
+    public void removeTriangle(int index) {
+        triangles.remove(index);
+    }
+
+    public void addTriangles(Triangle... triangles) {
+        this.triangles.addAll(Arrays.asList(triangles));
+    }
+
+    public ArrayList<Triangle> getTriangles() {
+        return triangles;
     }
 }

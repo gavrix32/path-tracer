@@ -62,11 +62,11 @@ public class Render {
         ImGui.endDisabled();
         ImGui.text("accumulated frames: " + Renderer.getAccFrames());
         if (ImGui.checkbox("accumulation", accumulation)) Renderer.setAccumulation(accumulation.get());
-        if (ImGui.checkbox("gamma Correction", gammaCorrection) || gammaCorrection.get()) Renderer.useGammaCorrection(gammaCorrection.get(), gamma[0]);
+        if (ImGui.checkbox("gamma correction", gammaCorrection) || gammaCorrection.get()) Renderer.useGammaCorrection(gammaCorrection.get(), gamma[0]);
         ImGui.beginDisabled(!gammaCorrection.get());
         ImGui.sliderFloat("gamma", gamma, 0, 10, "%.1f");
         ImGui.endDisabled();
-        if (ImGui.checkbox("tone Mapping", tonemapping) || tonemapping.get()) Renderer.setToneMapping(tonemapping.get(), exposure[0]);
+        if (ImGui.checkbox("tone mapping", tonemapping) || tonemapping.get()) Renderer.setToneMapping(tonemapping.get(), exposure[0]);
         ImGui.beginDisabled(!tonemapping.get());
         ImGui.sliderFloat("exposure", exposure, 0, 5, "%.1f");
         ImGui.endDisabled();
