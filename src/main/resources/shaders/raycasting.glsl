@@ -14,7 +14,7 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
             hitInfo.material = plane.material;
             hitInfo.normal = vec3(0, 1, 0);
             if (plane.checkerboard) {
-                float cb = checkerboard(vec3(ray.dir * dist + ray.pos).xz * (0.06));
+                float cb = checkerboard(vec3(ray.d * dist + ray.o).xz * (0.06));
                 if (vec3(plane.color1 * cb) != vec3(0))
                 hitInfo.material.color = plane.color1;
                 else
@@ -29,14 +29,13 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
         if (dist > 0 && dist < hitInfo.minDistance) {
             hit = true;
             hitInfo.minDistance = dist;
-            //hitInfo.color = spheres[i].material.color;
             hitInfo.material = spheres[i].material;
-            hitInfo.normal = normalize(ray.pos + ray.dir * dist - spheres[i].position);
+            hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
         }
     }
     for (int i = 0; i < boxes_count; i++) {
         vec3 normal;
-        dist = intersect_box(Ray(ray.pos - boxes[i].position, ray.dir), boxes[i].scale, normal, boxes[i].rotation).x;
+        dist = intersect_box(Ray(ray.o - boxes[i].position, ray.d), boxes[i].scale, normal, boxes[i].rotation).x;
         if (dist > 0 && dist < hitInfo.minDistance) {
             hit = true;
             hitInfo.minDistance = dist;
@@ -46,7 +45,7 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
     }
     for (int i = 0; i < triangles_count; i++) {
         vec3 normal;
-        dist = intersect_triangle(Ray(ray.pos, ray.dir), triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
+        dist = intersect_triangle(Ray(ray.o, ray.d), triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
         if (dist > 0 && dist < hitInfo.minDistance) {
             hit = true;
             hitInfo.minDistance = dist;
@@ -59,7 +58,7 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
         hitInfo.minDistance = MAX_DISTANCE;
         switch (sky_has_texture) {
             case 1:
-            vec2 uv_ = vec2(atan(ray.dir.z, ray.dir.x) / PI, asin(ray.dir.y) * 2 / PI);
+            vec2 uv_ = vec2(atan(ray.d.z, ray.d.x) / PI, asin(ray.d.y) * 2 / PI);
             uv_ = uv_ * 0.5 + 0.5;
             hitInfo.material.color = texture(sky_texture, uv_).rgb;
             break;

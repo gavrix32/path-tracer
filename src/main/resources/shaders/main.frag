@@ -1,6 +1,6 @@
 #version 420 core
 
-out vec4 out_color;
+out vec3 out_color;
 
 #include shaders/defines.glsl
 #include shaders/structures.glsl
@@ -45,9 +45,9 @@ void main() {
             focus_dist = focus_distance;
         }
         vec3 dof_position = defocus_blur * vec3(random_cosine_weighted_hemisphere(vec3(0)).xy, 0);
-        vec3 dof_direction = normalize(ray.dir * focus_dist - dof_position);
-        ray.pos += dof_position;
-        ray.dir = normalize(dof_direction);
+        vec3 dof_direction = normalize(ray.d * focus_dist - dof_position);
+        ray.o += dof_position;
+        ray.d = normalize(dof_direction);
     }
 
     vec3 color;
@@ -72,5 +72,5 @@ void main() {
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
     }
-    out_color.rgb = post_process(color);
+    out_color = post_process(color);
 }

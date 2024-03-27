@@ -183,7 +183,6 @@ public class Renderer {
     }
 
     public static void setSamples(int samples) {
-        resetAccFrames();
         Renderer.samples = samples;
     }
 

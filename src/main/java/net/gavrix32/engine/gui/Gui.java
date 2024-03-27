@@ -8,7 +8,6 @@ import imgui.glfw.ImGuiImplGlfw;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.utils.Logger;
 import net.gavrix32.engine.utils.Utils;
 
 import java.util.ArrayList;
@@ -61,6 +60,10 @@ public class Gui {
         status = !status;
         Renderer.resetAccFrames();
         Renderer.resetAccTexture();
+    }
+
+    public static void setStatus(boolean status) {
+        Gui.status = status;
     }
 
     public static boolean isEnabled() {

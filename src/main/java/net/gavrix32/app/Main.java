@@ -10,6 +10,8 @@ import net.gavrix32.engine.io.*;
 
 import java.util.ArrayList;
 
+import static org.lwjgl.opengl.GL11C.*;
+
 public class Main implements IApp {
     private final ArrayList<Scene> scenes = new ArrayList<>();
     private final ArrayList<String> names = new ArrayList<>();

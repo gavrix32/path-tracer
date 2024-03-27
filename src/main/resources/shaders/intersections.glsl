@@ -1,10 +1,10 @@
 float intersect_plane(Ray ray, vec4 p) {
-    return -(dot(ray.pos, p.xyz) + p.w) / dot(ray.dir, p.xyz);
+    return -(dot(ray.o, p.xyz) + p.w) / dot(ray.d, p.xyz);
 }
 
 float intersect_sphere(Ray ray, vec3 ce, float ra) {
-    vec3 oc = ray.pos - ce;
-    float b = dot(oc, ray.dir);
+    vec3 oc = ray.o - ce;
+    float b = dot(oc, ray.d);
     float c = dot(oc, oc) - ra * ra;
     float h = b * b - c;
     if (h < 0) return -1;
@@ -12,8 +12,8 @@ float intersect_sphere(Ray ray, vec3 ce, float ra) {
 }
 
 float intersect_box(Ray ray, vec3 scale, out vec3 normal, mat4 rotation) {
-    vec3 ro = (rotation * vec4(ray.pos, 1)).xyz;
-    vec3 rd = (rotation * vec4(ray.dir, 0)).xyz;
+    vec3 ro = (rotation * vec4(ray.o, 1)).xyz;
+    vec3 rd = (rotation * vec4(ray.d, 0)).xyz;
     vec3 m = 1 / rd;
     vec3 n = m * ro;
     vec3 k = abs(m) * scale;
@@ -29,8 +29,8 @@ float intersect_box(Ray ray, vec3 scale, out vec3 normal, mat4 rotation) {
 }
 
 vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 normal, mat4 rotation) {
-    vec3 ro = (rotation * vec4(ray.pos, 1)).xyz;
-    vec3 rd = (rotation * vec4(ray.dir, 0)).xyz;
+    vec3 ro = (rotation * vec4(ray.o, 1)).xyz;
+    vec3 rd = (rotation * vec4(ray.d, 0)).xyz;
     vec3 v1v0 = v1 - v0;
     vec3 v2v0 = v2 - v0;
     vec3 rov0 = ro - v0;

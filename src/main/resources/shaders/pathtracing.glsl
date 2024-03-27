@@ -46,20 +46,24 @@ float fresnel(vec3 dir, vec3 n, float ior) {
 }
 
 Ray brdf(Ray ray, HitInfo hitInfo) {
+    if (hitInfo.material.is_glass)
+        ray.o += ray.d * (hitInfo.minDistance + EPSILON);
+    else
+        ray.o += ray.d * (hitInfo.minDistance - EPSILON);
     vec3 diffused = random_cosine_weighted_hemisphere(hitInfo.normal);
-    vec3 reflected = reflect(ray.dir, hitInfo.normal);
-    vec3 refracted = refract(ray.dir, hitInfo.normal, 1 / hitInfo.material.IOR);
+    vec3 reflected = reflect(ray.d, hitInfo.normal);
+    vec3 refracted = refract(ray.d, hitInfo.normal, 1 / hitInfo.material.IOR);
     if (hitInfo.material.is_glass) {
-        if (fresnel(ray.dir, hitInfo.normal, hitInfo.material.IOR) > random()) refracted = reflected;
+        if (fresnel(ray.d, hitInfo.normal, hitInfo.material.IOR) > random()) refracted = reflected;
         if (hitInfo.material.is_metal)
-        ray.dir = mix(refracted, diffused, hitInfo.material.roughness > 0.5 ? 0.5 : hitInfo.material.roughness);
+        ray.d = mix(refracted, diffused, hitInfo.material.roughness > 0.5 ? 0.5 : hitInfo.material.roughness);
         else
-        ray.dir = mix(refracted, diffused, random() < hitInfo.material.roughness ? 1 : 0);
+        ray.d = mix(refracted, diffused, random() < hitInfo.material.roughness ? 1 : 0);
     } else {
         if (hitInfo.material.is_metal)
-        ray.dir = mix(reflected, diffused, hitInfo.material.roughness);
+        ray.d = mix(reflected, diffused, hitInfo.material.roughness);
         else
-        ray.dir = mix(reflected, diffused, random() < hitInfo.material.roughness ? 1 : 0);
+        ray.d = mix(reflected, diffused, random() < hitInfo.material.roughness ? 1 : 0);
     }
     return ray;
 }
@@ -69,10 +73,6 @@ vec3 trace(Ray ray) {
     for(int i = 0; i <= bounces; i++) {
         HitInfo hitInfo;
         if (raycast(ray, hitInfo)) {
-            if (hitInfo.material.is_glass)
-            ray.pos += ray.dir * (hitInfo.minDistance + EPSILON);
-            else
-            ray.pos += ray.dir * (hitInfo.minDistance - EPSILON);
             ray = brdf(ray, hitInfo);
             energy *= hitInfo.material.color;
             if (hitInfo.material.emission > 0) return energy * hitInfo.material.emission;

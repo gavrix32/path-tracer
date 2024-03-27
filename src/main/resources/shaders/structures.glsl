@@ -1,5 +1,5 @@
 struct Ray {
-    vec3 pos, dir;
+    vec3 o, d;
 };
 
 struct Material {
