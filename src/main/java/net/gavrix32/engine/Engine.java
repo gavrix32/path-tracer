@@ -24,7 +24,7 @@ public class Engine {
         System.exit(0);
     }
 
-    public static float getDelta() {
+    public static float getDeltaTime() {
         return dt;
     }
 

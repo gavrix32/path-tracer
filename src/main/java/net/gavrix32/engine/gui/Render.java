@@ -36,8 +36,8 @@ public class Render {
 
     public static void update() {
         ImGui.begin("Render", ImGuiWindowFlags.NoMove);
-        ImGui.text((int) (1 / Engine.getDelta()) + " fps");
-        ImGui.text("frame time: " + Engine.getDelta() * 1000 + " ms");
+        ImGui.text((int) (1 / Engine.getDeltaTime()) + " fps");
+        ImGui.text("frame time: " + Engine.getDeltaTime() * 1000 + " ms");
         if (ImGui.sliderInt("fps limit", fpsLimit, 1, 255, fpsLimit[0] < 255 ? String.valueOf(fpsLimit[0]) : "unlimited")) Engine.setFpsLimit(fpsLimit[0]);
         if (fpsLimit[0] == 255) Engine.setFpsLimit(Integer.MAX_VALUE);
         if (ImGui.combo("sync", syncType, syncTypes)) {

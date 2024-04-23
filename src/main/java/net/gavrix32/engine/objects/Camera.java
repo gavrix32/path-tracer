@@ -1,68 +1,93 @@
 package net.gavrix32.engine.objects;
 
 import net.gavrix32.engine.graphics.Renderer;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
+import net.gavrix32.engine.math.Matrix4f;
+import net.gavrix32.engine.math.Vector3f;
 
 public class Camera {
-    private Vector3f pos, rot;
-    private final Matrix4f view;
+    private Vector3f position;
+    private Vector3f rotation;
+    private final Vector3f cameraUp;
+    private Vector3f cameraFront;
     private float fov;
+    private final Matrix4f view;
 
     public Camera() {
-        pos = new Vector3f(0);
-        rot = new Vector3f(0);
-        view = new Matrix4f();
+        position = new Vector3f();
+        rotation = new Vector3f(-90, 0, 0);
         fov = 70.0f;
+        view = new Matrix4f();
+        cameraUp = new Vector3f(0, 1, 0);
+        cameraFront = new Vector3f();
     }
 
     public void update() {
-        view.identity();
-        view.rotateX((float) Math.toRadians(rot.x));
-        view.rotateY((float) Math.toRadians(rot.y));
-        view.rotateZ((float) Math.toRadians(rot.z));
+        if (rotation.y > 89.9f) rotation.y = 89.9f;
+        if (rotation.y < -89.9f) rotation.y = -89.9f;
+        Vector3f front = new Vector3f();
+        front.x = (float) (Math.cos(Math.toRadians(rotation.x)) * Math.cos(Math.toRadians(rotation.y)));
+        front.y = (float) Math.sin(Math.toRadians(rotation.y));
+        front.z = (float) (Math.sin(Math.toRadians(rotation.x)) * Math.cos(Math.toRadians(rotation.y)));
+        cameraFront = new Vector3f(front).normalize();
+        view.lookAt(position, new Vector3f(position).add(cameraFront), cameraUp);
     }
 
     public Vector3f getPosition() {
-        return new Vector3f(pos);
+        return position;
     }
 
     public Camera setPosition(Vector3f pos) {
-        this.pos = pos;
+        this.position = pos;
         return this;
     }
 
     public Camera setPosition(float x, float y, float z) {
-        pos.set(x, y, z);
+        position.set(x, y, z);
         return this;
     }
 
     public Vector3f getRotation() {
-        return rot;
+        return rotation;
     }
 
     public Camera setRotation(Vector3f rot) {
-        this.rot = rot;
+        this.rotation = rot;
         return this;
     }
 
     public Camera setRotation(float x, float y, float z) {
-        this.rot.set(x, y, z);
+        this.rotation.set(x, y, z);
         return this;
     }
 
+    public void move(Vector3f v) {
+        position.add(v);
+    }
+
     public void move(float x, float y, float z) {
-        pos.add(view.positiveX(new Vector3f()).mul(x));
-        pos.add(view.positiveY(new Vector3f()).mul(y));
-        pos.add(view.positiveZ(new Vector3f()).mul(z));
+        position.add(new Vector3f(cameraFront).cross(cameraUp).normalize().mul(x));
+        position.add(new Vector3f(cameraUp).mul(y));
+        position.add(new Vector3f(cameraFront).mul(z));
+    }
+
+    public void moveX(float x) {
+        move(x, 0, 0);
+    }
+
+    public void moveY(float y) {
+        move(0, y, 0);
+    }
+
+    public void moveZ(float z) {
+        move(0, 0, z);
     }
 
     public void rotateX(float x) {
-        rot.add(x, 0, 0);
+        rotation.addX(x);
     }
 
     public void rotateY(float y) {
-        rot.add(0, y, 0);
+        rotation.addY(y);
     }
 
     public Matrix4f getView() {

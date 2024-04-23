@@ -33,34 +33,38 @@ public class Controls {
 
     public static void update(Camera camera) {
         Input.update();
-        float speed;
-        if (Input.isKeyDown(GLFW_KEY_LEFT_CONTROL))
-            speed = 256f * Engine.getDelta();
-        else
-            speed = 128 * Engine.getDelta();
-        if (Input.isKeyDown(GLFW_KEY_W)) {
-            camera.move(0, 0, speed);
-            Renderer.resetAccFrames();
+        float speed = 200.0f * Engine.getDeltaTime();
+        if (Input.isKeyDown(GLFW_KEY_LEFT_CONTROL)) {
+            speed *= 2;
         }
-        if (Input.isKeyDown(GLFW_KEY_A)) {
-            camera.move(-speed, 0, 0);
+        if (Input.isKeyDown(GLFW_KEY_W)) {
+            camera.moveZ(-speed);
             Renderer.resetAccFrames();
         }
         if (Input.isKeyDown(GLFW_KEY_S)) {
-            camera.move(0, 0, -speed);
+            camera.moveZ(speed);
+            Renderer.resetAccFrames();
+        }
+        if (Input.isKeyDown(GLFW_KEY_A)) {
+            camera.moveX(-speed);
             Renderer.resetAccFrames();
         }
         if (Input.isKeyDown(GLFW_KEY_D)) {
-            camera.move(speed, 0, 0);
+            camera.moveX(speed);
             Renderer.resetAccFrames();
         }
         if (Input.isKeyDown(GLFW_KEY_SPACE)) {
-            camera.move(0, speed, 0);
+            camera.moveY(speed);
             Renderer.resetAccFrames();
         }
         if (Input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
-            camera.move(0, -speed, 0);
+            camera.moveY(-speed);
             Renderer.resetAccFrames();
+        }
+        if (!Window.isCursorVisible()) {
+            camera.rotateY(Input.getDeltaY() * 0.1f);
+            camera.rotateX(Input.getDeltaX() * -0.1f);
+            if (Input.getDeltaX() != 0 || Input.getDeltaY() != 0) Renderer.resetAccFrames();
         }
     }
 }

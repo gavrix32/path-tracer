@@ -1,11 +1,11 @@
 package net.gavrix32.app.scenes;
 
+import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.objects.Camera;
 import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.objects.Box;
 import net.gavrix32.engine.objects.Sphere;
-import org.joml.Vector3f;
 
 public class Spheres {
     private final Scene scene;
@@ -13,7 +13,7 @@ public class Spheres {
     public Spheres() {
         scene = new Scene();
         scene.setCamera(new Camera().setPosition(0, 100, -200));
-        scene.setSky("textures/sky/lauter_waterfall_2k.hdr");
+        scene.setSky("textures/sky/kiara_1_dawn_2k.hdr").setMaterial(false, 0.2f, 0, 1, false);
         scene.addBox(new Box(
                 new Vector3f(),
                 new Vector3f(),

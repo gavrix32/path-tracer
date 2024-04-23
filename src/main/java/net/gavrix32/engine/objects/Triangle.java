@@ -1,8 +1,8 @@
 package net.gavrix32.engine.objects;
 
 import net.gavrix32.engine.graphics.Material;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
+import net.gavrix32.engine.math.Matrix4f;
+import net.gavrix32.engine.math.Vector3f;
 
 public class Triangle extends Shape {
     private Vector3f v1, v2, v3;
@@ -13,7 +13,7 @@ public class Triangle extends Shape {
         this.v1 = v1;
         this.v2 = v2;
         this.v3 = v3;
-        rotationMatrix = new Matrix4f().identity();
+        rotationMatrix = new Matrix4f();
     }
 
     public Triangle(Vector3f v1, Vector3f v2, Vector3f v3) {
@@ -21,7 +21,7 @@ public class Triangle extends Shape {
         this.v1 = v1;
         this.v2 = v2;
         this.v3 = v3;
-        rotationMatrix = new Matrix4f().identity();
+        rotationMatrix = new Matrix4f();
     }
 
     public Triangle() {
@@ -29,7 +29,7 @@ public class Triangle extends Shape {
         this.v1 = new Vector3f();
         this.v2 = new Vector3f();
         this.v3 = new Vector3f();
-        rotationMatrix = new Matrix4f().identity();
+        rotationMatrix = new Matrix4f();
     }
 
     public Vector3f getV1() {

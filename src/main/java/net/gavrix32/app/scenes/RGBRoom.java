@@ -1,10 +1,10 @@
 package net.gavrix32.app.scenes;
 
+import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.objects.Camera;
 import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.objects.Box;
-import org.joml.Vector3f;
 
 public class RGBRoom {
     private final Scene scene;

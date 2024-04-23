@@ -2,9 +2,8 @@ package net.gavrix32.app.scenes;
 
 import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.graphics.Scene;
+import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.objects.Box;
-import net.gavrix32.engine.objects.Triangle;
-import org.joml.Vector3f;
 
 public class OpenBox {
     private final Scene scene;

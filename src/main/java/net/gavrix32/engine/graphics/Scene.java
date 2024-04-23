@@ -1,19 +1,19 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.objects.*;
-import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Scene {
     private String name;
-    private Camera camera;
-    private Sky sky;
-    private Plane plane;
-    private final ArrayList<Sphere> spheres;
-    private final ArrayList<Box> boxes;
-    private final ArrayList<Triangle> triangles;
+    protected Camera camera;
+    protected Sky sky;
+    protected Plane plane;
+    protected final ArrayList<Sphere> spheres;
+    protected final ArrayList<Box> boxes;
+    protected final ArrayList<Triangle> triangles;
 
     public Scene() {
         name = "Unnamed scene";

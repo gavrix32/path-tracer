@@ -1,11 +1,11 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.engine.math.Matrix4f;
+import net.gavrix32.engine.math.Vector2f;
+import net.gavrix32.engine.math.Vector3f;
+import net.gavrix32.engine.math.Vector4f;
 import net.gavrix32.engine.utils.Logger;
 import net.gavrix32.engine.utils.Utils;
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import static org.lwjgl.opengl.GL20.*;
 
@@ -14,20 +14,28 @@ public class Shader {
 
     public Shader(String vertexPath, String fragmentPath) {
         int vertex = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex, parseIncludes(Utils.loadString(vertexPath)));
+        //glShaderSource(vertex, parseIncludes(Utils.loadString(vertexPath)));
+        glShaderSource(vertex, Utils.loadString(vertexPath));
         glCompileShader(vertex);
-        if (glGetShaderi(vertex, GL_COMPILE_STATUS) == 0) Logger.error(vertexPath + System.lineSeparator() + glGetShaderInfoLog(vertex));
+        if (glGetShaderi(vertex, GL_COMPILE_STATUS) == 0) {
+            Logger.error(vertexPath + System.lineSeparator() + glGetShaderInfoLog(vertex));
+        }
 
         int fragment = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment, parseIncludes(Utils.loadString(fragmentPath)));
+        //glShaderSource(fragment, parseIncludes(Utils.loadString(fragmentPath)));
+        glShaderSource(fragment, Utils.loadString(fragmentPath));
         glCompileShader(fragment);
-        if (glGetShaderi(fragment, GL_COMPILE_STATUS) == 0) Logger.error(fragmentPath + System.lineSeparator() + glGetShaderInfoLog(fragment));
+        if (glGetShaderi(fragment, GL_COMPILE_STATUS) == 0) {
+            Logger.error(fragmentPath + System.lineSeparator() + glGetShaderInfoLog(fragment));
+        }
 
         program = glCreateProgram();
         glAttachShader(program, vertex);
         glAttachShader(program, fragment);
         glLinkProgram(program);
-        if (glGetProgrami(program, GL_LINK_STATUS) == 0) Logger.error("Shader program " + glGetProgramInfoLog(program));
+        if (glGetProgrami(program, GL_LINK_STATUS) == 0) {
+            Logger.error("Shader program " + glGetProgramInfoLog(program));
+        }
     }
 
     private String parseIncludes(String code) {
@@ -67,7 +75,11 @@ public class Shader {
     }
 
     public void setMat4(String name, Matrix4f matrix) {
-        glUniformMatrix4fv(glGetUniformLocation(program, name), false, matrix.get(new float[16]));
+        glUniformMatrix4fv(glGetUniformLocation(program, name), false, matrix.get());
+    }
+
+    public void setMat4(String name, float[] values) {
+        glUniformMatrix4fv(glGetUniformLocation(program, name), false, values);
     }
 
     public void use() {

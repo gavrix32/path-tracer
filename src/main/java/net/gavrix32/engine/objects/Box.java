@@ -1,9 +1,9 @@
 package net.gavrix32.engine.objects;
 
 import net.gavrix32.engine.graphics.Material;
+import net.gavrix32.engine.math.Matrix4f;
+import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.utils.Logger;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
 public class Box extends Shape {
     private Vector3f scale;
@@ -12,13 +12,13 @@ public class Box extends Shape {
     public Box(Vector3f pos, Vector3f rotation, Vector3f col, Vector3f scale, Material material) {
         super(pos, rotation, col, material);
         this.scale = scale;
-        rotationMatrix = new Matrix4f().identity();
+        rotationMatrix = new Matrix4f();
     }
 
     public Box() {
         super(new Vector3f(), new Vector3f(), new Vector3f(1), new Material(true, 0, 1, 1, false));
         this.scale = new Vector3f(10);
-        rotationMatrix = new Matrix4f().identity();
+        rotationMatrix = new Matrix4f();
     }
 
     public Vector3f getScale() {

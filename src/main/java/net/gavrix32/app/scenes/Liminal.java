@@ -1,10 +1,10 @@
 package net.gavrix32.app.scenes;
 
 import net.gavrix32.engine.graphics.*;
+import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.objects.Box;
 import net.gavrix32.engine.objects.Camera;
 import net.gavrix32.engine.objects.Plane;
-import org.joml.Vector3f;
 
 public class Liminal {
     private final Scene scene;

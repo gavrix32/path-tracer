@@ -1,8 +1,8 @@
 package net.gavrix32.engine.objects;
 
 import net.gavrix32.engine.graphics.Material;
+import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.utils.Logger;
-import org.joml.Vector3f;
 
 public class Sphere extends Shape {
     private float radius;

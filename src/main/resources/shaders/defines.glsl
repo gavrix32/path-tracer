@@ -1,6 +1,0 @@
-#define PI 3.14159
-#define EPSILON 0.001
-#define MAX_DISTANCE 999999999
-#define MAX_SPHERES 16
-#define MAX_BOXES 16
-#define MAX_TRIANGLES 16

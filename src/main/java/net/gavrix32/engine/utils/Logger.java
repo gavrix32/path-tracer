@@ -15,8 +15,20 @@ public class Logger {
         if (printToOutput) System.out.println(msg);
     }
 
+    public static void info(Object obj) {
+        String msg = timeFormatter.format(LocalDateTime.now()) + " [INFO] " + obj.toString();
+        logList.add(msg);
+        if (printToOutput) System.out.println(msg);
+    }
+
     public static void warning(String msg) {
         msg = timeFormatter.format(LocalDateTime.now()) + " [WARNING] " + msg;
+        logList.add(msg);
+        if (printToOutput) System.out.println("\u001B[33m" + msg + "\u001B[0m)");
+    }
+
+    public static void warning(Object obj) {
+        String msg = timeFormatter.format(LocalDateTime.now()) + " [WARNING] " + obj.toString();
         logList.add(msg);
         if (printToOutput) System.out.println("\u001B[33m" + msg + "\u001B[0m)");
     }
@@ -27,11 +39,13 @@ public class Logger {
         if (printToOutput) System.err.println(msg);
     }
 
+    public static void error(Object obj) {
+        String msg = timeFormatter.format(LocalDateTime.now()) + " [ERROR] " + obj.toString();
+        logList.add(msg);
+        if (printToOutput) System.err.println(msg);
+    }
+
     public static ArrayList<String> getLogList() {
         return logList;
     }
-
-    /*public static void clearLogList() {
-        logList.clear();
-    }*/
 }

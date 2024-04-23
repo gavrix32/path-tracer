@@ -2,9 +2,10 @@ package net.gavrix32.engine.graphics;
 
 import net.gavrix32.engine.gui.Gui;
 import net.gavrix32.engine.gui.Viewport;
-import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
-import org.joml.Vector2f;
+import net.gavrix32.engine.math.Matrix4f;
+import net.gavrix32.engine.math.Vector2f;
+import net.gavrix32.engine.math.Vector3f;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
@@ -21,7 +22,7 @@ public class Renderer {
             1, 2, 3
     };
     private static Scene scene;
-    private static Shader rt_shader;
+    private static Shader pt_shader;
     private static int accFrames = 0;
     private static int samples = 1, bounces = 3;
     private static boolean
@@ -44,120 +45,115 @@ public class Renderer {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, INDICES, GL_STATIC_DRAW);
 
-        rt_shader = new Shader("shaders/main.vert", "shaders/main.frag");
-        rt_shader.use();
+        pt_shader = new Shader("shaders/main.vert", "shaders/main.frag");
+        pt_shader.use();
 
         scene = new Scene();
     }
 
     public static void render() {
         glClear(GL_COLOR_BUFFER_BIT);
-        scene.getCamera().update();
-        if (!Window.isCursorVisible()) {
-            scene.getCamera().rotateX(Input.getDeltaY() * -0.12f);
-            scene.getCamera().rotateY(Input.getDeltaX() * -0.12f);
-            if (Input.getDeltaX() != 0 || Input.getDeltaY() != 0) Renderer.resetAccFrames();
-        }
-        rt_shader.setMat4("view", scene.getCamera().getView());
-        rt_shader.setVec3("camera_position", scene.getCamera().getPosition());
+        scene.camera.update();
+        pt_shader.setMat4("view", scene.camera.getView());
+        pt_shader.setVec3("camera_position", scene.camera.getPosition());
         if (Gui.status) {
             if (Viewport.getWidthDelta() != 0 || Viewport.getHeightDelta() != 0) resetAccFrames();
-            rt_shader.setVec2("resolution", new Vector2f(Viewport.getWidth(), Viewport.getHeight()));
+            pt_shader.setVec2("resolution", new Vector2f(Viewport.getWidth(), Viewport.getHeight()));
         } else {
-            rt_shader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
+            pt_shader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
         }
-        rt_shader.setFloat("time", (float) glfwGetTime());
-        rt_shader.setFloat("acc_frames", accFrames);
-        rt_shader.setBool("show_albedo", showAlbedo);
-        rt_shader.setBool("show_normals", showNormals);
-        rt_shader.setBool("show_depth", showDepth);
-        rt_shader.setInt("samples", samples);
-        rt_shader.setInt("bounces", bounces);
-        rt_shader.setFloat("fov", scene.getCamera().getFov());
-        rt_shader.setBool("random_noise", randNoise);
-        rt_shader.setBool("frame_mixing", frameMixing);
-        rt_shader.setBool("use_taa", taa);
-        rt_shader.setBool("use_dof", dof);
-        rt_shader.setBool("autofocus", autofocus);
-        rt_shader.setFloat("focus_distance", focusDistance);
-        rt_shader.setFloat("defocus_blur", defocusBlur);
-        rt_shader.setFloat("gamma", gamma);
-        rt_shader.setBool("gamma_correction", gammaCorrection);
-        rt_shader.setBool("tonemapping", tonemapping);
-        rt_shader.setFloat("exposure", exposure);
-        rt_shader.setBool("sky_has_texture", scene.getSky().hasTexture());
+        pt_shader.setFloat("time", (float) glfwGetTime());
+        pt_shader.setFloat("acc_frames", accFrames);
+        pt_shader.setBool("show_albedo", showAlbedo);
+        pt_shader.setBool("show_normals", showNormals);
+        pt_shader.setBool("show_depth", showDepth);
+        pt_shader.setInt("samples", samples);
+        pt_shader.setInt("bounces", bounces);
+        pt_shader.setFloat("fov", scene.getCamera().getFov());
+        pt_shader.setBool("random_noise", randNoise);
+        pt_shader.setBool("frame_mixing", frameMixing);
+        pt_shader.setBool("use_taa", taa);
+        pt_shader.setBool("use_dof", dof);
+        pt_shader.setBool("autofocus", autofocus);
+        pt_shader.setFloat("focus_distance", focusDistance);
+        pt_shader.setFloat("defocus_blur", defocusBlur);
+        pt_shader.setFloat("gamma", gamma);
+        pt_shader.setBool("gamma_correction", gammaCorrection);
+        pt_shader.setBool("tonemapping", tonemapping);
+        pt_shader.setFloat("exposure", exposure);
+        pt_shader.setBool("sky_has_texture", scene.getSky().hasTexture());
         if (scene.getSky().hasTexture()) {
             glActiveTexture(GL_TEXTURE0);
             scene.getSky().bindTexture();
-            rt_shader.setInt("sky_texture", 0);
-        } else rt_shader.setVec3("sky.material.color", scene.getSky().getColor());
-        rt_shader.setBool("sky.material.is_metal", scene.getSky().getMaterial().isMetal());
-        rt_shader.setFloat("sky.material.emission", scene.getSky().getMaterial().getEmission());
-        rt_shader.setFloat("sky.material.roughness", scene.getSky().getMaterial().getRoughness());
-        rt_shader.setBool("sky.material.is_glass", scene.getSky().getMaterial().isGlass());
-        rt_shader.setFloat("sky.material.IOR", scene.getSky().getMaterial().getIOR());
+            pt_shader.setInt("sky_texture", 0);
+        } else pt_shader.setVec3("sky.material.color", scene.getSky().getColor());
+        pt_shader.setBool("sky.material.is_metal", scene.getSky().getMaterial().isMetal());
+        pt_shader.setFloat("sky.material.emission", scene.getSky().getMaterial().getEmission());
+        pt_shader.setFloat("sky.material.roughness", scene.getSky().getMaterial().getRoughness());
+        pt_shader.setBool("sky.material.is_glass", scene.getSky().getMaterial().isGlass());
+        pt_shader.setFloat("sky.material.IOR", scene.getSky().getMaterial().getIOR());
         // Plane
         if (scene.getPlane() != null) {
-            rt_shader.setInt("plane.exists", 1);
-            rt_shader.setBool("plane.checkerboard", scene.getPlane().isCheckerBoard());
+            pt_shader.setInt("plane.exists", 1);
+            pt_shader.setBool("plane.checkerboard", scene.getPlane().isCheckerBoard());
             if (scene.getPlane().isCheckerBoard()) {
-                rt_shader.setVec3("plane.color1", scene.getPlane().getColor1());
-                rt_shader.setVec3("plane.color2", scene.getPlane().getColor2());
-            } else rt_shader.setVec3("plane.material.color", scene.getPlane().getColor());
-            rt_shader.setFloat("plane.material.emission", scene.getPlane().getMaterial().getEmission());
-            rt_shader.setFloat("plane.material.roughness", scene.getPlane().getMaterial().getRoughness());
-            rt_shader.setBool("plane.material.is_glass", scene.getPlane().getMaterial().isGlass());
-            rt_shader.setFloat("plane.material.IOR", scene.getPlane().getMaterial().getIOR());
-            rt_shader.setBool("plane.material.is_metal", scene.getPlane().getMaterial().isMetal());
-        } else rt_shader.setInt("plane.exists", 0);
+                pt_shader.setVec3("plane.color1", scene.getPlane().getColor1());
+                pt_shader.setVec3("plane.color2", scene.getPlane().getColor2());
+            } else pt_shader.setVec3("plane.material.color", scene.getPlane().getColor());
+            pt_shader.setFloat("plane.material.emission", scene.getPlane().getMaterial().getEmission());
+            pt_shader.setFloat("plane.material.roughness", scene.getPlane().getMaterial().getRoughness());
+            pt_shader.setBool("plane.material.is_glass", scene.getPlane().getMaterial().isGlass());
+            pt_shader.setFloat("plane.material.IOR", scene.getPlane().getMaterial().getIOR());
+            pt_shader.setBool("plane.material.is_metal", scene.getPlane().getMaterial().isMetal());
+        } else pt_shader.setInt("plane.exists", 0);
         // Spheres
-        rt_shader.setInt("spheres_count", scene.getSpheres().size());
+        pt_shader.setInt("spheres_count", scene.getSpheres().size());
         for (int i = 0; i < scene.getSpheres().size(); i++) {
-            rt_shader.setVec3("spheres[" + i + "].position", scene.getSpheres().get(i).getPos());
-            rt_shader.setFloat("spheres[" + i + "].radius", scene.getSpheres().get(i).getRadius());
-            rt_shader.setVec3("spheres[" + i + "].material.color", scene.getSpheres().get(i).getColor());
-            rt_shader.setBool("spheres[" + i + "].material.is_metal", scene.getSpheres().get(i).getMaterial().isMetal());
-            rt_shader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres().get(i).getMaterial().getEmission());
-            rt_shader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres().get(i).getMaterial().getRoughness());
-            rt_shader.setBool("spheres[" + i + "].material.is_glass", scene.getSpheres().get(i).getMaterial().isGlass());
-            rt_shader.setFloat("spheres[" + i + "].material.IOR", scene.getSpheres().get(i).getMaterial().getIOR());
+            pt_shader.setVec3("spheres[" + i + "].position", scene.getSpheres().get(i).getPos());
+            pt_shader.setFloat("spheres[" + i + "].radius", scene.getSpheres().get(i).getRadius());
+            pt_shader.setVec3("spheres[" + i + "].material.color", scene.getSpheres().get(i).getColor());
+            pt_shader.setBool("spheres[" + i + "].material.is_metal", scene.getSpheres().get(i).getMaterial().isMetal());
+            pt_shader.setFloat("spheres[" + i + "].material.emission", scene.getSpheres().get(i).getMaterial().getEmission());
+            pt_shader.setFloat("spheres[" + i + "].material.roughness", scene.getSpheres().get(i).getMaterial().getRoughness());
+            pt_shader.setBool("spheres[" + i + "].material.is_glass", scene.getSpheres().get(i).getMaterial().isGlass());
+            pt_shader.setFloat("spheres[" + i + "].material.IOR", scene.getSpheres().get(i).getMaterial().getIOR());
         }
         // Boxes
-        rt_shader.setInt("boxes_count", scene.getBoxes().size());
+        pt_shader.setInt("boxes_count", scene.getBoxes().size());
         for (int i = 0; i < scene.getBoxes().size(); i++) {
-            rt_shader.setVec3("boxes[" + i + "].position", scene.getBoxes().get(i).getPos());
-            scene.getBoxes().get(i).getRotationMatrix().setRotationXYZ(
-                    (float) Math.toRadians(scene.getBoxes().get(i).getRot().x),
-                    (float) Math.toRadians(scene.getBoxes().get(i).getRot().y),
-                    (float) Math.toRadians(scene.getBoxes().get(i).getRot().z)
+            pt_shader.setVec3("boxes[" + i + "].position", scene.getBoxes().get(i).getPos());
+            scene.getBoxes().get(i).getRotationMatrix().rotate(
+                    scene.getBoxes().get(i).getRot().x,
+                    scene.getBoxes().get(i).getRot().y,
+                    scene.getBoxes().get(i).getRot().z
             );
-            rt_shader.setMat4("boxes[" + i + "].rotation", scene.getBoxes().get(i).getRotationMatrix());
-            rt_shader.setVec3("boxes[" + i + "].scale", scene.getBoxes().get(i).getScale());
-            rt_shader.setVec3("boxes[" + i + "].material.color", scene.getBoxes().get(i).getColor());
-            rt_shader.setBool("boxes[" + i + "].material.is_metal", scene.getBoxes().get(i).getMaterial().isMetal());
-            rt_shader.setFloat("boxes[" + i + "].material.emission", scene.getBoxes().get(i).getMaterial().getEmission());
-            rt_shader.setFloat("boxes[" + i + "].material.roughness", scene.getBoxes().get(i).getMaterial().getRoughness());
-            rt_shader.setBool("boxes[" + i + "].material.is_glass", scene.getBoxes().get(i).getMaterial().isGlass());
-            rt_shader.setFloat("boxes[" + i + "].material.IOR", scene.getBoxes().get(i).getMaterial().getIOR());
+            pt_shader.setMat4("boxes[" + i + "].rotation", scene.getBoxes().get(i).getRotationMatrix());
+            pt_shader.setVec3("boxes[" + i + "].scale", scene.getBoxes().get(i).getScale());
+            pt_shader.setVec3("boxes[" + i + "].material.color", scene.getBoxes().get(i).getColor());
+            pt_shader.setBool("boxes[" + i + "].material.is_metal", scene.getBoxes().get(i).getMaterial().isMetal());
+            pt_shader.setFloat("boxes[" + i + "].material.emission", scene.getBoxes().get(i).getMaterial().getEmission());
+            pt_shader.setFloat("boxes[" + i + "].material.roughness", scene.getBoxes().get(i).getMaterial().getRoughness());
+            pt_shader.setBool("boxes[" + i + "].material.is_glass", scene.getBoxes().get(i).getMaterial().isGlass());
+            pt_shader.setFloat("boxes[" + i + "].material.IOR", scene.getBoxes().get(i).getMaterial().getIOR());
         }
         // Triangles
-        rt_shader.setInt("triangles_count", scene.getTriangles().size());
+        pt_shader.setInt("triangles_count", scene.getTriangles().size());
         for (int i = 0; i < scene.getTriangles().size(); i++) {
-            rt_shader.setVec3("triangles[" + i + "].v1", scene.getTriangles().get(i).getV1());
-            rt_shader.setVec3("triangles[" + i + "].v2", scene.getTriangles().get(i).getV2());
-            rt_shader.setVec3("triangles[" + i + "].v3", scene.getTriangles().get(i).getV3());
-            scene.getTriangles().get(i).getRotationMatrix().setRotationXYZ(
-                    (float) Math.toRadians(scene.getTriangles().get(i).getRot().x),
-                    (float) Math.toRadians(scene.getTriangles().get(i).getRot().y),
-                    (float) Math.toRadians(scene.getTriangles().get(i).getRot().z)
+            pt_shader.setVec3("triangles[" + i + "].v1", scene.getTriangles().get(i).getV1());
+            pt_shader.setVec3("triangles[" + i + "].v2", scene.getTriangles().get(i).getV2());
+            pt_shader.setVec3("triangles[" + i + "].v3", scene.getTriangles().get(i).getV3());
+            scene.getTriangles().get(i).getRotationMatrix().rotate(
+                    scene.getTriangles().get(i).getRot().x,
+                    scene.getTriangles().get(i).getRot().y,
+                    scene.getTriangles().get(i).getRot().z
             );
-            rt_shader.setMat4("triangles[" + i + "].rotation", scene.getTriangles().get(i).getRotationMatrix());
-            rt_shader.setVec3("triangles[" + i + "].material.color", scene.getTriangles().get(i).getColor());
-            rt_shader.setBool("triangles[" + i + "].material.is_metal", scene.getTriangles().get(i).getMaterial().isMetal());
-            rt_shader.setFloat("triangles[" + i + "].material.emission", scene.getTriangles().get(i).getMaterial().getEmission());
-            rt_shader.setFloat("triangles[" + i + "].material.roughness", scene.getTriangles().get(i).getMaterial().getRoughness());
-            rt_shader.setBool("triangles[" + i + "].material.is_glass", scene.getTriangles().get(i).getMaterial().isGlass());
-            rt_shader.setFloat("triangles[" + i + "].material.IOR", scene.getTriangles().get(i).getMaterial().getIOR());
+            pt_shader.setMat4("triangles[" + i + "].rotation", scene.getTriangles().get(i).getRotationMatrix());
+            pt_shader.setVec3("triangles[" + i + "].material.color", scene.getTriangles().get(i).getColor());
+            pt_shader.setBool("triangles[" + i + "].material.is_metal", scene.getTriangles().get(i).getMaterial().isMetal());
+            pt_shader.setFloat("triangles[" + i + "].material.emission", scene.getTriangles().get(i).getMaterial().getEmission());
+            pt_shader.setFloat("triangles[" + i + "].material.roughness", scene.getTriangles().get(i).getMaterial().getRoughness());
+            pt_shader.setBool("triangles[" + i + "].material.is_glass", scene.getTriangles().get(i).getMaterial().isGlass());
+            pt_shader.setFloat("triangles[" + i + "].material.IOR", scene.getTriangles().get(i).getMaterial().getIOR());
         }
         if (accumulation || frameMixing) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
         if (accFrames == 0 && !frameMixing) resetAccTexture();
