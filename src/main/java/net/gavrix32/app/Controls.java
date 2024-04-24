@@ -63,7 +63,7 @@ public class Controls {
         }
         if (!Window.isCursorVisible()) {
             camera.rotateY(Input.getDeltaY() * 0.1f);
-            camera.rotateX(Input.getDeltaX() * -0.1f);
+            camera.rotateX(Input.getDeltaX() * 0.1f);
             if (Input.getDeltaX() != 0 || Input.getDeltaY() != 0) Renderer.resetAccFrames();
         }
     }

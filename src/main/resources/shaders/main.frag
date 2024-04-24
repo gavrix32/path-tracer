@@ -59,7 +59,7 @@ struct Plane {
 
 uniform vec2 resolution;
 uniform vec3 camera_position;
-uniform mat4 view;
+uniform mat4 proj, view;
 uniform int samples, bounces, use_taa, use_dof, autofocus, random_noise, gamma_correction, tonemapping, frame_mixing,
 show_albedo, show_depth, show_normals, sky_has_texture, spheres_count, boxes_count, triangles_count;
 uniform sampler2D sky_texture;
@@ -287,7 +287,6 @@ void main() {
     else
         seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
 
-    //vec2 uv = (2 * gl_FragCoord.xy - resolution) / resolution.y;
     vec2 uv = (2 * gl_FragCoord.xy - resolution) / resolution.y;
 
     if (use_taa == 1) {
@@ -295,8 +294,12 @@ void main() {
         uv.y += (random() - 0.5) * 0.002;
     }
 
-    vec3 dir = normalize(vec3(uv, 1.0 / tan(radians(fov) / 2))) * mat3(view);
-    Ray ray = Ray(camera_position, dir);
+    mat4 invProjView = inverse(proj * view);
+    vec4 dir = normalize(invProjView * vec4(uv, 1, 1));
+    Ray ray = Ray(camera_position, dir.xyz);
+    //Ray ray = Ray(camera_position, normalize((invProjView * vec4(uv, 1, 1)).xyz));
+    // vec3 dir = normalize(vec3(uv, 1.0 / tan(radians(fov) / 2))) * mat3(view);
+    // Ray ray = Ray(camera_position, dir);
 
     // depth of field
     if (use_dof == 1) {
@@ -338,4 +341,5 @@ void main() {
         }
     }
     out_color = post_process(color);
+    //out_color = vec3(uv, 0);
 }

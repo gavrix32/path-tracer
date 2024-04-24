@@ -50,14 +50,14 @@ public class OpenBox {
                 ),
                 // Tall box
                 new Box(new Vector3f(-45, -50, 25),
-                        new Vector3f(0, 25, 0),
+                        new Vector3f(0, -25, 0),
                         new Vector3f(1),
                         new Vector3f(25, 50, 25),
                         new Material(true, 0, 1, 1, false)
                 ),
                 // Short box
                 new Box(new Vector3f(45, -75, -25),
-                        new Vector3f(0, -25, 0),
+                        new Vector3f(0, 25, 0),
                         new Vector3f(1),
                         new Vector3f(25),
                         new Material(true, 0, 1, 1, false)

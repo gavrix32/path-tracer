@@ -119,6 +119,19 @@ public final class Matrix4f {
         return this;
     }
 
+    public Matrix4f perspective(float fov, float aspect, float zNear, float zFar) {
+        zero();
+        float fn = zFar + zNear;
+        float f_n = zFar - zNear;
+        float t = 1.0f / (float) Math.tan(Math.toRadians(fov) / 2.0f);
+        this.m[0][0] = t / aspect;
+        this.m[1][1] = t;
+        this.m[2][2] = -fn / f_n;
+        this.m[3][2] = -2.0f * zFar * zNear / f_n;
+        this.m[2][3] = -1.0f;
+        return this;
+    }
+
     public Matrix4f mul(Matrix4f matrix) {
         Matrix4f result = new Matrix4f().zero();
         for (int i = 0; i < 4; i++) {

@@ -125,4 +125,8 @@ public class Window {
     public static int getHeight() {
         return height;
     }
+
+    public static float getAspect() {
+        return (float) width / height;
+    }
 }

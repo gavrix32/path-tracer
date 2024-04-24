@@ -73,7 +73,8 @@ public class Main implements IApp {
         2.0 0.0 4.0 0.0
         0.0 0.0 0.0 1.0
          */
-        //org.joml.Matrix4f matrix4f = new org.joml.Matrix4f().invert();
+        //System.out.println();
+        //System.out.println(new Matrix4f().perspective(70, (float) 1820 / 720, 0.01f, 100.0f));
     }
 
     @Override

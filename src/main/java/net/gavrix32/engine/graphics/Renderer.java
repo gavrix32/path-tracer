@@ -5,7 +5,6 @@ import net.gavrix32.engine.gui.Viewport;
 import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector2f;
-import net.gavrix32.engine.math.Vector3f;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
@@ -30,6 +29,7 @@ public class Renderer {
             taa = true, dof = false, autofocus = true, showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
     private static float gamma = 2.2f, exposure = 1.0f, focusDistance = 50.0f, defocusBlur = 3.0f;
+    private static Matrix4f proj;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -49,11 +49,15 @@ public class Renderer {
         pt_shader.use();
 
         scene = new Scene();
+
+        proj = new Matrix4f();
     }
 
     public static void render() {
         glClear(GL_COLOR_BUFFER_BIT);
         scene.camera.update();
+        proj.perspective(scene.camera.getFov(), 1.0f, 0.01f, 100.0f);
+        pt_shader.setMat4("proj", proj);
         pt_shader.setMat4("view", scene.camera.getView());
         pt_shader.setVec3("camera_position", scene.camera.getPosition());
         if (Gui.status) {

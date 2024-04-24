@@ -119,6 +119,21 @@ public final class Vector3f {
         return this;
     }
 
+    public Vector3f subX(float x) {
+        this.x -= x;
+        return this;
+    }
+
+    public Vector3f subY(float y) {
+        this.y -= y;
+        return this;
+    }
+
+    public Vector3f subZ(float z) {
+        this.z -= z;
+        return this;
+    }
+
     public Vector3f mul(float s) {
         this.x *= s;
         this.y *= s;

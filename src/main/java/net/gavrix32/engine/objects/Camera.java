@@ -67,7 +67,7 @@ public class Camera {
     public void move(float x, float y, float z) {
         position.add(new Vector3f(cameraFront).cross(cameraUp).normalize().mul(x));
         position.add(new Vector3f(cameraUp).mul(y));
-        position.add(new Vector3f(cameraFront).mul(z));
+        position.sub(new Vector3f(cameraFront).mul(z));
     }
 
     public void moveX(float x) {
@@ -87,7 +87,7 @@ public class Camera {
     }
 
     public void rotateY(float y) {
-        rotation.addY(y);
+        rotation.subY(y);
     }
 
     public Matrix4f getView() {
