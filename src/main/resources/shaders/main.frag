@@ -310,7 +310,7 @@ void main() {
         } else {
             focus_dist = focus_distance;
         }
-        vec3 dof_position = defocus_blur * vec3(random_cosine_weighted_hemisphere(vec3(0)).xy, 0);
+        vec3 dof_position = defocus_blur * vec3(random_cosine_weighted_hemisphere(vec3(0)));
         vec3 dof_direction = normalize(ray.d * focus_dist - dof_position);
         ray.o += dof_position;
         ray.d = normalize(dof_direction);

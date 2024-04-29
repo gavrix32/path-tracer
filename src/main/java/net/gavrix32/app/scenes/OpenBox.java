@@ -4,6 +4,7 @@ import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.objects.Box;
+import net.gavrix32.engine.objects.Triangle;
 
 public class OpenBox {
     private final Scene scene;
