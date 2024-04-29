@@ -155,6 +155,14 @@ public final class Vector3f {
         return this;
     }
 
+    public Vector3f mul(Matrix4f m) {
+        return set(
+                m.m[0][0] * x + m.m[0][1] * y + m.m[0][2] * z,
+                m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z,
+                m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z
+        );
+    }
+
     public Vector3f div(float s) {
         this.x /= s;
         this.y /= s;

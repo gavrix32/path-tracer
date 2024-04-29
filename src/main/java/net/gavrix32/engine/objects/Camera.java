@@ -5,39 +5,96 @@ import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector3f;
 
 public class Camera {
-    private Vector3f position;
-    private Vector3f rotation;
-    private final Vector3f cameraUp;
-    private Vector3f cameraFront;
+    private Vector3f position, rotation;
     private float fov;
-    private final Matrix4f view;
+    private final Matrix4f euler_rotation;
 
     public Camera() {
         position = new Vector3f();
-        rotation = new Vector3f(90, 0, 0);
+        rotation = new Vector3f();
         fov = 70.0f;
-        view = new Matrix4f();
-        cameraUp = new Vector3f(0, 1, 0);
-        cameraFront = new Vector3f();
+        euler_rotation = new Matrix4f();
     }
 
-    public void update() {
-        if (rotation.y > 89.9f) rotation.y = 89.9f;
-        if (rotation.y < -89.9f) rotation.y = -89.9f;
-        Vector3f front = new Vector3f();
-        front.x = (float) (Math.cos(Math.toRadians(rotation.x)) * Math.cos(Math.toRadians(rotation.y)));
-        front.y = (float) Math.sin(Math.toRadians(rotation.y));
-        front.z = (float) (Math.sin(Math.toRadians(rotation.x)) * Math.cos(Math.toRadians(rotation.y)));
-        cameraFront = new Vector3f(front).normalize();
-        view.lookAt(position, new Vector3f(position).add(cameraFront), cameraUp);
+    public Camera update() {
+        euler_rotation.rotate(rotation);
+        return this;
+    }
+
+    public Camera move(float x, float y, float z) {
+        position.add(new Vector3f(1, 0, 0).mul(euler_rotation).mul(x));
+        position.add(new Vector3f(0, 1, 0).mul(euler_rotation).mul(y));
+        position.add(new Vector3f(0, 0, 1).mul(euler_rotation).mul(z));
+        return this;
+    }
+
+    public Camera move(Vector3f v) {
+        position.add(new Vector3f(1, 0, 0).mul(euler_rotation).mul(v.x));
+        position.add(new Vector3f(0, 1, 0).mul(euler_rotation).mul(v.y));
+        position.add(new Vector3f(0, 0, 1).mul(euler_rotation).mul(v.z));
+        return this;
+    }
+
+    public Camera moveX(float x) {
+        move(x, 0, 0);
+        return this;
+    }
+
+    public Camera moveY(float y) {
+        move(0, y, 0);
+        return this;
+    }
+
+    public Camera moveZ(float z) {
+        move(0, 0, z);
+        return this;
+    }
+
+    public Camera rotate(float x, float y, float z) {
+        rotation.add(x, y, z);
+        return this;
+    }
+
+    public Camera rotate(Vector3f rotation) {
+        this.rotation.add(rotation);
+        return this;
+    }
+
+    public Camera rotateX(float x) {
+        rotation.addX(x);
+        return this;
+    }
+
+    public Camera rotateY(float y) {
+        rotation.addY(y);
+        return this;
+    }
+
+    public Camera rotateZ(float z) {
+        rotation.addZ(z);
+        return this;
+    }
+
+    public Matrix4f getEulerRotation() {
+        return euler_rotation;
+    }
+
+    public float getFov() {
+        return fov;
+    }
+
+    public Camera setFov(float fov) {
+        Renderer.resetAccFrames();
+        this.fov = fov;
+        return this;
     }
 
     public Vector3f getPosition() {
         return position;
     }
 
-    public Camera setPosition(Vector3f pos) {
-        this.position = pos;
+    public Camera setPosition(Vector3f position) {
+        this.position = position;
         return this;
     }
 
@@ -57,50 +114,6 @@ public class Camera {
 
     public Camera setRotation(float x, float y, float z) {
         this.rotation.set(x, y, z);
-        return this;
-    }
-
-    public void move(Vector3f v) {
-        position.add(v);
-    }
-
-    public void move(float x, float y, float z) {
-        position.add(new Vector3f(cameraFront).cross(cameraUp).normalize().mul(x));
-        position.add(new Vector3f(cameraUp).mul(y));
-        position.sub(new Vector3f(cameraFront).mul(z));
-    }
-
-    public void moveX(float x) {
-        move(x, 0, 0);
-    }
-
-    public void moveY(float y) {
-        move(0, y, 0);
-    }
-
-    public void moveZ(float z) {
-        move(0, 0, z);
-    }
-
-    public void rotateX(float x) {
-        rotation.addX(x);
-    }
-
-    public void rotateY(float y) {
-        rotation.subY(y);
-    }
-
-    public Matrix4f getView() {
-        return view;
-    }
-
-    public float getFov() {
-        return fov;
-    }
-
-    public Camera setFov(float fov) {
-        Renderer.resetAccFrames();
-        this.fov = fov;
         return this;
     }
 }

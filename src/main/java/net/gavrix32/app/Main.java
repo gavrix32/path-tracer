@@ -8,6 +8,7 @@ import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.gui.SceneEditor;
 import net.gavrix32.engine.io.*;
 import net.gavrix32.engine.math.Matrix4f;
+import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.utils.Logger;
 
 import java.util.ArrayList;
@@ -22,7 +23,6 @@ public class Main implements IApp {
     private Liminal liminal;
     private OpenBox openBox;
 
-    @Override
     public void init() {
         Window.init("Path Tracing", 1280, 720);
         Window.setFullscreen(true);
@@ -55,7 +55,6 @@ public class Main implements IApp {
         SceneEditor.setDefaultScene(5);
     }
 
-    @Override
     public void update() {
         Controls.update(Renderer.getScene().getCamera());
         Renderer.render();

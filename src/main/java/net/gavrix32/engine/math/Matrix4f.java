@@ -3,15 +3,22 @@ package net.gavrix32.engine.math;
 import net.gavrix32.engine.utils.Logger;
 
 public final class Matrix4f {
-    public float[][] m;
+    public float[][] m = new float[4][4];
 
     public Matrix4f() {
-        m = new float[4][4];
         identity();
     }
 
+    public Matrix4f(float a, float b, float c, float d,
+                    float e, float f, float g, float h,
+                    float i, float j, float k, float l,
+                    float m, float n, float o, float p) {
+        set(new float[] {
+                a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p
+        });
+    }
+
     public Matrix4f(float[] values) {
-        m = new float[4][4];
         set(values);
     }
 
@@ -32,22 +39,20 @@ public final class Matrix4f {
 
     public Matrix4f set(float[] values) {
         if (values.length != 16) Logger.error("Matrix4f length (" + values.length + ") is not equal to 16");
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++)
             System.arraycopy(values, 4 * i, m[i], 0, 4);
-        }
         return this;
     }
 
-    public Matrix4f set(Matrix4f m) {
-        this.m = m.m;
+    public Matrix4f set(Matrix4f matrix) {
+        m = matrix.m;
         return this;
     }
 
     public float[] get() {
         float[] values = new float[16];
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++)
             System.arraycopy(m[i], 0, values, 4 * i, 4);
-        }
         return values;
     }
 
@@ -55,17 +60,12 @@ public final class Matrix4f {
         m[0][3] += m[0][0] * x + m[0][1] * y + m[0][2] * z;
         m[1][3] += m[1][0] * x + m[1][1] * y + m[1][2] * z;
         m[2][3] += m[2][0] * x + m[2][1] * y + m[2][2] * z;
-        m[3][3] += m[3][0] * x + m[3][1] * y + m[3][2] * z; // ?
         return this;
     }
 
     public Matrix4f translate(Vector3f v) {
         translate(v.x, v.y, v.z);
         return this;
-    }
-
-    public Vector3f getTranslation() {
-        return new Vector3f(m[0][3], m[1][3], m[2][3]);
     }
 
     public Matrix4f rotateX(float angle) {
@@ -99,37 +99,13 @@ public final class Matrix4f {
     }
 
     public Matrix4f rotate(float x, float y, float z) {
-        return set(new Matrix4f().rotateZ(z)
+        return set(new Matrix4f().rotateZ(-z)
                 .mul(new Matrix4f().rotateY(y))
-                .mul(new Matrix4f().rotateX(x)));
+                .mul(new Matrix4f().rotateX(-x)));
     }
 
     public Matrix4f rotate(Vector3f v) {
         return this.rotate(v.x, v.y, v.z);
-    }
-
-    public Matrix4f lookAt(Vector3f pos, Vector3f dir, Vector3f up) {
-        Vector3f d = new Vector3f(pos).sub(dir).normalize(); // dir
-        Vector3f r = new Vector3f(up).cross(d).normalize(); // right
-        Vector3f u = new Vector3f(d).cross(r).normalize(); // up
-        m[0][0] = r.x; m[0][1] = u.x; m[0][2] = d.x; m[0][3] = 0;
-        m[1][0] = r.y; m[1][1] = u.y; m[1][2] = d.y; m[1][3] = 0;
-        m[2][0] = r.z; m[2][1] = u.z; m[2][2] = d.z; m[2][3] = 0;
-        m[3][0] =   0; m[3][1] =   0; m[3][2] =   0; m[3][3] = 1;
-        return this;
-    }
-
-    public Matrix4f perspective(float fov, float zNear, float zFar) {
-        zero();
-        float n = zNear;
-        float f = zFar;
-        float t = (float) Math.tan(Math.toRadians(fov) / 2) * n;
-        m[0][0] = n / t;
-        m[1][1] = n / t;
-        m[2][2] = (-f - n) / (f - n);
-        m[2][3] = -1.0f;
-        m[3][2] = -2.0f * f * n / (f - n);
-        return this;
     }
 
     public Matrix4f mul(Matrix4f matrix) {

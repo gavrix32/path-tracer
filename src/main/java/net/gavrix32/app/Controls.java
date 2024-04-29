@@ -39,11 +39,11 @@ public class Controls {
             speed *= 2;
         }
         if (Input.isKeyDown(Key.W)) {
-            camera.moveZ(-speed);
+            camera.moveZ(speed);
             Renderer.resetAccFrames();
         }
         if (Input.isKeyDown(Key.S)) {
-            camera.moveZ(speed);
+            camera.moveZ(-speed);
             Renderer.resetAccFrames();
         }
         if (Input.isKeyDown(Key.A)) {
@@ -63,8 +63,8 @@ public class Controls {
             Renderer.resetAccFrames();
         }
         if (!Window.isCursorVisible()) {
-            camera.rotateY(Input.getDeltaY() * 0.1f);
-            camera.rotateX(Input.getDeltaX() * 0.1f);
+            camera.rotateX(Input.getDeltaY() * -0.1f);
+            camera.rotateY(Input.getDeltaX() * 0.1f);
             if (Input.getDeltaX() != 0 || Input.getDeltaY() != 0) Renderer.resetAccFrames();
         }
     }

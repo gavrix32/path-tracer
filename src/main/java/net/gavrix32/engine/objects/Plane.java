@@ -48,29 +48,29 @@ public class Plane {
         this.color.z = b;
     }
 
-    public Vector3f getColor1() {
+    public Vector3f getFirstColor() {
         return color1;
     }
 
-    public void setColor1(Vector3f color1) {
+    public void setFirstColor(Vector3f color1) {
         this.color1 = color1;
     }
 
-    public void setColor1(float r, float g, float b) {
+    public void setFirstColor(float r, float g, float b) {
         this.color1.x = r;
         this.color1.y = g;
         this.color1.z = b;
     }
 
-    public Vector3f getColor2() {
+    public Vector3f getSecondColor() {
         return color2;
     }
 
-    public void setColor2(Vector3f color2) {
+    public void setSecondColor(Vector3f color2) {
         this.color2 = color2;
     }
 
-    public void setColor2(float r, float g, float b) {
+    public void setSecondColor(float r, float g, float b) {
         this.color2.x = r;
         this.color2.y = g;
         this.color2.z = b;

@@ -59,7 +59,7 @@ struct Plane {
 
 uniform vec2 resolution;
 uniform vec3 camera_position;
-uniform mat4 proj, view, prev_view;
+uniform mat4 euler_rotation;
 uniform int samples, bounces, use_taa, use_dof, autofocus, random_noise, gamma_correction, tonemapping, frame_mixing,
 show_albedo, show_depth, show_normals, sky_has_texture, spheres_count, boxes_count, triangles_count;
 uniform sampler2D sky_texture;
@@ -296,19 +296,15 @@ void main() {
         uv.y += (random() - 0.5) * 0.002;
     }
 
-    mat4 invProjView = inverse(proj * view);
-    vec4 dir = normalize(invProjView * vec4(uv, 1, 1));
-    Ray ray = Ray(camera_position, dir.xyz);
-    //Ray ray = Ray(camera_position, normalize((invProjView * vec4(uv, 1, 1)).xyz));
-    // vec3 dir = normalize(vec3(uv, 1.0 / tan(radians(fov) / 2))) * mat3(view);
-    // Ray ray = Ray(camera_position, dir);
+    vec3 dir = normalize(vec3(uv, 1.0 / tan(radians(fov) / 2))) * mat3(euler_rotation);
+    Ray ray = Ray(camera_position, dir);
 
     // depth of field
     if (use_dof == 1) {
         float focus_dist;
         if (autofocus == 1) {
             HitInfo autofocus_hitinfo;
-            Ray autofocus_ray = Ray(camera_position, normalize(vec3(vec2(0.001), 1.0 / tan(fov * (PI / 180) * 0.5)) * mat3(view)));
+            Ray autofocus_ray = Ray(camera_position, normalize(vec3(vec2(0.001), 1.0 / tan(radians(fov) / 2)) * mat3(euler_rotation)));
             raycast(autofocus_ray, autofocus_hitinfo);
             focus_dist = autofocus_hitinfo.minDistance >= MAX_DISTANCE ? 1000 : autofocus_hitinfo.minDistance;
         } else {

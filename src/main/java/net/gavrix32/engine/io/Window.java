@@ -37,6 +37,8 @@ public class Window {
         );
         glfwMakeContextCurrent(window);
         GL.createCapabilities();
+        Logger.info(System.getProperty("os.name") + " " + System.getProperty("os.version") + " " + System.getProperty("os.arch"));
+        Logger.info("Java " + System.getProperty("java.version") + " " + System.getProperty("java.vendor"));
         Logger.info("LWJGL " + Version.getVersion());
         Logger.info(glGetString(GL_RENDERER));
         Logger.info("OpenGL " + glGetString(GL_VERSION));

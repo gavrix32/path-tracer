@@ -100,14 +100,14 @@ public class SceneEditor {
                         scene.getPlane().getColor().z
                 };
                 float[] color1 = new float[] {
-                        scene.getPlane().getColor1().x,
-                        scene.getPlane().getColor1().y,
-                        scene.getPlane().getColor1().z
+                        scene.getPlane().getFirstColor().x,
+                        scene.getPlane().getFirstColor().y,
+                        scene.getPlane().getFirstColor().z
                 };
                 float[] color2 = new float[] {
-                        scene.getPlane().getColor2().x,
-                        scene.getPlane().getColor2().y,
-                        scene.getPlane().getColor2().z
+                        scene.getPlane().getSecondColor().x,
+                        scene.getPlane().getSecondColor().y,
+                        scene.getPlane().getSecondColor().z
                 };
                 float[] emission = new float[] {scene.getPlane().getMaterial().getEmission()};
                 float[] roughness = new float[] {scene.getPlane().getMaterial().getRoughness()};
@@ -123,11 +123,11 @@ public class SceneEditor {
                 if (checkerBoard.get()) {
                     if (ImGui.colorEdit3("color 1", color1)) {
                         Renderer.resetAccFrames();
-                        scene.getPlane().setColor1(color1[0], color1[1], color1[2]);
+                        scene.getPlane().setFirstColor(color1[0], color1[1], color1[2]);
                     }
                     if (ImGui.colorEdit3("color 2", color2)) {
                         Renderer.resetAccFrames();
-                        scene.getPlane().setColor2(color2[0], color2[1], color2[2]);
+                        scene.getPlane().setSecondColor(color2[0], color2[1], color2[2]);
                     }
                 } else {
                     if (ImGui.colorEdit3("color", color)) {
