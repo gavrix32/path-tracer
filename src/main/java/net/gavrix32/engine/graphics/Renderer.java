@@ -29,7 +29,7 @@ public class Renderer {
             taa = true, dof = false, autofocus = true, showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
     private static float gamma = 2.2f, exposure = 1.0f, focusDistance = 50.0f, defocusBlur = 3.0f;
-    private static Matrix4f proj;
+    private static Matrix4f proj, view;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -51,14 +51,19 @@ public class Renderer {
         scene = new Scene();
 
         proj = new Matrix4f();
+        view = new Matrix4f();
     }
 
     public static void render() {
         glClear(GL_COLOR_BUFFER_BIT);
-        scene.camera.update();
-        proj.perspective(scene.camera.getFov(), 1.0f, 0.01f, 100.0f);
+        proj.perspective(scene.camera.getFov(), 0.01f, 100.0f);
         pt_shader.setMat4("proj", proj);
-        pt_shader.setMat4("view", scene.camera.getView());
+
+        pt_shader.setMat4("prev_view", view);
+        scene.camera.update();
+        view = scene.getCamera().getView();
+        pt_shader.setMat4("view", view);
+
         pt_shader.setVec3("camera_position", scene.camera.getPosition());
         if (Gui.status) {
             if (Viewport.getWidthDelta() != 0 || Viewport.getHeightDelta() != 0) resetAccFrames();

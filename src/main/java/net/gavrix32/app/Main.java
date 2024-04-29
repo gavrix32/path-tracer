@@ -53,28 +53,6 @@ public class Main implements IApp {
 
         Renderer.init();
         SceneEditor.setDefaultScene(5);
-
-        Matrix4f m1 = new Matrix4f(new float[] {
-                4, 2, 0, 0,
-                0, 8, 1, 0,
-                0, 1, 0, 0,
-                0, 0, 0, 1
-        });
-        Matrix4f m2 = new Matrix4f(new float[] {
-                4, 2, 1, 0,
-                2, 0, 4, 0,
-                9, 4, 2, 0,
-                0, 0, 0, 1
-        });
-        Logger.info(System.lineSeparator() + System.lineSeparator() + m1.mul(m2));
-        /*
-        20.0 8.0 12.0 0.0
-        25.0 4.0 34.0 0.0
-        2.0 0.0 4.0 0.0
-        0.0 0.0 0.0 1.0
-         */
-        //System.out.println();
-        //System.out.println(new Matrix4f().perspective(70, (float) 1820 / 720, 0.01f, 100.0f));
     }
 
     @Override

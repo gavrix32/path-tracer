@@ -14,7 +14,7 @@ public class Camera {
 
     public Camera() {
         position = new Vector3f();
-        rotation = new Vector3f(-90, 0, 0);
+        rotation = new Vector3f(90, 0, 0);
         fov = 70.0f;
         view = new Matrix4f();
         cameraUp = new Vector3f(0, 1, 0);

@@ -59,7 +59,7 @@ struct Plane {
 
 uniform vec2 resolution;
 uniform vec3 camera_position;
-uniform mat4 proj, view;
+uniform mat4 proj, view, prev_view;
 uniform int samples, bounces, use_taa, use_dof, autofocus, random_noise, gamma_correction, tonemapping, frame_mixing,
 show_albedo, show_depth, show_normals, sky_has_texture, spheres_count, boxes_count, triangles_count;
 uniform sampler2D sky_texture;
@@ -69,6 +69,8 @@ uniform Box boxes[MAX_BOXES];
 uniform Triangle triangles[MAX_TRIANGLES];
 uniform Sky sky;
 uniform Plane plane;
+
+vec3 p;
 
 float intersect_plane(Ray ray, vec4 p) {
     return -(dot(ray.o, p.xyz) + p.w) / dot(ray.d, p.xyz);
@@ -341,5 +343,4 @@ void main() {
         }
     }
     out_color = post_process(color);
-    //out_color = vec3(uv, 0);
 }

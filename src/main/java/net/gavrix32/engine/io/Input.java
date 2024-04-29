@@ -13,12 +13,12 @@ public class Input {
         });
     }
 
-    public static boolean isKeyDown(int key) {
-        return glfwGetKey(Window.get(), key) == GLFW_PRESS;
+    public static boolean isKeyDown(Key key) {
+        return glfwGetKey(Window.get(), key.getId()) == GLFW_PRESS;
     }
 
-    public static boolean isButtonDown(int button) {
-        return glfwGetMouseButton(Window.get(), button) == GLFW_PRESS;
+    public static boolean isButtonDown(Button button) {
+        return glfwGetMouseButton(Window.get(), button.getId()) == GLFW_PRESS;
     }
 
     public static void update() {

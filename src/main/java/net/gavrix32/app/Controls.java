@@ -3,6 +3,7 @@ package net.gavrix32.app;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.gui.Gui;
 import net.gavrix32.engine.gui.Viewport;
+import net.gavrix32.engine.io.Key;
 import net.gavrix32.engine.objects.Camera;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.io.Input;
@@ -34,30 +35,30 @@ public class Controls {
     public static void update(Camera camera) {
         Input.update();
         float speed = 200.0f * Engine.getDeltaTime();
-        if (Input.isKeyDown(GLFW_KEY_LEFT_CONTROL)) {
+        if (Input.isKeyDown(Key.LEFT_CONTROL)) {
             speed *= 2;
         }
-        if (Input.isKeyDown(GLFW_KEY_W)) {
+        if (Input.isKeyDown(Key.W)) {
             camera.moveZ(-speed);
             Renderer.resetAccFrames();
         }
-        if (Input.isKeyDown(GLFW_KEY_S)) {
+        if (Input.isKeyDown(Key.S)) {
             camera.moveZ(speed);
             Renderer.resetAccFrames();
         }
-        if (Input.isKeyDown(GLFW_KEY_A)) {
+        if (Input.isKeyDown(Key.A)) {
             camera.moveX(-speed);
             Renderer.resetAccFrames();
         }
-        if (Input.isKeyDown(GLFW_KEY_D)) {
+        if (Input.isKeyDown(Key.D)) {
             camera.moveX(speed);
             Renderer.resetAccFrames();
         }
-        if (Input.isKeyDown(GLFW_KEY_SPACE)) {
+        if (Input.isKeyDown(Key.SPACE)) {
             camera.moveY(speed);
             Renderer.resetAccFrames();
         }
-        if (Input.isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+        if (Input.isKeyDown(Key.LEFT_SHIFT)) {
             camera.moveY(-speed);
             Renderer.resetAccFrames();
         }
