@@ -10,6 +10,7 @@ import net.gavrix32.engine.io.Input;
 import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.utils.Utils;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -24,7 +25,9 @@ public class Controls {
             if (key == GLFW_KEY_F2 && action == GLFW_RELEASE) {
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
                 LocalDateTime now = LocalDateTime.now();
-                Utils.takeScreenshot("screenshots/" + dtf.format(now) + ".png");
+                File screenshotsDir = new File(System.getProperty("user.dir"), "screenshots");
+                if (!screenshotsDir.exists()) screenshotsDir.mkdir();
+                Utils.takeScreenshot(System.getProperty("user.dir") + "/screenshots/" + dtf.format(now) + ".png");
             }
         });
         glfwSetMouseButtonCallback(Window.get(), (window, button, action, mods) -> {
