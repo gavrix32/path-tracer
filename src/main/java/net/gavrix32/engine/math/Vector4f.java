@@ -1,6 +1,6 @@
 package net.gavrix32.engine.math;
 
-public class Vector4f {
+public final class Vector4f {
     public float x, y, z, w;
 
     public Vector4f() {

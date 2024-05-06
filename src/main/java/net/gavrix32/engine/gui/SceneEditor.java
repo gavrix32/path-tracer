@@ -10,7 +10,10 @@ import net.gavrix32.engine.objects.Box;
 import net.gavrix32.engine.objects.Plane;
 import net.gavrix32.engine.objects.Sphere;
 import net.gavrix32.engine.objects.Triangle;
+import net.gavrix32.engine.utils.Logger;
 
+import java.io.File;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 public class SceneEditor {
@@ -35,20 +38,21 @@ public class SceneEditor {
                     scene.getCamera().getPosition().y,
                     scene.getCamera().getPosition().z
             };
-            if (ImGui.dragFloat3("camera position", pos)) {
-                scene.getCamera().setPosition(pos[0], pos[1], pos[2]);
-                Renderer.resetAccFrames();
-            }
             float[] rot = new float[] {
                     scene.getCamera().getRotation().x,
                     scene.getCamera().getRotation().y,
                     scene.getCamera().getRotation().z
             };
+            float[] fov = new float[] {scene.getCamera().getFov()};
+
+            if (ImGui.dragFloat3("camera position", pos)) {
+                scene.getCamera().setPosition(pos[0], pos[1], pos[2]);
+                Renderer.resetAccFrames();
+            }
             if (ImGui.dragFloat3("camera rotation", rot)) {
                 scene.getCamera().setRotation(rot[0], rot[1], rot[2]);
                 Renderer.resetAccFrames();
             }
-            float[] fov = new float[] {scene.getCamera().getFov()};
             if (ImGui.dragFloat("fov", fov, 1, 0, 180, "%.2f°")) scene.getCamera().setFov(fov[0]);
             ImGui.treePop();
         }
@@ -64,13 +68,43 @@ public class SceneEditor {
             ImBoolean isMetal = new ImBoolean(scene.getSky().getMaterial().isMetal());
             ImBoolean isGlass = new ImBoolean(scene.getSky().getMaterial().isGlass());
 
-            if (ImGui.checkbox("metal", isMetal)) {
+            ImBoolean skyHasTexture = new ImBoolean(scene.getSky().hasTexture());
+            if (ImGui.checkbox("texture", skyHasTexture)) {
                 Renderer.resetAccFrames();
-                scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
-            }
+                scene.getSky().setHasTexture(skyHasTexture.get());
+            };
+            ImGui.sameLine();
+            ImInt skyTextureId = new ImInt();
+
+            /*File dir = null;
+            try {
+                dir = new File(SceneEditor.class.getResource("/textures").toURI());
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }*/
+            //Logger.info(dir.exists());
+            /*File[] files = dir.listFiles();
+            for (File file : files) {
+                if (file.isFile()) {
+                    System.out.println(file.getName());
+                }
+            }*/
+
+            String[] skyTextureNames = new String[] {"HDR_041_Path_Env.hdr", "texture2"};
+            ImGui.pushID("sky_textures");
+            if (ImGui.combo("", skyTextureId, skyTextureNames)) {
+                Renderer.resetAccFrames();
+            };
+            ImGui.popID();
+            if (skyHasTexture.get()) ImGui.beginDisabled();
             if (ImGui.colorEdit3("color", color)) {
                 Renderer.resetAccFrames();
                 scene.getSky().setColor(color[0], color[1], color[2]);
+            }
+            if (skyHasTexture.get()) ImGui.endDisabled();
+            if (ImGui.checkbox("metal", isMetal)) {
+                Renderer.resetAccFrames();
+                scene.getSky().setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
             }
             if (ImGui.dragFloat("emission", emission, 0.01f, 0, Float.MAX_VALUE, "%.2f")) {
                 Renderer.resetAccFrames();
@@ -109,6 +143,7 @@ public class SceneEditor {
                         scene.getPlane().getSecondColor().y,
                         scene.getPlane().getSecondColor().z
                 };
+                float[] scale = new float[] {scene.getPlane().getScale()};
                 float[] emission = new float[] {scene.getPlane().getMaterial().getEmission()};
                 float[] roughness = new float[] {scene.getPlane().getMaterial().getRoughness()};
                 float[] IOR = new float[] {scene.getPlane().getMaterial().getIOR()};
@@ -128,6 +163,10 @@ public class SceneEditor {
                     if (ImGui.colorEdit3("color 2", color2)) {
                         Renderer.resetAccFrames();
                         scene.getPlane().setSecondColor(color2[0], color2[1], color2[2]);
+                    }
+                    if (ImGui.dragFloat("scale", scale, 1.0f, 0.0f, Float.MAX_VALUE)) {
+                        Renderer.resetAccFrames();
+                        scene.getPlane().setScale(scale[0]);
                     }
                 } else {
                     if (ImGui.colorEdit3("color", color)) {

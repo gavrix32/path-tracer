@@ -5,8 +5,8 @@ out vec3 out_color;
 #define PI 3.14159
 #define EPSILON 0.001
 #define MAX_DISTANCE 999999999
-#define MAX_SPHERES 16
-#define MAX_BOXES 16
+#define MAX_SPHERES 128
+#define MAX_BOXES 128
 #define MAX_TRIANGLES 16
 
 struct Ray {
@@ -53,19 +53,26 @@ struct Sky {
 
 struct Plane {
     bool exists, checkerboard;
+    float scale;
     vec3 color1, color2;
     Material material;
 };
 
+struct AABB {
+    vec3 min, max;
+};
+
 uniform vec2 resolution;
 uniform vec3 camera_position;
-uniform mat4 euler_rotation;
-uniform int samples, bounces, use_taa, use_dof, autofocus, random_noise, gamma_correction, tonemapping, frame_mixing,
-show_albedo, show_depth, show_normals, sky_has_texture, spheres_count, boxes_count, triangles_count;
+uniform mat4 camera_rotation_matrix;
+uniform int samples, bounces, spheres_count, boxes_count, triangles_count;
+uniform bool use_gamma_correction, use_tonemapping, use_random_noise, use_frame_mixing, show_albedo, show_depth,
+             show_normals, use_dof, use_autofocus, use_taa, sky_has_texture, use_accel;
 uniform sampler2D sky_texture;
 uniform float acc_frames, time, gamma, exposure, fov, focus_distance, defocus_blur;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
+uniform AABB sphAABB, boxAABB;
 uniform Triangle triangles[MAX_TRIANGLES];
 uniform Sky sky;
 uniform Plane plane;
@@ -102,20 +109,32 @@ float intersect_box(Ray ray, vec3 scale, out vec3 normal, mat4 rotation) {
     return tN;
 }
 
+float intersect_aabb(Ray ray, AABB aabb/*, out vec3 normal*/) {
+    vec3 tMin = (aabb.min - ray.o) / ray.d;
+    vec3 tMax = (aabb.max - ray.o) / ray.d;
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+    if (tNear > tFar || tFar < 0) return -1;
+    //normal = vec3(equal(t1, vec3(tNear))) * sign(-ray.d);
+    return tNear;
+}
+
 vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 normal, mat4 rotation) {
     vec3 ro = (rotation * vec4(ray.o, 1)).xyz;
     vec3 rd = (rotation * vec4(ray.d, 0)).xyz;
     vec3 v1v0 = v1 - v0;
     vec3 v2v0 = v2 - v0;
     vec3 rov0 = ro - v0;
-    vec3 n = cross(v1v0, v2v0);
+    normal = cross(v1v0, v2v0);
     vec3 q = cross(rov0, rd);
-    float d = 1.0 / dot(rd, n);
+    float d = 1.0 / dot(rd, normal);
     float u = d * dot(-q, v2v0);
     float v = d * dot(q, v1v0);
-    float t = d * dot(-n, rov0);
+    float t = d * dot(-normal, rov0);
     if (u < 0.0 || v < 0.0 || (u + v) > 1.0) t = -1.0;
-    normal = n * mat3(rotation);
+    normal *= mat3(rotation);
     return vec3(t, u, v);
 }
 
@@ -135,38 +154,67 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
             hitInfo.material = plane.material;
             hitInfo.normal = vec3(0, 1, 0);
             if (plane.checkerboard) {
-                float cb = checkerboard(vec3(ray.d * dist + ray.o).xz * (0.06));
+                float cb = checkerboard(vec3(ray.d * dist + ray.o).xz / (plane.scale * 0.4f));
                 if (vec3(plane.color1 * cb) != vec3(0))
-                hitInfo.material.color = plane.color1;
+                    hitInfo.material.color = plane.color1;
                 else
-                hitInfo.material.color = plane.color2;
+                    hitInfo.material.color = plane.color2;
             } else {
                 hitInfo.material.color = plane.material.color;
             }
         }
     }
-    for (int i = 0; i < spheres_count; i++) {
-        dist = intersect_sphere(ray, spheres[i].position, spheres[i].radius);
-        if (dist > 0 && dist < hitInfo.minDistance) {
-            hit = true;
-            hitInfo.minDistance = dist;
-            hitInfo.material = spheres[i].material;
-            hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
+    if (use_accel) {
+        dist = intersect_aabb(ray, sphAABB);
+        if (dist != -1 && dist < hitInfo.minDistance) {
+            for (int i = 0; i < spheres_count; i++) {
+                dist = intersect_sphere(ray, spheres[i].position, spheres[i].radius);
+                if (dist > 0 && dist < hitInfo.minDistance) {
+                    hit = true;
+                    hitInfo.minDistance = dist;
+                    hitInfo.material = spheres[i].material;
+                    hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
+                }
+            }
+        }
+        dist = intersect_aabb(ray, boxAABB);
+        if (dist != -1 && dist < hitInfo.minDistance) {
+            for (int i = 0; i < boxes_count; i++) {
+                vec3 normal;
+                dist = intersect_box(Ray(ray.o - boxes[i].position, ray.d), boxes[i].scale, normal, boxes[i].rotation).x;
+                if (dist > 0 && dist < hitInfo.minDistance) {
+                    hit = true;
+                    hitInfo.minDistance = dist;
+                    hitInfo.material = boxes[i].material;
+                    hitInfo.normal = normalize(normal);
+                }
+            }
+        }
+    } else {
+        for (int i = 0; i < boxes_count; i++) {
+            vec3 normal;
+            dist = intersect_box(Ray(ray.o - boxes[i].position, ray.d), boxes[i].scale, normal, boxes[i].rotation).x;
+            if (dist > 0 && dist < hitInfo.minDistance) {
+                hit = true;
+                hitInfo.minDistance = dist;
+                hitInfo.material = boxes[i].material;
+                hitInfo.normal = normalize(normal);
+            }
+        }
+        for (int i = 0; i < spheres_count; i++) {
+            dist = intersect_sphere(ray, spheres[i].position, spheres[i].radius);
+            if (dist > 0 && dist < hitInfo.minDistance) {
+                hit = true;
+                hitInfo.minDistance = dist;
+                hitInfo.material = spheres[i].material;
+                hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
+            }
         }
     }
-    for (int i = 0; i < boxes_count; i++) {
-        vec3 normal;
-        dist = intersect_box(Ray(ray.o - boxes[i].position, ray.d), boxes[i].scale, normal, boxes[i].rotation).x;
-        if (dist > 0 && dist < hitInfo.minDistance) {
-            hit = true;
-            hitInfo.minDistance = dist;
-            hitInfo.material = boxes[i].material;
-            hitInfo.normal = normalize(normal);
-        }
-    }
+
     for (int i = 0; i < triangles_count; i++) {
         vec3 normal;
-        dist = intersect_triangle(Ray(ray.o, ray.d), triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
+        dist = intersect_triangle(ray, triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
         if (dist > 0 && dist < hitInfo.minDistance) {
             hit = true;
             hitInfo.minDistance = dist;
@@ -174,18 +222,27 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
             hitInfo.normal = normalize(normal);
         }
     }
+    /*dist = intersect_aabb(ray, boxAABB);
+    if (dist > 0 && dist < hitInfo.minDistance) {
+        hit = true;
+        hitInfo.minDistance = dist;
+        hitInfo.material.color = vec3(0.5);
+        hitInfo.material.emission = 0;
+        hitInfo.material.IOR = 1;
+        hitInfo.material.is_glass = true;
+        hitInfo.material.is_metal = true;
+        hitInfo.material.roughness = 0;
+        hitInfo.normal = vec3(1);
+    }*/
     if (!hit) {
         hitInfo.material = sky.material;
         hitInfo.minDistance = MAX_DISTANCE;
-        switch (sky_has_texture) {
-            case 1:
+        if (sky_has_texture) {
             vec2 uv_ = vec2(atan(ray.d.z, ray.d.x) / PI, asin(ray.d.y) * 2 / PI);
             uv_ = uv_ * 0.5 + 0.5;
             hitInfo.material.color = texture(sky_texture, uv_).rgb;
-            break;
-            case 0:
+        } else {
             hitInfo.material.color = sky.material.color;
-            break;
         }
         return true;
     }
@@ -241,23 +298,23 @@ float fresnel(vec3 dir, vec3 n, float ior) {
 
 Ray brdf(Ray ray, HitInfo hitInfo) {
     if (hitInfo.material.is_glass)
-    ray.o += ray.d * (hitInfo.minDistance + EPSILON);
+        ray.o += ray.d * (hitInfo.minDistance + EPSILON);
     else
-    ray.o += ray.d * (hitInfo.minDistance - EPSILON);
+        ray.o += ray.d * (hitInfo.minDistance - EPSILON);
     vec3 diffused = random_cosine_weighted_hemisphere(hitInfo.normal);
     vec3 reflected = reflect(ray.d, hitInfo.normal);
     vec3 refracted = refract(ray.d, hitInfo.normal, 1 / hitInfo.material.IOR);
     if (hitInfo.material.is_glass) {
         if (fresnel(ray.d, hitInfo.normal, hitInfo.material.IOR) > random()) refracted = reflected;
         if (hitInfo.material.is_metal)
-        ray.d = mix(refracted, diffused, hitInfo.material.roughness > 0.5 ? 0.5 : hitInfo.material.roughness);
+            ray.d = mix(refracted, diffused, hitInfo.material.roughness > 0.5 ? 0.5 : hitInfo.material.roughness);
         else
-        ray.d = mix(refracted, diffused, random() < hitInfo.material.roughness ? 1 : 0);
+            ray.d = mix(refracted, diffused, random() < hitInfo.material.roughness ? 1 : 0);
     } else {
         if (hitInfo.material.is_metal)
-        ray.d = mix(reflected, diffused, hitInfo.material.roughness);
+            ray.d = mix(reflected, diffused, hitInfo.material.roughness);
         else
-        ray.d = mix(reflected, diffused, random() < hitInfo.material.roughness ? 1 : 0);
+            ray.d = mix(reflected, diffused, random() < hitInfo.material.roughness ? 1 : 0);
     }
     return ray;
 }
@@ -269,7 +326,8 @@ vec3 trace(Ray ray) {
         if (raycast(ray, hitInfo)) {
             ray = brdf(ray, hitInfo);
             energy *= hitInfo.material.color;
-            if (hitInfo.material.emission > 0) return energy * hitInfo.material.emission;
+            if (hitInfo.material.emission > 0)
+                return energy * hitInfo.material.emission;
         }
     }
     return vec3(0);
@@ -278,33 +336,33 @@ vec3 trace(Ray ray) {
 layout(binding = 0, rgba32f) uniform image2D frame_image;
 
 vec3 post_process(vec3 col) {
-    if (tonemapping == 1) col = vec3(1.0) - exp(-col * exposure);
-    if (gamma_correction == 1) col = pow(col, vec3(1.0 / gamma));
+    if (use_tonemapping) col = vec3(1.0) - exp(-col * exposure);
+    if (use_gamma_correction) col = pow(col, vec3(1.0 / gamma));
     return col;
 }
 
 void main() {
-    if (acc_frames > 0 || random_noise == 1 || frame_mixing == 1)
+    if (acc_frames > 0 || use_random_noise || use_frame_mixing)
         update_seed();
     else
         seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
 
     vec2 uv = (2 * gl_FragCoord.xy - resolution) / resolution.y;
 
-    if (use_taa == 1) {
+    if (use_taa) {
         uv.x += (random() - 0.5) * 0.002;
         uv.y += (random() - 0.5) * 0.002;
     }
 
-    vec3 dir = normalize(vec3(uv, 1.0 / tan(radians(fov) / 2))) * mat3(euler_rotation);
+    vec3 dir = normalize(vec3(uv, 1.0 / tan(radians(fov) / 2))) * mat3(camera_rotation_matrix);
     Ray ray = Ray(camera_position, dir);
 
     // depth of field
-    if (use_dof == 1) {
+    if (use_dof) {
         float focus_dist;
-        if (autofocus == 1) {
+        if (use_autofocus) {
             HitInfo autofocus_hitinfo;
-            Ray autofocus_ray = Ray(camera_position, normalize(vec3(vec2(0.001), 1.0 / tan(radians(fov) / 2)) * mat3(euler_rotation)));
+            Ray autofocus_ray = Ray(camera_position, normalize(vec3(vec2(0.001), 1.0 / tan(radians(fov) / 2)) * mat3(camera_rotation_matrix)));
             raycast(autofocus_ray, autofocus_hitinfo);
             focus_dist = autofocus_hitinfo.minDistance >= MAX_DISTANCE ? 1000 : autofocus_hitinfo.minDistance;
         } else {
@@ -320,19 +378,19 @@ void main() {
     for (int i = 0; i < samples; i++) color += trace(ray);
     color /= samples;
 
-    if (show_depth == 1 || show_albedo == 1 || show_normals == 1) {
+    if (show_depth || show_albedo || show_normals) {
         HitInfo hitInfo;
         raycast(ray, hitInfo);
         color = hitInfo.material.color;
-        if (show_normals == 1) color = hitInfo.normal * 0.5 + 0.5;
-        if (show_depth == 1) color = vec3(hitInfo.minDistance) * 0.001;
+        if (show_normals) color = hitInfo.normal * 0.5 + 0.5;
+        if (show_depth) color = vec3(hitInfo.minDistance) * 0.001;
     } else {
         if (acc_frames > 0) {
             vec3 prev_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy)).rgb;
             color = mix(color, prev_color, acc_frames / (acc_frames + 1));
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
         }
-        if (frame_mixing == 1) {
+        if (use_frame_mixing) {
             vec3 prev_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy)).rgb;
             color = mix(color, prev_color, 0.8);
             imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));

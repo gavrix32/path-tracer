@@ -4,9 +4,8 @@ import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.math.Vector3f;
 
 public class Plane {
-    private Vector3f color;
-    private Vector3f color1;
-    private Vector3f color2;
+    private Vector3f color, color1, color2;
+    private float scale = 100.0f;
     private Material material;
     private boolean checkerBoard;
 
@@ -38,42 +37,48 @@ public class Plane {
         return color;
     }
 
-    public void setColor(Vector3f color) {
+    public Plane setColor(Vector3f color) {
         this.color = color;
+        return this;
     }
 
-    public void setColor(float r, float g, float b) {
+    public Plane setColor(float r, float g, float b) {
         this.color.x = r;
         this.color.y = g;
         this.color.z = b;
+        return this;
     }
 
     public Vector3f getFirstColor() {
         return color1;
     }
 
-    public void setFirstColor(Vector3f color1) {
+    public Plane setFirstColor(Vector3f color1) {
         this.color1 = color1;
+        return this;
     }
 
-    public void setFirstColor(float r, float g, float b) {
+    public Plane setFirstColor(float r, float g, float b) {
         this.color1.x = r;
         this.color1.y = g;
         this.color1.z = b;
+        return this;
     }
 
     public Vector3f getSecondColor() {
         return color2;
     }
 
-    public void setSecondColor(Vector3f color2) {
+    public Plane setSecondColor(Vector3f color2) {
         this.color2 = color2;
+        return this;
     }
 
-    public void setSecondColor(float r, float g, float b) {
+    public Plane setSecondColor(float r, float g, float b) {
         this.color2.x = r;
         this.color2.y = g;
         this.color2.z = b;
+        return this;
     }
 
     public Material getMaterial() {
@@ -92,7 +97,17 @@ public class Plane {
         return checkerBoard;
     }
 
-    public void setCheckerBoard(boolean checkerBoard) {
+    public Plane setCheckerBoard(boolean checkerBoard) {
         this.checkerBoard = checkerBoard;
+        return this;
+    }
+
+    public float getScale() {
+        return scale;
+    }
+
+    public Plane setScale(float scale) {
+        this.scale = scale;
+        return this;
     }
 }

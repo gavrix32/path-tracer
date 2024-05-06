@@ -32,6 +32,10 @@ public class Sky {
     }
 
     public Sky(String path) {
+        setTexture(path);
+    }
+
+    public void setTexture(String path) {
         this.path = path;
         texture = glGenTextures();
         glActiveTexture(GL_TEXTURE0);
@@ -95,5 +99,9 @@ public class Sky {
 
     public boolean hasTexture() {
         return hasTexture;
+    }
+
+    public void setHasTexture(boolean hasTexture) {
+        this.hasTexture = hasTexture;
     }
 }

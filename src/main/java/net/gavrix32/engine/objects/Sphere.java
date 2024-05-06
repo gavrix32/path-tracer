@@ -1,5 +1,6 @@
 package net.gavrix32.engine.objects;
 
+import net.gavrix32.engine.graphics.AABB;
 import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.utils.Logger;
@@ -24,5 +25,12 @@ public class Sphere extends Shape {
     public void setRadius(float value) {
         if (value < 0) Logger.error("Radius cannot be less than 0");
         this.radius = value;
+    }
+
+    public AABB getAABB() {
+        return new AABB(
+                new Vector3f(new Vector3f(super.pos).sub(radius)),
+                new Vector3f(new Vector3f(super.pos).add(radius))
+        );
     }
 }

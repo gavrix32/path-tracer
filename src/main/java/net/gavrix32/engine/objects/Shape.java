@@ -5,7 +5,7 @@ import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.utils.Logger;
 
 public class Shape {
-    private Vector3f pos, rot, col;
+    protected Vector3f pos, rot, col;
     private Material material;
 
     public Shape(Vector3f pos, Vector3f rot, Vector3f col, Material material) {

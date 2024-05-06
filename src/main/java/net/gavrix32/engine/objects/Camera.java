@@ -7,31 +7,31 @@ import net.gavrix32.engine.math.Vector3f;
 public class Camera {
     private Vector3f position, rotation;
     private float fov;
-    private final Matrix4f euler_rotation;
+    private final Matrix4f rotation_matrix;
 
     public Camera() {
         position = new Vector3f();
         rotation = new Vector3f();
         fov = 70.0f;
-        euler_rotation = new Matrix4f();
+        rotation_matrix = new Matrix4f();
     }
 
     public Camera update() {
-        euler_rotation.rotate(rotation);
+        rotation_matrix.rotate(rotation);
         return this;
     }
 
     public Camera move(float x, float y, float z) {
-        position.add(new Vector3f(1, 0, 0).mul(euler_rotation).mul(x));
-        position.add(new Vector3f(0, 1, 0).mul(euler_rotation).mul(y));
-        position.add(new Vector3f(0, 0, 1).mul(euler_rotation).mul(z));
+        position.add(new Vector3f(1, 0, 0).mul(rotation_matrix).mul(x));
+        position.add(new Vector3f(0, 1, 0).mul(rotation_matrix).mul(y));
+        position.add(new Vector3f(0, 0, 1).mul(rotation_matrix).mul(z));
         return this;
     }
 
     public Camera move(Vector3f v) {
-        position.add(new Vector3f(1, 0, 0).mul(euler_rotation).mul(v.x));
-        position.add(new Vector3f(0, 1, 0).mul(euler_rotation).mul(v.y));
-        position.add(new Vector3f(0, 0, 1).mul(euler_rotation).mul(v.z));
+        position.add(new Vector3f(1, 0, 0).mul(rotation_matrix).mul(v.x));
+        position.add(new Vector3f(0, 1, 0).mul(rotation_matrix).mul(v.y));
+        position.add(new Vector3f(0, 0, 1).mul(rotation_matrix).mul(v.z));
         return this;
     }
 
@@ -75,8 +75,8 @@ public class Camera {
         return this;
     }
 
-    public Matrix4f getEulerRotation() {
-        return euler_rotation;
+    public Matrix4f getRotationMatrix() {
+        return rotation_matrix;
     }
 
     public float getFov() {

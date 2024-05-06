@@ -7,9 +7,6 @@ import net.gavrix32.engine.gui.Gui;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.gui.SceneEditor;
 import net.gavrix32.engine.io.*;
-import net.gavrix32.engine.math.Matrix4f;
-import net.gavrix32.engine.math.Vector3f;
-import net.gavrix32.engine.utils.Logger;
 
 import java.util.ArrayList;
 
@@ -52,7 +49,7 @@ public class Main implements IApp {
         names.add("Open Box");
 
         Renderer.init();
-        SceneEditor.setDefaultScene(5);
+        SceneEditor.setDefaultScene(2);
     }
 
     public void update() {

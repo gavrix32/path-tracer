@@ -48,7 +48,7 @@ public class Render {
             }
         }
         if (ImGui.sliderInt("spp", samples, 1, 32)) Renderer.setSamples(samples[0]);
-        if (ImGui.sliderInt("bounces", bounces, 0, 8)) Renderer.setBounces(bounces[0]);
+        if (ImGui.sliderInt("bounces", bounces, 0, 16)) Renderer.setBounces(bounces[0]);
         if (ImGui.checkbox("taa", taa)) Renderer.useTaa(taa.get());
         if (ImGui.checkbox("dof", dof)) Renderer.setDof(dof.get());
         ImGui.beginDisabled(!dof.get());
@@ -62,13 +62,19 @@ public class Render {
         ImGui.endDisabled();
         ImGui.text("accumulated frames: " + Renderer.getAccFrames());
         if (ImGui.checkbox("accumulation", accumulation)) Renderer.setAccumulation(accumulation.get());
-        if (ImGui.checkbox("gamma correction", gammaCorrection) || gammaCorrection.get()) Renderer.useGammaCorrection(gammaCorrection.get(), gamma[0]);
+        if (ImGui.checkbox("gamma", gammaCorrection) || gammaCorrection.get()) Renderer.useGammaCorrection(gammaCorrection.get(), gamma[0]);
         ImGui.beginDisabled(!gammaCorrection.get());
-        ImGui.sliderFloat("gamma", gamma, 0, 10, "%.1f");
+        ImGui.sameLine();
+        ImGui.pushID("slider_gamma");
+        ImGui.sliderFloat("", gamma, 0, 10, "%.1f");
+        ImGui.popID();
         ImGui.endDisabled();
-        if (ImGui.checkbox("tone mapping", tonemapping) || tonemapping.get()) Renderer.setToneMapping(tonemapping.get(), exposure[0]);
+        if (ImGui.checkbox("exposure", tonemapping) || tonemapping.get()) Renderer.setToneMapping(tonemapping.get(), exposure[0]);
         ImGui.beginDisabled(!tonemapping.get());
-        ImGui.sliderFloat("exposure", exposure, 0, 5, "%.1f");
+        ImGui.sameLine();
+        ImGui.pushID("slider_exposure");
+        ImGui.sliderFloat("", exposure, 0, 5, "%.1f");
+        ImGui.popID();
         ImGui.endDisabled();
         if (ImGui.checkbox("temporal mixing", frameMixing)) Renderer.setFrameMixing(frameMixing.get());
         if (ImGui.checkbox("random noise", randNoise)) Renderer.setRandomNoise(randNoise.get());

@@ -3,7 +3,6 @@ package net.gavrix32.engine.graphics;
 import net.gavrix32.engine.gui.Gui;
 import net.gavrix32.engine.gui.Viewport;
 import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector2f;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -29,6 +28,7 @@ public class Renderer {
             taa = true, dof = false, autofocus = true, showAlbedo = false, showNormals = false, showDepth = false;
     private static int accTexture;
     private static float gamma = 2.2f, exposure = 1.0f, focusDistance = 50.0f, defocusBlur = 3.0f;
+    private static Accelerator accelerator;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -53,7 +53,7 @@ public class Renderer {
     public static void render() {
         glClear(GL_COLOR_BUFFER_BIT);
         scene.camera.update();
-        pt_shader.setMat4("euler_rotation", scene.camera.getEulerRotation());
+        pt_shader.setMat4("camera_rotation_matrix", scene.camera.getRotationMatrix());
         pt_shader.setVec3("camera_position", scene.camera.getPosition());
         if (Gui.status) {
             if (Viewport.getWidthDelta() != 0 || Viewport.getHeightDelta() != 0) resetAccFrames();
@@ -69,23 +69,26 @@ public class Renderer {
         pt_shader.setInt("samples", samples);
         pt_shader.setInt("bounces", bounces);
         pt_shader.setFloat("fov", scene.camera.getFov());
-        pt_shader.setBool("random_noise", randNoise);
-        pt_shader.setBool("frame_mixing", frameMixing);
+        pt_shader.setBool("use_random_noise", randNoise);
+        pt_shader.setBool("use_frame_mixing", frameMixing);
         pt_shader.setBool("use_taa", taa);
         pt_shader.setBool("use_dof", dof);
-        pt_shader.setBool("autofocus", autofocus);
+        pt_shader.setBool("use_autofocus", autofocus);
         pt_shader.setFloat("focus_distance", focusDistance);
         pt_shader.setFloat("defocus_blur", defocusBlur);
         pt_shader.setFloat("gamma", gamma);
-        pt_shader.setBool("gamma_correction", gammaCorrection);
-        pt_shader.setBool("tonemapping", tonemapping);
+        pt_shader.setBool("use_gamma_correction", gammaCorrection);
+        pt_shader.setBool("use_tonemapping", tonemapping);
         pt_shader.setFloat("exposure", exposure);
         pt_shader.setBool("sky_has_texture", scene.sky.hasTexture());
+        pt_shader.setBool("use_accel", true);
         if (scene.sky.hasTexture()) {
             glActiveTexture(GL_TEXTURE0);
             scene.sky.bindTexture();
             pt_shader.setInt("sky_texture", 0);
-        } else pt_shader.setVec3("sky.material.color", scene.sky.getColor());
+        } else {
+            pt_shader.setVec3("sky.material.color", scene.sky.getColor());
+        }
         pt_shader.setBool("sky.material.is_metal", scene.sky.getMaterial().isMetal());
         pt_shader.setFloat("sky.material.emission", scene.sky.getMaterial().getEmission());
         pt_shader.setFloat("sky.material.roughness", scene.sky.getMaterial().getRoughness());
@@ -98,14 +101,22 @@ public class Renderer {
             if (scene.plane.isCheckerBoard()) {
                 pt_shader.setVec3("plane.color1", scene.plane.getFirstColor());
                 pt_shader.setVec3("plane.color2", scene.plane.getSecondColor());
-            } else pt_shader.setVec3("plane.material.color", scene.plane.getColor());
+                pt_shader.setFloat("plane.scale", scene.plane.getScale());
+            } else {
+                pt_shader.setVec3("plane.material.color", scene.plane.getColor());
+            }
             pt_shader.setFloat("plane.material.emission", scene.plane.getMaterial().getEmission());
             pt_shader.setFloat("plane.material.roughness", scene.plane.getMaterial().getRoughness());
             pt_shader.setBool("plane.material.is_glass", scene.plane.getMaterial().isGlass());
             pt_shader.setFloat("plane.material.IOR", scene.plane.getMaterial().getIOR());
             pt_shader.setBool("plane.material.is_metal", scene.plane.getMaterial().isMetal());
-        } else pt_shader.setInt("plane.exists", 0);
+        } else {
+            pt_shader.setInt("plane.exists", 0);
+        }
+        accelerator = new Accelerator(scene);
         // Spheres
+        pt_shader.setVec3("sphAABB.min", accelerator.getSpheresBoundingBox().min);
+        pt_shader.setVec3("sphAABB.max", accelerator.getSpheresBoundingBox().max);
         pt_shader.setInt("spheres_count", scene.spheres.size());
         for (int i = 0; i < scene.spheres.size(); i++) {
             pt_shader.setVec3("spheres[" + i + "].position", scene.spheres.get(i).getPos());
@@ -118,6 +129,8 @@ public class Renderer {
             pt_shader.setFloat("spheres[" + i + "].material.IOR", scene.spheres.get(i).getMaterial().getIOR());
         }
         // Boxes
+        pt_shader.setVec3("boxAABB.min", accelerator.getBoxesBoundingBox().min);
+        pt_shader.setVec3("boxAABB.max", accelerator.getBoxesBoundingBox().max);
         pt_shader.setInt("boxes_count", scene.boxes.size());
         for (int i = 0; i < scene.boxes.size(); i++) {
             pt_shader.setVec3("boxes[" + i + "].position", scene.boxes.get(i).getPos());
@@ -154,6 +167,7 @@ public class Renderer {
             pt_shader.setBool("triangles[" + i + "].material.is_glass", scene.triangles.get(i).getMaterial().isGlass());
             pt_shader.setFloat("triangles[" + i + "].material.IOR", scene.triangles.get(i).getMaterial().getIOR());
         }
+
         if (accumulation || frameMixing) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
         if (accFrames == 0 && !frameMixing) resetAccTexture();
         if (!Gui.status) glViewport(0, 0, Window.getWidth(), Window.getHeight());
@@ -315,6 +329,7 @@ public class Renderer {
     }
 
     public static void showAlbedo(boolean value) {
+        resetAccFrames();
         showAlbedo = value;
     }
 
@@ -323,10 +338,12 @@ public class Renderer {
     }
 
     public static void showNormals(boolean value) {
+        resetAccFrames();
         showNormals = value;
     }
 
     public static boolean isShowDepth() {
+        resetAccFrames();
         return showDepth;
     }
 
