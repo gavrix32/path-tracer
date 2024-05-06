@@ -372,7 +372,7 @@ public class SceneEditor {
                 };
 
                 ImGui.pushID(i);
-                if (ImGui.colorEdit3("box " + i + " color", color)) {
+                if (ImGui.colorEdit3("triangle " + i + " color", color)) {
                     Renderer.resetAccFrames();
                     scene.getTriangle(i).setColor(color[0], color[1], color[2]);
                 }

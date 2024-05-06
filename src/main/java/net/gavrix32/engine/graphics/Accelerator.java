@@ -3,6 +3,7 @@ package net.gavrix32.engine.graphics;
 import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.objects.Box;
 import net.gavrix32.engine.objects.Sphere;
+import net.gavrix32.engine.objects.Triangle;
 
 public class Accelerator {
     private final Scene scene;
@@ -39,6 +40,22 @@ public class Accelerator {
             if (box.getAABB().max.x > aabb.max.x) aabb.max.x = box.getAABB().max.x;
             if (box.getAABB().max.y > aabb.max.y) aabb.max.y = box.getAABB().max.y;
             if (box.getAABB().max.z > aabb.max.z) aabb.max.z = box.getAABB().max.z;
+        }
+        return aabb;
+    }
+
+    public AABB getTrianglesBoundingBox() {
+        AABB aabb = new AABB(
+                new Vector3f(Float.MAX_VALUE),
+                new Vector3f(Float.MIN_VALUE)
+        );
+        for (Triangle triangle : scene.triangles) {
+            if (triangle.getAABB().min.x < aabb.min.x) aabb.min.x = triangle.getAABB().min.x;
+            if (triangle.getAABB().min.y < aabb.min.y) aabb.min.y = triangle.getAABB().min.y;
+            if (triangle.getAABB().min.z < aabb.min.z) aabb.min.z = triangle.getAABB().min.z;
+            if (triangle.getAABB().max.x > aabb.max.x) aabb.max.x = triangle.getAABB().max.x;
+            if (triangle.getAABB().max.y > aabb.max.y) aabb.max.y = triangle.getAABB().max.y;
+            if (triangle.getAABB().max.z > aabb.max.z) aabb.max.z = triangle.getAABB().max.z;
         }
         return aabb;
     }

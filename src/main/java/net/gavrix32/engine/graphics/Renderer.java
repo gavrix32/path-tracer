@@ -149,6 +149,8 @@ public class Renderer {
             pt_shader.setFloat("boxes[" + i + "].material.IOR", scene.boxes.get(i).getMaterial().getIOR());
         }
         // Triangles
+        pt_shader.setVec3("triAABB.min", accelerator.getTrianglesBoundingBox().min);
+        pt_shader.setVec3("triAABB.max", accelerator.getTrianglesBoundingBox().max);
         pt_shader.setInt("triangles_count", scene.triangles.size());
         for (int i = 0; i < scene.triangles.size(); i++) {
             pt_shader.setVec3("triangles[" + i + "].v1", scene.triangles.get(i).getV1());

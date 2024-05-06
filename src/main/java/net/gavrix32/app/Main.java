@@ -49,7 +49,7 @@ public class Main implements IApp {
         names.add("Open Box");
 
         Renderer.init();
-        SceneEditor.setDefaultScene(2);
+        SceneEditor.setDefaultScene(5);
     }
 
     public void update() {

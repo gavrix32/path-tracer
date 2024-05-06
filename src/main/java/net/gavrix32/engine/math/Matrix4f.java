@@ -108,6 +108,27 @@ public final class Matrix4f {
         return this.rotate(v.x, v.y, v.z);
     }
 
+    public Matrix4f setScale(Vector3f scale) {
+        m[0][0] = scale.x;
+        m[1][1] = scale.y;
+        m[2][2] = scale.z;
+        return this;
+    }
+
+    public Matrix4f setScale(float x, float y, float z) {
+        m[0][0] = x;
+        m[1][1] = y;
+        m[2][2] = z;
+        return this;
+    }
+
+    public Matrix4f setScale(float s) {
+        m[0][0] = s;
+        m[1][1] = s;
+        m[2][2] = s;
+        return this;
+    }
+
     public Matrix4f mul(Matrix4f matrix) {
         Matrix4f result = new Matrix4f().zero();
         for (int i = 0; i < 4; i++) {

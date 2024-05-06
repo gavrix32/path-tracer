@@ -7,7 +7,7 @@ out vec3 out_color;
 #define MAX_DISTANCE 999999999
 #define MAX_SPHERES 128
 #define MAX_BOXES 128
-#define MAX_TRIANGLES 16
+#define MAX_TRIANGLES 300
 
 struct Ray {
     vec3 o, d;
@@ -72,8 +72,8 @@ uniform sampler2D sky_texture;
 uniform float acc_frames, time, gamma, exposure, fov, focus_distance, defocus_blur;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
-uniform AABB sphAABB, boxAABB;
 uniform Triangle triangles[MAX_TRIANGLES];
+uniform AABB sphAABB, boxAABB, triAABB;
 uniform Sky sky;
 uniform Plane plane;
 
@@ -134,6 +134,7 @@ vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 no
     float v = d * dot(q, v1v0);
     float t = d * dot(-normal, rov0);
     if (u < 0.0 || v < 0.0 || (u + v) > 1.0) t = -1.0;
+    if (dot(normal, ray.d) > 0) normal = -normal;
     normal *= mat3(rotation);
     return vec3(t, u, v);
 }
@@ -190,6 +191,19 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
                 }
             }
         }
+        dist = intersect_aabb(ray, triAABB);
+        if (dist != -1 && dist < hitInfo.minDistance) {
+            for (int i = 0; i < triangles_count; i++) {
+                vec3 normal;
+                dist = intersect_triangle(ray, triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
+                if (dist > 0 && dist < hitInfo.minDistance) {
+                    hit = true;
+                    hitInfo.minDistance = dist;
+                    hitInfo.material = triangles[i].material;
+                    hitInfo.normal = normalize(normal);
+                }
+            }
+        }
     } else {
         for (int i = 0; i < boxes_count; i++) {
             vec3 normal;
@@ -210,18 +224,18 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
                 hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
             }
         }
-    }
-
-    for (int i = 0; i < triangles_count; i++) {
-        vec3 normal;
-        dist = intersect_triangle(ray, triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
-        if (dist > 0 && dist < hitInfo.minDistance) {
-            hit = true;
-            hitInfo.minDistance = dist;
-            hitInfo.material = triangles[i].material;
-            hitInfo.normal = normalize(normal);
+        for (int i = 0; i < triangles_count; i++) {
+            vec3 normal;
+            dist = intersect_triangle(ray, triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
+            if (dist > 0 && dist < hitInfo.minDistance) {
+                hit = true;
+                hitInfo.minDistance = dist;
+                hitInfo.material = triangles[i].material;
+                hitInfo.normal = normalize(normal);
+            }
         }
     }
+
     /*dist = intersect_aabb(ray, boxAABB);
     if (dist > 0 && dist < hitInfo.minDistance) {
         hit = true;
