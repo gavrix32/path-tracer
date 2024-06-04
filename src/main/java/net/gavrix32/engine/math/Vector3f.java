@@ -1,5 +1,7 @@
 package net.gavrix32.engine.math;
 
+import net.gavrix32.engine.utils.Logger;
+
 public final class Vector3f {
     public float x, y, z;
 
@@ -60,6 +62,17 @@ public final class Vector3f {
         y = v.y;
         z = v.z;
         return this;
+    }
+
+    public float get(int axis) {
+        float val = 0;
+        switch (axis) {
+            case 0 -> val = x;
+            case 1 -> val = y;
+            case 2 -> val = z;
+            default -> Logger.error("Unknown axe " + axis);
+        }
+        return val;
     }
 
     public Vector3f add(float s) {

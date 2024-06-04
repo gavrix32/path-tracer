@@ -48,7 +48,7 @@ public class Sky {
         buffer.put(bytes);
         buffer.flip();
         stbi_set_flip_vertically_on_load(true);
-        FloatBuffer data = stbi_loadf_from_memory(buffer, width, height,  new int[1], 3);
+        FloatBuffer data = stbi_loadf_from_memory(buffer, width, height, new int[1], 3);
         if (data == null) Logger.error("Failed to load texture: \"\"" + path + " " + stbi_failure_reason());
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width[0], height[0], 0, GL_RGB, GL_FLOAT, data);
         glBindTexture(GL_TEXTURE_2D, 0);

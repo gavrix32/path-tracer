@@ -23,7 +23,6 @@ struct Material {
 };
 
 struct HitInfo {
-    Ray ray;
     vec3 normal;
     float minDistance;
     Material material;
@@ -63,8 +62,8 @@ struct AABB {
 };
 
 uniform vec2 resolution;
-uniform vec3 camera_position;
-uniform mat4 camera_rotation_matrix;
+uniform vec3 camera_position, prev_camera_position;
+uniform mat4 camera_rotation_matrix, prev_camera_rotation_matrix;
 uniform int samples, bounces, spheres_count, boxes_count, triangles_count;
 uniform bool use_gamma_correction, use_tonemapping, use_random_noise, use_frame_mixing, show_albedo, show_depth,
              show_normals, use_dof, use_autofocus, use_taa, sky_has_texture, use_accel;
@@ -76,6 +75,7 @@ uniform Triangle triangles[MAX_TRIANGLES];
 uniform AABB sphAABB, boxAABB, triAABB;
 uniform Sky sky;
 uniform Plane plane;
+uniform samplerBuffer verticesTexture;
 
 vec3 p;
 
@@ -193,9 +193,13 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
         }
         dist = intersect_aabb(ray, triAABB);
         if (dist != -1 && dist < hitInfo.minDistance) {
+            int index = 0;
             for (int i = 0; i < triangles_count; i++) {
                 vec3 normal;
-                dist = intersect_triangle(ray, triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
+                vec3 v1 = texelFetch(verticesTexture, index++).xyz;
+                vec3 v2 = texelFetch(verticesTexture, index++).xyz;
+                vec3 v3 = texelFetch(verticesTexture, index++).xyz;
+                dist = intersect_triangle(ray, v1, v2, v3, normal, triangles[i].rotation).x;
                 if (dist > 0 && dist < hitInfo.minDistance) {
                     hit = true;
                     hitInfo.minDistance = dist;
@@ -235,19 +239,6 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
             }
         }
     }
-
-    /*dist = intersect_aabb(ray, boxAABB);
-    if (dist > 0 && dist < hitInfo.minDistance) {
-        hit = true;
-        hitInfo.minDistance = dist;
-        hitInfo.material.color = vec3(0.5);
-        hitInfo.material.emission = 0;
-        hitInfo.material.IOR = 1;
-        hitInfo.material.is_glass = true;
-        hitInfo.material.is_metal = true;
-        hitInfo.material.roughness = 0;
-        hitInfo.normal = vec3(1);
-    }*/
     if (!hit) {
         hitInfo.material = sky.material;
         hitInfo.minDistance = MAX_DISTANCE;
@@ -333,11 +324,12 @@ Ray brdf(Ray ray, HitInfo hitInfo) {
     return ray;
 }
 
-vec3 trace(Ray ray) {
+vec3 trace(Ray ray, out HitInfo outHitInfo) {
     vec3 energy = vec3(1);
     for(int i = 0; i <= bounces; i++) {
         HitInfo hitInfo;
         if (raycast(ray, hitInfo)) {
+            outHitInfo = hitInfo;
             ray = brdf(ray, hitInfo);
             energy *= hitInfo.material.color;
             if (hitInfo.material.emission > 0)
@@ -355,6 +347,10 @@ vec3 post_process(vec3 col) {
     return col;
 }
 
+ivec2 uv_to_fragcoord(vec2 uv) {
+    return ivec2((uv * resolution.y + resolution) / 2);
+}
+
 void main() {
     if (acc_frames > 0 || use_random_noise || use_frame_mixing)
         update_seed();
@@ -368,8 +364,9 @@ void main() {
         uv.y += (random() - 0.5) * 0.002;
     }
 
-    vec3 dir = normalize(vec3(uv, 1.0 / tan(radians(fov) / 2))) * mat3(camera_rotation_matrix);
-    Ray ray = Ray(camera_position, dir);
+    float fov_converted = 1.0 / tan(radians(fov) / 2);
+    vec3 dir = vec3(uv, fov_converted) * mat3(camera_rotation_matrix);
+    Ray ray = Ray(camera_position, normalize(dir));
 
     // depth of field
     if (use_dof) {
@@ -389,7 +386,8 @@ void main() {
     }
 
     vec3 color;
-    for (int i = 0; i < samples; i++) color += trace(ray);
+    HitInfo hinfo;
+    for (int i = 0; i < samples; i++) color += trace(ray, hinfo);
     color /= samples;
 
     if (show_depth || show_albedo || show_normals) {

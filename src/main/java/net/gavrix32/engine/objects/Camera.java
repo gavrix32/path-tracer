@@ -5,12 +5,13 @@ import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector3f;
 
 public class Camera {
-    private Vector3f position, rotation;
+    private Vector3f temp_pos, position, rotation;
     private float fov;
     private final Matrix4f rotation_matrix;
 
     public Camera() {
         position = new Vector3f();
+        temp_pos = new Vector3f();
         rotation = new Vector3f();
         fov = 70.0f;
         rotation_matrix = new Matrix4f();
@@ -18,6 +19,7 @@ public class Camera {
 
     public Camera update() {
         rotation_matrix.rotate(rotation);
+        temp_pos.set(position);
         return this;
     }
 
@@ -90,7 +92,7 @@ public class Camera {
     }
 
     public Vector3f getPosition() {
-        return position;
+        return temp_pos;
     }
 
     public Camera setPosition(Vector3f position) {

@@ -6,7 +6,7 @@ import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector3f;
 
 public class Triangle extends Shape {
-    private Vector3f v1, v2, v3;
+    private Vector3f v1, v2, v3, centroid;
     private Matrix4f rotationMatrix;
 
     public Triangle(Vector3f v1, Vector3f v2, Vector3f v3, Vector3f rot, Vector3f col, Material material) {
@@ -121,5 +121,13 @@ public class Triangle extends Shape {
         aabb.max.z = Math.max(aabb.max.z, vertex3.z);
 
         return aabb;
+    }
+
+    public Vector3f getCentroid() {
+        return centroid;
+    }
+
+    public void setCentroid(Vector3f centroid) {
+        this.centroid = centroid;
     }
 }

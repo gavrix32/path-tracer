@@ -1,9 +1,11 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.app.scenes.OpenBox;
 import net.gavrix32.engine.gui.Gui;
 import net.gavrix32.engine.gui.Viewport;
 import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.math.Vector2f;
+import net.gavrix32.engine.math.Vector3f;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
@@ -29,6 +31,7 @@ public class Renderer {
     private static int accTexture;
     private static float gamma = 2.2f, exposure = 1.0f, focusDistance = 50.0f, defocusBlur = 3.0f;
     private static Accelerator accelerator;
+    private static int verticesBuffer, verticesTexture;
 
     public static void init() {
         int vertexArray = glGenVertexArrays();
@@ -52,6 +55,8 @@ public class Renderer {
 
     public static void render() {
         glClear(GL_COLOR_BUFFER_BIT);
+        pt_shader.setMat4("prev_camera_rotation_matrix", scene.camera.getRotationMatrix());
+        pt_shader.setVec3("prev_camera_position", scene.camera.getPosition());
         scene.camera.update();
         pt_shader.setMat4("camera_rotation_matrix", scene.camera.getRotationMatrix());
         pt_shader.setVec3("camera_position", scene.camera.getPosition());
@@ -151,6 +156,23 @@ public class Renderer {
         // Triangles
         pt_shader.setVec3("triAABB.min", accelerator.getTrianglesBoundingBox().min);
         pt_shader.setVec3("triAABB.max", accelerator.getTrianglesBoundingBox().max);
+
+        if (OpenBox.getModel() != null) {
+            verticesBuffer = glGenBuffers();
+            glBindBuffer(GL_TEXTURE_BUFFER, verticesBuffer);
+            glBufferData(GL_TEXTURE_BUFFER, OpenBox.getModel().getVerticesData(), GL_STATIC_DRAW);
+            //glBufferData(GL_TEXTURE_BUFFER, OpenBox.getModel().getVerticesData(), GL_STATIC_DRAW);
+        }
+
+        verticesTexture = glGenTextures();
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_BUFFER, verticesTexture);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, verticesBuffer);
+        pt_shader.setInt("verticesTexture", 1);
+
+        // Triangles BVH data
+
+
         pt_shader.setInt("triangles_count", scene.triangles.size());
         for (int i = 0; i < scene.triangles.size(); i++) {
             pt_shader.setVec3("triangles[" + i + "].v1", scene.triangles.get(i).getV1());

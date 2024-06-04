@@ -1,8 +1,6 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector3f;
-import net.gavrix32.engine.objects.Shape;
 import net.gavrix32.engine.objects.Triangle;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
@@ -13,6 +11,7 @@ import java.util.List;
 public class Model {
     private static final List<Vector3f> positions = new ArrayList<>();
     private static final List<Triangle> triangles = new ArrayList<>();
+    private static float[] verticesData;
 
     public Model(String filepath, float scale) {
         AIScene scene = Assimp.aiImportFile(filepath, Assimp.aiProcess_Triangulate);
@@ -46,6 +45,19 @@ public class Model {
         for (int i = 0; i < positions.size(); i += 3) {
             triangles.add(i / 3, new Triangle(positions.get(i), positions.get(i + 1), positions.get(i + 2)));
         }
+
+        verticesData = new float[positions.size() * 4];
+        int index = 0;
+        for (Vector3f pos : positions) {
+            verticesData[index++] = pos.x;
+            verticesData[index++] = pos.y;
+            verticesData[index++] = pos.z;
+            verticesData[index++] = 1.0f;
+        }
+    }
+
+    public float[] getVerticesData() {
+        return verticesData;
     }
 
     public List<Triangle> getTriangles() {
