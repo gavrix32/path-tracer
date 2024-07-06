@@ -3,10 +3,9 @@ package net.gavrix32.app;
 import net.gavrix32.app.scenes.*;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.IApp;
-import net.gavrix32.engine.gui.Gui;
 import net.gavrix32.engine.graphics.*;
-import net.gavrix32.engine.gui.SceneEditor;
 import net.gavrix32.engine.io.*;
+import org.lwjgl.opengl.GLUtil;
 
 import java.util.ArrayList;
 
@@ -21,6 +20,8 @@ public class Main implements IApp {
     private OpenBox openBox;
 
     public void init() {
+        Config.useDefault(true);
+        Config.init();
         Window.init("Path Tracing", 1280, 720);
         Window.setFullscreen(true);
         //GLUtil.setupDebugMessageCallback();
@@ -49,13 +50,16 @@ public class Main implements IApp {
         names.add("Open Box");
 
         Renderer.init();
-        SceneEditor.setDefaultScene(5);
+        //SceneEditor.setDefaultScene(5);
+        //Gui.setStatus(false);
+        //Renderer.setScene(rgbSpheres.getScene());
+        Renderer.setScene(openBox.getScene());
     }
 
     public void update() {
         Controls.update(Renderer.getScene().getCamera());
         Renderer.render();
-        Gui.update(scenes, names);
+        //Gui.update(scenes, names);
         Window.update();
     }
 

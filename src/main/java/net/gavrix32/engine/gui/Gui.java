@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Gui {
-    public static boolean status = true;
+    public static boolean status = false;
     private static final ImGuiImplGl3 imGuiImplGl3 = new ImGuiImplGl3();
     private static final ImGuiImplGlfw imGuiImplGlfw = new ImGuiImplGlfw();
     private static final String fontPath = "fonts/Inter-Regular.ttf";
@@ -42,8 +42,11 @@ public class Gui {
             Render.update();
             SceneEditor.update(scenes, sceneNames);
             Logs.update();
-            Viewport.update();
+        }
 
+        Viewport.update(status);
+
+        if (status) {
             ImGui.endDisabled();
             ImGui.render();
             imGuiImplGl3.renderDrawData(ImGui.getDrawData());

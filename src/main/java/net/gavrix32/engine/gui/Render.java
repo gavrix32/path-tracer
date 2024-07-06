@@ -15,6 +15,7 @@ public class Render {
             bounces = new int[] {Renderer.getBounces()},
             fpsLimit = new int[] {Engine.getFpsLimit()};
     private static final float[]
+            mixFactor = new float[] {Renderer.getMixFactor()},
             gamma = new float[] {Renderer.getGamma()},
             exposure = new float[] {Renderer.getExposure()},
             focusDistance = new float[] {Renderer.getFocusDistance()},
@@ -60,7 +61,7 @@ public class Render {
         ImGui.beginDisabled(!dof.get());
         if (ImGui.sliderFloat("defocus blur", defocusBlur, 0, 10, "%.1f")) Renderer.setDefocusBlur(defocusBlur[0]);
         ImGui.endDisabled();
-        ImGui.text("accumulated frames: " + Renderer.getAccFrames());
+        ImGui.text("accumulated frames: " + Renderer.getFrames());
         if (ImGui.checkbox("accumulation", accumulation)) Renderer.setAccumulation(accumulation.get());
         if (ImGui.checkbox("gamma", gammaCorrection) || gammaCorrection.get()) Renderer.useGammaCorrection(gammaCorrection.get(), gamma[0]);
         ImGui.beginDisabled(!gammaCorrection.get());
@@ -77,6 +78,10 @@ public class Render {
         ImGui.popID();
         ImGui.endDisabled();
         if (ImGui.checkbox("temporal mixing", frameMixing)) Renderer.setFrameMixing(frameMixing.get());
+        if (frameMixing.get()) {
+            ImGui.sliderFloat("mixing factor", mixFactor, 0, 0.9f, "%.1f");
+            Renderer.setMixFactor(mixFactor[0]);
+        }
         if (ImGui.checkbox("random noise", randNoise)) Renderer.setRandomNoise(randNoise.get());
         if (ImGui.checkbox("show albedo", showAlbedo)) Renderer.showAlbedo(showAlbedo.get());
         if (ImGui.checkbox("show normals", showNormals)) Renderer.showNormals(showNormals.get());

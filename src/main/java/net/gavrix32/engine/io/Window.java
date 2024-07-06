@@ -1,5 +1,6 @@
 package net.gavrix32.engine.io;
 
+import net.gavrix32.engine.graphics.Config;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.utils.Logger;
 import org.lwjgl.Version;
@@ -22,8 +23,8 @@ public class Window {
         defaultHeight = height;
         GLFWErrorCallback.createPrint(System.err).set();
         if (!glfwInit()) Logger.error("Failed to initialize GLFW");
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         window = glfwCreateWindow(width, height, title, 0, 0);
         if (window == 0) Logger.error("Failed to create the GLFW window");
@@ -45,7 +46,7 @@ public class Window {
         Logger.info("GLSL " + glGetString(GL_SHADING_LANGUAGE_VERSION));
         Logger.info("GLX_EXT_swap_control_tear extension support: " + glfwExtensionSupported("GLX_EXT_swap_control_tear"));
         Logger.info("WGL_EXT_swap_control_tear extension support: " + glfwExtensionSupported("WGL_EXT_swap_control_tear"));
-        glfwSwapInterval(0);
+        glfwSwapInterval(Integer.parseInt(Config.get("vsync")));
         glfwSetWindowSizeCallback(window, (window, w, h) -> {
             Window.width = w;
             Window.height = h;

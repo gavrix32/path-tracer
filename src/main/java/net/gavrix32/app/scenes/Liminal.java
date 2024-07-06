@@ -13,6 +13,7 @@ public class Liminal {
         scene = new Scene();
         scene.setCamera(new Camera().setPosition(0, 100, 50));
         scene.setPlane(new Plane(true));
+        scene.setSky("textures/sky/HDR_111_Parking_Lot_2_Env.hdr").setMaterial(true, 0, 1, 1, false);
         scene.addBoxes(
                 new Box(new Vector3f(0, 200, 10000), // Roof
                         new Vector3f(),

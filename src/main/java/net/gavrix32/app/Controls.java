@@ -1,9 +1,7 @@
 package net.gavrix32.app;
 
 import net.gavrix32.engine.Engine;
-import net.gavrix32.engine.gui.Gui;
-import net.gavrix32.engine.gui.Viewport;
-import net.gavrix32.engine.io.Key;
+import net.gavrix32.engine.graphics.Config;
 import net.gavrix32.engine.objects.Camera;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.io.Input;
@@ -17,11 +15,11 @@ import java.time.format.DateTimeFormatter;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Controls {
-    static {
+    static { // Реализовать это в Input
         glfwSetKeyCallback(Window.get(), (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) Window.close();
             if (key == GLFW_KEY_F11 && action == GLFW_RELEASE) Window.toggleFullscreen();
-            if (key == GLFW_KEY_F1 && action == GLFW_RELEASE) Gui.toggle();
+            //if (key == GLFW_KEY_F1 && action == GLFW_RELEASE) Gui.toggle();
             if (key == GLFW_KEY_F2 && action == GLFW_RELEASE) {
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
                 LocalDateTime now = LocalDateTime.now();
@@ -31,37 +29,37 @@ public class Controls {
             }
         });
         glfwSetMouseButtonCallback(Window.get(), (window, button, action, mods) -> {
-            if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE && Viewport.cursorInViewport()) Window.toggleCursor();
+            if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE /*&& Viewport.cursorInViewport()*/) Window.toggleCursor();
         });
     }
 
     public static void update(Camera camera) {
         Input.update();
         float speed = 200.0f * Engine.getDeltaTime();
-        if (Input.isKeyDown(Key.LEFT_CONTROL)) {
+        if (Input.isKeyDown(Config.getKey("sprint"))) {
             speed *= 2;
         }
-        if (Input.isKeyDown(Key.W)) {
+        if (Input.isKeyDown(Config.getKey("move_forward"))) {
             camera.moveZ(speed);
             Renderer.resetAccFrames();
         }
-        if (Input.isKeyDown(Key.S)) {
+        if (Input.isKeyDown(Config.getKey("move_backward"))) {
             camera.moveZ(-speed);
             Renderer.resetAccFrames();
         }
-        if (Input.isKeyDown(Key.A)) {
+        if (Input.isKeyDown(Config.getKey("move_left"))) {
             camera.moveX(-speed);
             Renderer.resetAccFrames();
         }
-        if (Input.isKeyDown(Key.D)) {
+        if (Input.isKeyDown(Config.getKey("move_right"))) {
             camera.moveX(speed);
             Renderer.resetAccFrames();
         }
-        if (Input.isKeyDown(Key.SPACE)) {
+        if (Input.isKeyDown(Config.getKey("move_up"))) {
             camera.moveY(speed);
             Renderer.resetAccFrames();
         }
-        if (Input.isKeyDown(Key.LEFT_SHIFT)) {
+        if (Input.isKeyDown(Config.getKey("move_down"))) {
             camera.moveY(-speed);
             Renderer.resetAccFrames();
         }

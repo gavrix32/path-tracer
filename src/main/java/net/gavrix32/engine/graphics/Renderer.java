@@ -1,73 +1,64 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.app.scenes.OpenBox;
-import net.gavrix32.engine.gui.Gui;
-import net.gavrix32.engine.gui.Viewport;
+import net.gavrix32.engine.io.Input;
+import net.gavrix32.engine.io.Key;
 import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.math.Vector2f;
-import net.gavrix32.engine.math.Vector3f;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
 
 public class Renderer {
-    private static final float[] VERTICES = {
-            -1, -1, 0,
-            -1, 1, 0,
-            1, 1, 0,
-            1, -1, 0
-    };
-    private static final int[] INDICES = {
-            0, 1, 3,
-            1, 2, 3
-    };
     private static Scene scene;
-    private static Shader pt_shader;
-    private static int accFrames = 0;
+    private static Shader pt_shader, show_shader;
+    private static int frames = 0;
     private static int samples = 1, bounces = 3;
     private static boolean
             accumulation = true, frameMixing = true, randNoise = false, gammaCorrection = true, tonemapping = true,
-            taa = true, dof = false, autofocus = true, showAlbedo = false, showNormals = false, showDepth = false;
-    private static int accTexture;
-    private static float gamma = 2.2f, exposure = 1.0f, focusDistance = 50.0f, defocusBlur = 3.0f;
+            taa = false, dof = false, autofocus = true, showAlbedo = false, showNormals = false, showDepth = false;
+    private static int accTexture, frameBuffer, frameTexture;
+    private static float mixFactor = 0.8f, gamma = 2.2f, exposure = 1.0f, focusDistance = 50.0f, defocusBlur = 3.0f;
     private static Accelerator accelerator;
     private static int verticesBuffer, verticesTexture;
 
     public static void init() {
-        int vertexArray = glGenVertexArrays();
-        glBindVertexArray(vertexArray);
-
-        int vertexBuffer = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, VERTICES, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-        glEnableVertexAttribArray(0);
-
-        int indexBuffer = glGenBuffers();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, INDICES, GL_STATIC_DRAW);
+        Quad.init();
 
         pt_shader = new Shader("shaders/main.vert", "shaders/main.frag");
-        pt_shader.use();
+        show_shader = new Shader("shaders/main.vert", "shaders/show.frag");
 
         scene = new Scene();
+
+        // Frame buffer
+        frameBuffer = glGenFramebuffers();
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+        frameTexture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, frameTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 1920, 1080, 0, GL_RGB, GL_FLOAT, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameTexture, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     public static void render() {
         glClear(GL_COLOR_BUFFER_BIT);
+        if (Input.isKeyDown(Key.U))
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        pt_shader.use();
         pt_shader.setMat4("prev_camera_rotation_matrix", scene.camera.getRotationMatrix());
         pt_shader.setVec3("prev_camera_position", scene.camera.getPosition());
         scene.camera.update();
         pt_shader.setMat4("camera_rotation_matrix", scene.camera.getRotationMatrix());
         pt_shader.setVec3("camera_position", scene.camera.getPosition());
-        if (Gui.status) {
-            if (Viewport.getWidthDelta() != 0 || Viewport.getHeightDelta() != 0) resetAccFrames();
-            pt_shader.setVec2("resolution", new Vector2f(Viewport.getWidth(), Viewport.getHeight()));
-        } else {
-            pt_shader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
-        }
+        pt_shader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
         pt_shader.setFloat("time", (float) glfwGetTime());
-        pt_shader.setFloat("acc_frames", accFrames);
+        pt_shader.setFloat("acc_frames", frames);
         pt_shader.setBool("show_albedo", showAlbedo);
         pt_shader.setBool("show_normals", showNormals);
         pt_shader.setBool("show_depth", showDepth);
@@ -75,12 +66,13 @@ public class Renderer {
         pt_shader.setInt("bounces", bounces);
         pt_shader.setFloat("fov", scene.camera.getFov());
         pt_shader.setBool("use_random_noise", randNoise);
-        pt_shader.setBool("use_frame_mixing", frameMixing);
+        pt_shader.setBool("use_reproj", frameMixing);
         pt_shader.setBool("use_taa", taa);
         pt_shader.setBool("use_dof", dof);
         pt_shader.setBool("use_autofocus", autofocus);
         pt_shader.setFloat("focus_distance", focusDistance);
         pt_shader.setFloat("defocus_blur", defocusBlur);
+        pt_shader.setFloat("mix_factor", mixFactor);
         pt_shader.setFloat("gamma", gamma);
         pt_shader.setBool("use_gamma_correction", gammaCorrection);
         pt_shader.setBool("use_tonemapping", tonemapping);
@@ -88,9 +80,9 @@ public class Renderer {
         pt_shader.setBool("sky_has_texture", scene.sky.hasTexture());
         pt_shader.setBool("use_accel", true);
         if (scene.sky.hasTexture()) {
-            glActiveTexture(GL_TEXTURE0);
+            glActiveTexture(GL_TEXTURE1);
             scene.sky.bindTexture();
-            pt_shader.setInt("sky_texture", 0);
+            pt_shader.setInt("sky_texture", 1);
         } else {
             pt_shader.setVec3("sky.material.color", scene.sky.getColor());
         }
@@ -154,7 +146,7 @@ public class Renderer {
             pt_shader.setFloat("boxes[" + i + "].material.IOR", scene.boxes.get(i).getMaterial().getIOR());
         }
         // Triangles
-        pt_shader.setVec3("triAABB.min", accelerator.getTrianglesBoundingBox().min);
+        /*pt_shader.setVec3("triAABB.min", accelerator.getTrianglesBoundingBox().min);
         pt_shader.setVec3("triAABB.max", accelerator.getTrianglesBoundingBox().max);
 
         if (OpenBox.getModel() != null) {
@@ -165,14 +157,12 @@ public class Renderer {
         }
 
         verticesTexture = glGenTextures();
-        glActiveTexture(GL_TEXTURE1);
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_BUFFER, verticesTexture);
         glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, verticesBuffer);
-        pt_shader.setInt("verticesTexture", 1);
+        pt_shader.setInt("verticesTexture", 2);
 
         // Triangles BVH data
-
-
         pt_shader.setInt("triangles_count", scene.triangles.size());
         for (int i = 0; i < scene.triangles.size(); i++) {
             pt_shader.setVec3("triangles[" + i + "].v1", scene.triangles.get(i).getV1());
@@ -190,17 +180,34 @@ public class Renderer {
             pt_shader.setFloat("triangles[" + i + "].material.roughness", scene.triangles.get(i).getMaterial().getRoughness());
             pt_shader.setBool("triangles[" + i + "].material.is_glass", scene.triangles.get(i).getMaterial().isGlass());
             pt_shader.setFloat("triangles[" + i + "].material.IOR", scene.triangles.get(i).getMaterial().getIOR());
-        }
+        }*/
 
-        if (accumulation || frameMixing) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
-        if (accFrames == 0 && !frameMixing) resetAccTexture();
-        if (!Gui.status) glViewport(0, 0, Window.getWidth(), Window.getHeight());
-        Viewport.bindFramebuffer();
-        scene.sky.bindTexture();
-        glDrawElements(GL_TRIANGLES, INDICES.length, GL_UNSIGNED_INT, 0);
-        scene.sky.unbindTexture();
-        Viewport.unbindFramebuffer();
-        if (accumulation) accFrames++;
+        //glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+        //glBindTexture(GL_TEXTURE_2D, frameTexture);
+        //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameTexture, 0);
+        //pt_shader.setInt("frame_tex", 2);
+        //if (accumulation || frameMixing) glBindImageTexture(0, accTexture, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+        //if (accFrames == 0 && !frameMixing) resetAccTexture();
+        //glBindTexture(GL_TEXTURE_2D, frameTexture);
+        // Update frame texture
+        //glBindTexture(GL_TEXTURE_2D, frameTexture);
+        //if (accumulation) accFrames++;
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, frameTexture);
+        pt_shader.setInt("prev_frame", 2);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+        Quad.draw();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, frameTexture);
+        show_shader.use();
+        show_shader.setInt("frame_texture", 0);
+        show_shader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
+        Quad.draw();
+        frames++;
     }
 
     public static void setScene(Scene scene) {
@@ -246,11 +253,11 @@ public class Renderer {
     }
 
     public static void resetAccFrames() {
-        accFrames = 0;
+        frames = 0;
     }
 
-    public static int getAccFrames() {
-        return accFrames;
+    public static int getFrames() {
+        return frames;
     }
 
     public static void resetAccTexture() {
@@ -267,6 +274,14 @@ public class Renderer {
 
     public static boolean isRandNoise() {
         return randNoise;
+    }
+
+    public static float getMixFactor() {
+        return mixFactor;
+    }
+
+    public static void setMixFactor(float mixFactor) {
+        Renderer.mixFactor = mixFactor;
     }
 
     public static float getGamma() {
