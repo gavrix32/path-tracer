@@ -1,7 +1,5 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.io.Input;
-import net.gavrix32.engine.io.Key;
 import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.math.Vector2f;
 
@@ -35,7 +33,7 @@ public class Renderer {
 
         frameTexture = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, frameTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 1920, 1080, 0, GL_RGB, GL_FLOAT, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 1920, 1080, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -48,8 +46,6 @@ public class Renderer {
 
     public static void render() {
         glClear(GL_COLOR_BUFFER_BIT);
-        if (Input.isKeyDown(Key.U))
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
         pt_shader.use();
         pt_shader.setMat4("prev_camera_rotation_matrix", scene.camera.getRotationMatrix());
         pt_shader.setVec3("prev_camera_position", scene.camera.getPosition());

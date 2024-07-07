@@ -22,6 +22,10 @@ public final class Matrix4f {
         set(values);
     }
 
+    public Matrix4f(Matrix4f m) {
+        set(m);
+    }
+
     public Matrix4f zero() {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {

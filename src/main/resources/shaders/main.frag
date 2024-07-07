@@ -320,6 +320,7 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
         hitInfo.normal = calcNormal(ray.o + ray.d * dist);
     }*/
     ///////////////
+    hitInfo.hitpos = ray.o + ray.d * hitInfo.minDistance;
     if (!hit) {
         hitInfo.material = sky.material;
         hitInfo.minDistance = MAX_DISTANCE;
@@ -332,7 +333,6 @@ bool raycast(inout Ray ray, out HitInfo hitInfo) {
         }
         return true;
     }
-    hitInfo.hitpos = ray.o + ray.d * hitInfo.minDistance;
     return hit;
 }
 
@@ -406,16 +406,23 @@ Ray brdf(Ray ray, HitInfo hitInfo) {
     return ray;
 }
 
-vec3 trace(Ray ray, out HitInfo hinfo) {
+vec3 trace(Ray ray, in bool hit, in HitInfo in_hitinfo, out HitInfo out_hitinfo) {
     vec3 energy = vec3(1);
-    for (int i = 0; i <= bounces; i++) {
-        HitInfo hitInfo;
-        if (raycast(ray, hitInfo)) {
-            hinfo = hitInfo;
-            ray = brdf(ray, hitInfo);
-            energy *= hitInfo.material.color;
-            if (hitInfo.material.emission > 0)
-                return energy * hitInfo.material.emission;
+    if (hit) {
+        out_hitinfo = in_hitinfo;
+        ray = brdf(ray, in_hitinfo);
+        energy *= in_hitinfo.material.color;
+        if (in_hitinfo.material.emission > 0)
+            return energy * in_hitinfo.material.emission;
+    }
+    for (int i = 0; i < bounces; i++) {
+        HitInfo hitinfo;
+        if (raycast(ray, hitinfo)) {
+            out_hitinfo = hitinfo;
+            ray = brdf(ray, hitinfo);
+            energy *= hitinfo.material.color;
+            if (hitinfo.material.emission > 0)
+                return energy * hitinfo.material.emission;
         }
     }
     return vec3(0);
@@ -431,12 +438,10 @@ vec2 uv2fragcoord(vec2 uv) {
     return vec2((uv * resolution.y + resolution) / 2);
 }
 
-vec2 reproject(mat3 prev_view, vec3 prev_cam_pos, vec3 hitpos, float fov_converted) {
-    float dist = distance(prev_cam_pos, hitpos);
-    vec3 dir = (hitpos - prev_cam_pos) / dist;
+vec2 reproject(mat3 prev_view, vec3 prev_cam_pos, HitInfo hitinfo, float fov_converted) {
+    vec3 dir = (hitinfo.hitpos - prev_cam_pos) / hitinfo.minDistance;
     dir *= inverse(prev_view);
-    dir.xy /= 1 / fov_converted;
-    dir.xy /= dir.z;
+    dir.xy /= fov_converted * dir.z;
     return uv2fragcoord(dir.xy);
 }
 
@@ -475,14 +480,17 @@ void main() {
         ray.d = normalize(dof_direction);
     }
 
+    HitInfo hitinfo_rep;
+    bool hit = raycast(ray, hitinfo_rep);
+    vec2 reproj = reproject(mat3(prev_camera_rotation_matrix), prev_camera_position, hitinfo_rep, fov_converted);
+
     vec3 color;
     HitInfo hitInfo;
-    for (int i = 0; i < samples; i++) color += trace(ray, hitInfo);
+    for (int i = 0; i < samples; i++) color += trace(ray, hit, hitinfo_rep, hitInfo);
     color /= samples;
 
-    HitInfo hitinfo_rep;
-    raycast(Ray(camera_position, dir), hitinfo_rep);
-    vec2 reproj = reproject(mat3(prev_camera_rotation_matrix), prev_camera_position, hitinfo_rep.hitpos, 1 / fov_converted);
+    vec3 prev_color = texture(prev_frame, reproj / resolution).rgb;
+    color = mix(color, prev_color, 0.9);
 
     /*if (acc_frames > 0) {
         vec3 prev_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy)).rgb;
@@ -497,18 +505,15 @@ void main() {
         //imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
     }*/
 
-    vec3 prev_color = texture(prev_frame, reproj / resolution).rgb;
-    color = mix(color, prev_color, 0.9);
+    //if (uv.x > 0) color = mix(color, prev_color, 0.9);
 
-    if (show_depth || show_albedo || show_normals) {
+    /*if (show_depth || show_albedo || show_normals) {
         HitInfo hitInfo;
         raycast(ray, hitInfo);
         color = hitInfo.material.color;
         if (show_normals) color = hitInfo.normal * 0.5 + 0.5;
         if (show_depth) color = vec3(hitInfo.minDistance) * 0.001;
-    }
+    }*/
+
     out_color = color;
-    //out_color = vec3(((gl_FragCoord.xy / resolution) - (reproj / resolution)) * 100 + 0.5, 0.0);
-    //out_color = post_process(color);
-    //out_color = mix(post_process(color), texture(prev_frame, gl_FragCoord.xy / resolution).rgb, 0.9);
 }
