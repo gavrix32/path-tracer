@@ -478,8 +478,13 @@ void main() {
     float factor = (frames) / (frames + 1.0);
     if (temporal_reprojection) {
         vec2 reproj_fragcoord = reproject(mat3(prev_camera_rotation), prev_camera_position, hitinfo, fov_converted);
-        vec3 prev_color = texture(prev_frame, reproj_fragcoord / resolution).rgb;
-        color = frames != 0 ? mix(color, prev_color, factor == 0 ? 0.9 : factor) : mix(color, prev_color, 0.9);
+        vec2 reproj_uv = reproj_fragcoord / resolution;
+        float temporal_mix_factor = 0.9;
+        if (reproj_uv.x < 0.0 || reproj_uv.y < 0.0 || reproj_uv.x > 1.0 || reproj_uv.y > 1.0) {
+            temporal_mix_factor = 0.0;
+        }
+        vec3 prev_color = texture(prev_frame, reproj_uv).rgb;
+        color = frames != 0 ? mix(color, prev_color, factor == 0 ? temporal_mix_factor : factor) : mix(color, prev_color, temporal_mix_factor);
     }
     if (frames != 0 && !temporal_reprojection) {
         vec3 prev_color = texture(prev_frame, gl_FragCoord.xy / resolution).rgb;
