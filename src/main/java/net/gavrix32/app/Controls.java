@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Controls {
-    static { // Реализовать это в Input
+    static {
         glfwSetKeyCallback(Window.get(), (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) Window.close();
             if (key == GLFW_KEY_F11 && action == GLFW_RELEASE) Window.toggleFullscreen();
@@ -33,12 +33,13 @@ public class Controls {
         });
     }
 
-    public static void update(Camera camera) {
+    public static void update() {
         Input.update();
         float speed = 200.0f * Engine.getDeltaTime();
         if (Input.isKeyDown(Config.getKey("sprint"))) {
             speed *= 2;
         }
+        Camera camera = Renderer.getScene().getCamera();
         if (Input.isKeyDown(Config.getKey("move_forward"))) {
             camera.moveZ(speed);
             Renderer.resetAccFrames();

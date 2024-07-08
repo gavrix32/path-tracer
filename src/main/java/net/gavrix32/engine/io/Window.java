@@ -3,7 +3,6 @@ package net.gavrix32.engine.io;
 import net.gavrix32.engine.graphics.Config;
 import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.utils.Logger;
-import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
@@ -13,12 +12,15 @@ import static org.lwjgl.opengl.GL46C.*;
 
 public class Window {
     private static long window;
+    private static String title;
     private static int width, height, defaultWidth, defaultHeight, monitorWidth, monitorHeight;
+    private static int xpos, ypos;
     private static boolean cursorVisible = true, fullscreen = false;
 
-    public static void init(String title, int width, int height) {
-        Window.width = width;
-        Window.height = height;
+    public static void init() {
+        width = Integer.parseInt(Config.getString("window_width"));
+        height = Integer.parseInt(Config.getString("window_height"));
+        title = Config.getString("window_title");
         defaultWidth = width;
         defaultHeight = height;
         GLFWErrorCallback.createPrint(System.err).set();
@@ -26,6 +28,7 @@ public class Window {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        Logger.info("Creating a window with " + width + "x" + height + " resolution and title \"" + title + "\"");
         window = glfwCreateWindow(width, height, title, 0, 0);
         if (window == 0) Logger.error("Failed to create the GLFW window");
         GLFWVidMode vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -38,21 +41,28 @@ public class Window {
         );
         glfwMakeContextCurrent(window);
         GL.createCapabilities();
-        Logger.info(System.getProperty("os.name") + " " + System.getProperty("os.version") + " " + System.getProperty("os.arch"));
-        Logger.info("Java " + System.getProperty("java.version") + " " + System.getProperty("java.vendor"));
-        Logger.info("LWJGL " + Version.getVersion());
-        Logger.info(glGetString(GL_RENDERER));
+        Logger.info("GPU: " + glGetString(GL_RENDERER));
         Logger.info("OpenGL " + glGetString(GL_VERSION));
         Logger.info("GLSL " + glGetString(GL_SHADING_LANGUAGE_VERSION));
         Logger.info("GLX_EXT_swap_control_tear extension support: " + glfwExtensionSupported("GLX_EXT_swap_control_tear"));
         Logger.info("WGL_EXT_swap_control_tear extension support: " + glfwExtensionSupported("WGL_EXT_swap_control_tear"));
-        glfwSwapInterval(Integer.parseInt(Config.get("vsync")));
+        glfwSwapInterval(Config.getInt("swap_interval"));
         glfwSetWindowSizeCallback(window, (window, w, h) -> {
-            Window.width = w;
-            Window.height = h;
+            width = w;
+            height = h;
+            if (!fullscreen) {
+                defaultWidth = w;
+                defaultHeight = h;
+            }
             glViewport(0, 0, w, h);
             Renderer.resetAccFrames();
-            Renderer.resetAccTexture();
+            Renderer.resetFrameBufferTextures();
+        });
+        glfwSetWindowPosCallback(window, (window, xpos, ypos) -> {
+            if (!fullscreen) {
+                Window.xpos = xpos;
+                Window.ypos = ypos;
+            }
         });
     }
 
@@ -94,7 +104,7 @@ public class Window {
                     monitorWidth, monitorHeight, GLFW_DONT_CARE);
             Renderer.resetAccFrames();
         } else {
-            glfwSetWindowMonitor(window, 0, (monitorWidth - defaultWidth) / 2, (monitorHeight - defaultHeight) / 2,
+            glfwSetWindowMonitor(window, 0, (monitorWidth - width) / 2, (monitorHeight - height) / 2,
                     defaultWidth, defaultHeight, GLFW_DONT_CARE);
             Renderer.resetAccFrames();
         }
@@ -107,18 +117,14 @@ public class Window {
                     monitorWidth, monitorHeight, GLFW_DONT_CARE);
             Renderer.resetAccFrames();
         } else {
-            glfwSetWindowMonitor(window, 0, (monitorWidth - defaultWidth) / 2, (monitorHeight - defaultHeight) / 2,
+            glfwSetWindowMonitor(window, 0, xpos, ypos,
                     defaultWidth, defaultHeight, GLFW_DONT_CARE);
             Renderer.resetAccFrames();
         }
     }
 
-    public static void sync(VSync type) {
-        switch (type) {
-            case ON -> glfwSwapInterval(1);
-            case OFF -> glfwSwapInterval(0);
-            case ADAPTIVE -> glfwSwapInterval(-1);
-        }
+    public static void setSwapInterval(int interval) {
+        glfwSwapInterval(interval);
     }
 
     public static int getWidth() {

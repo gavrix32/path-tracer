@@ -14,6 +14,7 @@ import java.util.ArrayList;
 
 import static org.lwjgl.glfw.GLFW.*;
 
+// Deprecated
 public class Gui {
     public static boolean status = false;
     private static final ImGuiImplGl3 imGuiImplGl3 = new ImGuiImplGl3();
@@ -27,7 +28,7 @@ public class Gui {
         ImGui.loadIniSettingsFromMemory(Utils.loadString("imgui.ini"));
         io.getFonts().addFontFromMemoryTTF(Utils.loadBytes(fontPath), 15);
         io.addConfigFlags(ImGuiConfigFlags.DockingEnable);
-        Style.apply();
+        //Style.apply();
         imGuiImplGlfw.init(Window.get(), true);
         imGuiImplGl3.init();
     }
@@ -38,10 +39,7 @@ public class Gui {
             ImGui.newFrame();
             ImGui.dockSpaceOverViewport();
             ImGui.beginDisabled(!Window.isCursorVisible());
-
-            Render.update();
             SceneEditor.update(scenes, sceneNames);
-            Logs.update();
         }
 
         Viewport.update(status);
@@ -62,7 +60,6 @@ public class Gui {
     public static void toggle() {
         status = !status;
         Renderer.resetAccFrames();
-        Renderer.resetAccTexture();
     }
 
     public static void setStatus(boolean status) {

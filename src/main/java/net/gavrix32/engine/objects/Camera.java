@@ -6,14 +6,12 @@ import net.gavrix32.engine.math.Vector3f;
 
 public class Camera {
     private Vector3f temp_pos, position, rotation;
-    private float fov;
     private final Matrix4f rotation_matrix;
 
     public Camera() {
         position = new Vector3f();
         temp_pos = new Vector3f();
         rotation = new Vector3f();
-        fov = 70.0f;
         rotation_matrix = new Matrix4f();
     }
 
@@ -79,16 +77,6 @@ public class Camera {
 
     public Matrix4f getRotationMatrix() {
         return rotation_matrix;
-    }
-
-    public float getFov() {
-        return fov;
-    }
-
-    public Camera setFov(float fov) {
-        Renderer.resetAccFrames();
-        this.fov = fov;
-        return this;
     }
 
     public Vector3f getPosition() {

@@ -63,12 +63,11 @@ struct AABB {
 
 uniform vec2 resolution;
 uniform vec3 camera_position, prev_camera_position;
-uniform mat4 camera_rotation_matrix, prev_camera_rotation_matrix;
-uniform int samples, bounces, spheres_count, boxes_count, triangles_count;
-uniform bool use_gamma_correction, use_tonemapping, use_random_noise, use_reproj, show_albedo, show_depth,
-             show_normals, use_dof, use_autofocus, use_taa, sky_has_texture, use_accel;
+uniform mat4 camera_rotation, prev_camera_rotation;
+uniform int samples, bounces, spheres_count, boxes_count, triangles_count, frames;
+uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture, use_accel;
 uniform sampler2D sky_texture, prev_frame;
-uniform float acc_frames, time, mix_factor, gamma, exposure, fov, focus_distance, defocus_blur;
+uniform float time, fov, focus_distance, aperture;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
 uniform Triangle triangles[MAX_TRIANGLES];
@@ -207,7 +206,7 @@ vec3 calcNormal(in vec3 pos) {
 }
 ////////////////
 
-bool raycast(inout Ray ray, out HitInfo hitInfo) {
+bool raycast(in Ray ray, out HitInfo hitInfo) {
     hitInfo.minDistance = MAX_DISTANCE;
     bool hit = false;
     float dist;
@@ -406,19 +405,11 @@ Ray brdf(Ray ray, HitInfo hitInfo) {
     return ray;
 }
 
-vec3 trace(Ray ray, in bool hit, in HitInfo in_hitinfo, out HitInfo out_hitinfo) {
+vec3 trace(Ray ray) {
     vec3 energy = vec3(1);
-    if (hit) {
-        out_hitinfo = in_hitinfo;
-        ray = brdf(ray, in_hitinfo);
-        energy *= in_hitinfo.material.color;
-        if (in_hitinfo.material.emission > 0)
-            return energy * in_hitinfo.material.emission;
-    }
-    for (int i = 0; i < bounces; i++) {
+    for (int i = 0; i <= bounces; i++) {
         HitInfo hitinfo;
         if (raycast(ray, hitinfo)) {
-            out_hitinfo = hitinfo;
             ray = brdf(ray, hitinfo);
             energy *= hitinfo.material.color;
             if (hitinfo.material.emission > 0)
@@ -426,12 +417,6 @@ vec3 trace(Ray ray, in bool hit, in HitInfo in_hitinfo, out HitInfo out_hitinfo)
         }
     }
     return vec3(0);
-}
-
-vec3 post_process(vec3 col) {
-    if (use_tonemapping) col = vec3(1.0) - exp(-col * exposure);
-    if (use_gamma_correction) col = pow(col, vec3(1.0 / gamma));
-    return col;
 }
 
 vec2 uv2fragcoord(vec2 uv) {
@@ -446,66 +431,60 @@ vec2 reproject(mat3 prev_view, vec3 prev_cam_pos, HitInfo hitinfo, float fov_con
 }
 
 void main() {
-    if (acc_frames > 0 || use_random_noise || use_reproj)
-        update_seed();
-    else
-        seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
+    update_seed();
+    //seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
 
     vec2 uv = (2 * gl_FragCoord.xy - resolution) / resolution.y;
-
-    if (use_taa) {
-        uv.x += (random() - 0.5) * 0.002;
-        uv.y += (random() - 0.5) * 0.002;
-    }
-
     float fov_converted = tan(radians(fov / 2.0));
-    vec3 dir = vec3(uv * fov_converted, 1.0) * mat3(camera_rotation_matrix);
-    dir = normalize(dir);
-    Ray ray = Ray(camera_position, dir);
+    vec3 direction;
+
+    // TAA
+    if (temporal_antialiasing) {
+        vec2 uv_jitter = uv;
+        uv_jitter.x += (random() - 0.5) * 0.001;
+        uv_jitter.y += (random() - 0.5) * 0.001;
+        direction = normalize(vec3(uv_jitter * fov_converted, 1.0) * mat3(camera_rotation));
+    } else {
+        direction = normalize(vec3(uv * fov_converted, 1.0) * mat3(camera_rotation));
+    }
+    Ray ray = Ray(camera_position, direction);
 
     // depth of field
-    if (use_dof) {
+    if (aperture != 0.0) {
         float focus_dist;
-        if (use_autofocus) {
+        if (focus_distance == 0.0) {
             HitInfo autofocus_hitinfo;
-            Ray autofocus_ray = Ray(camera_position, normalize(vec3(vec2(0.001), 1) * mat3(camera_rotation_matrix)));
+            Ray autofocus_ray = Ray(camera_position, normalize(vec3(vec2(0.001), 1) * mat3(camera_rotation)));
             raycast(autofocus_ray, autofocus_hitinfo);
             focus_dist = autofocus_hitinfo.minDistance >= MAX_DISTANCE ? 1000 : autofocus_hitinfo.minDistance;
         } else {
             focus_dist = focus_distance;
         }
-        vec3 dof_position = defocus_blur * vec3(random_cosine_weighted_hemisphere(vec3(0)));
+        vec3 dof_position = (50.0 / aperture) * vec3(random_cosine_weighted_hemisphere(vec3(0)));
         vec3 dof_direction = normalize(ray.d * focus_dist - dof_position);
         ray.o += dof_position;
         ray.d = normalize(dof_direction);
     }
 
-    HitInfo hitinfo_rep;
-    bool hit = raycast(ray, hitinfo_rep);
-    vec2 reproj = reproject(mat3(prev_camera_rotation_matrix), prev_camera_position, hitinfo_rep, fov_converted);
+    HitInfo hitinfo;
+    bool hit = raycast(Ray(camera_position, normalize(vec3(uv * fov_converted, 1.0) * mat3(camera_rotation))), hitinfo);
 
     vec3 color;
-    HitInfo hitInfo;
-    for (int i = 0; i < samples; i++) color += trace(ray, hit, hitinfo_rep, hitInfo);
+    for (int i = 0; i < samples; i++) {
+        color += trace(ray);
+    }
     color /= samples;
 
-    vec3 prev_color = texture(prev_frame, reproj / resolution).rgb;
-    color = mix(color, prev_color, 0.9);
-
-    /*if (acc_frames > 0) {
-        vec3 prev_color = imageLoad(frame_image, ivec2(gl_FragCoord.xy)).rgb;
-        color = mix(color, prev_color, acc_frames / (acc_frames + 1));
-        imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
-    }*/
-    /*if (use_reproj) {
-        //vec3 prev_color = imageLoad(frame_image, ivec2(reproj)).rgb;
-        vec3 prev_color = texture(prev_frame, reproj / resolution).rgb;
-        //color = mix(color, prev_color, mix_factor);
-        color = mix(color, prev_color, mix_factor);
-        //imageStore(frame_image, ivec2(gl_FragCoord.xy), vec4(color, 1));
-    }*/
-
-    //if (uv.x > 0) color = mix(color, prev_color, 0.9);
+    float factor = (frames) / (frames + 1.0);
+    if (temporal_reprojection) {
+        vec2 reproj_fragcoord = reproject(mat3(prev_camera_rotation), prev_camera_position, hitinfo, fov_converted);
+        vec3 prev_color = texture(prev_frame, reproj_fragcoord / resolution).rgb;
+        color = frames != 0 ? mix(color, prev_color, factor == 0 ? 0.9 : factor) : mix(color, prev_color, 0.9);
+    }
+    if (frames != 0 && !temporal_reprojection) {
+        vec3 prev_color = texture(prev_frame, gl_FragCoord.xy / resolution).rgb;
+        color = mix(color, prev_color, factor);
+    }
 
     /*if (show_depth || show_albedo || show_normals) {
         HitInfo hitInfo;

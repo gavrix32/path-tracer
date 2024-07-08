@@ -16,6 +16,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
+// Deprecated
 public class SceneEditor {
     private static final ImInt sceneID = new ImInt();
 
@@ -24,7 +25,6 @@ public class SceneEditor {
         String[] names = new String[sceneNames.size()];
         if (ImGui.combo("select scene", sceneID, sceneNames.toArray(names))) {
             Renderer.resetAccFrames();
-            Renderer.resetAccTexture();
         }
         Renderer.setScene(scenes.get(sceneID.get()));
         showSceneObjectProps(scenes.get(sceneID.get()));
@@ -43,7 +43,6 @@ public class SceneEditor {
                     scene.getCamera().getRotation().y,
                     scene.getCamera().getRotation().z
             };
-            float[] fov = new float[] {scene.getCamera().getFov()};
 
             if (ImGui.dragFloat3("camera position", pos)) {
                 scene.getCamera().setPosition(pos[0], pos[1], pos[2]);
@@ -53,7 +52,6 @@ public class SceneEditor {
                 scene.getCamera().setRotation(rot[0], rot[1], rot[2]);
                 Renderer.resetAccFrames();
             }
-            if (ImGui.dragFloat("fov", fov, 1, 0, 180, "%.2f°")) scene.getCamera().setFov(fov[0]);
             ImGui.treePop();
         }
         if (ImGui.treeNode("sky")) {

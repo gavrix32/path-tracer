@@ -11,7 +11,8 @@ public class RGBRoom {
 
     public RGBRoom() {
         scene = new Scene();
-        scene.setCamera(new Camera().setPosition(50, 100, -99).setFov(80));
+        scene.setName("RGB Room");
+        scene.setCamera(new Camera().setPosition(50, 100, -99));
         scene.setSky("textures/sky/HDR_041_Path_Env.hdr");
         scene.addBoxes(
                 new Box(new Vector3f(-30, 100, 90),     // Red light wall

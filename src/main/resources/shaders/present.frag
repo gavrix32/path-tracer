@@ -2,14 +2,13 @@
 
 out vec3 out_color;
 
+uniform float gamma, exposure;
 uniform sampler2D frame_texture;
 uniform vec2 resolution;
 
 vec3 post_process(vec3 col) {
-    float exposure = 1.0;
-    float gamma = 2.2;
-    col = vec3(1.0) - exp(-col * exposure);
-    col = pow(col, vec3(1.0 / gamma));
+    if (exposure != 0.0) col = vec3(1.0) - exp(-col * exposure);
+    if (gamma != 0.0) col = pow(col, vec3(1.0 / gamma));
     return col;
 }
 

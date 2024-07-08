@@ -15,6 +15,7 @@ public class RGBSpheres {
 
     public RGBSpheres() {
         scene = new Scene();
+        scene.setName("RGB Spheres");
         scene.setCamera(new Camera().setPosition(500, 250, 1));
         scene.setPlane(new Plane(false).setScale(200));
         scene.setSky("textures/sky/kiara_1_dawn_2k.hdr");

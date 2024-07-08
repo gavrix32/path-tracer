@@ -11,6 +11,7 @@ public class Liminal {
 
     public Liminal() {
         scene = new Scene();
+        scene.setName("Liminal");
         scene.setCamera(new Camera().setPosition(0, 100, 50));
         scene.setPlane(new Plane(true));
         scene.setSky("textures/sky/HDR_111_Parking_Lot_2_Env.hdr").setMaterial(true, 0, 1, 1, false);

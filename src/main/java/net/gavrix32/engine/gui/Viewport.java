@@ -8,6 +8,7 @@ import net.gavrix32.engine.io.Window;
 
 import static org.lwjgl.opengl.GL30C.*;
 
+// Deprecated
 public class Viewport {
     private static final int frameBuffer;
     private static final int viewportTexture;

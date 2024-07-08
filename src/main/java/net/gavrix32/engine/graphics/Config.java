@@ -2,52 +2,80 @@ package net.gavrix32.engine.graphics;
 
 import net.gavrix32.engine.io.Key;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 public class Config {
-    private static Properties props;
-    public static boolean useDefaultCfg = false;
+    private static final Properties props, defaultProps;
+    private static final String propsPath = System.getProperty("user.dir") + "/pathtracer.properties";
+    private static final InputStream defaultPropsInputStream;
 
-    public static void init() {
-        String propsPath = System.getProperty("user.dir") + "/app.properties";
-        InputStream defaultPropsInputStream = Config.class.getClassLoader().getResourceAsStream("default.properties");
+    static {
+        defaultPropsInputStream = Config.class.getClassLoader().getResourceAsStream("default.properties");
         try {
-            if (useDefaultCfg) {
-                props = new Properties();
-                props.load(defaultPropsInputStream);
-            } else {
-                File propsFile = new File(propsPath);
-                if (!propsFile.exists()) {
-                    Files.copy(defaultPropsInputStream, Paths.get(propsPath), StandardCopyOption.REPLACE_EXISTING);
-                }
-                Properties defaultProps = new Properties();
-                defaultProps.load(defaultPropsInputStream);
-                props = new Properties(defaultProps);
-                props.load(new FileInputStream(propsPath));
-            }
+            File propsFile = new File(propsPath);
+            defaultProps = new Properties();
+            defaultProps.load(defaultPropsInputStream);
+            props = new Properties(defaultProps);
+            if (!propsFile.exists()) defaultProps.store(new FileOutputStream(propsPath), null);
+            props.load(new FileInputStream(propsPath));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void useDefault(boolean value) {
-        useDefaultCfg = value;
+    public static void reset() {
+        try {
+            defaultProps.store(new FileOutputStream(propsPath), null);
+            props.load(new FileInputStream(propsPath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static String get(String property) {
-        return props.getProperty(property);
+    public static void save() {
+        try {
+            props.store(new FileOutputStream(propsPath), null);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static Key getKey(String property) {
+    public static String getString(String key) {
+        return props.getProperty(key);
+    }
+
+    public static void setString(String key, String value) {
+        props.setProperty(key, value);
+    }
+
+    public static int getInt(String key) {
+        return Integer.parseInt(props.getProperty(key));
+    }
+
+    public static void setInt(String key, int value) {
+        props.setProperty(key, String.valueOf(value));
+    }
+
+    public static boolean getBoolean(String key) {
+        return Boolean.parseBoolean(props.getProperty(key));
+    }
+
+    public static void setBoolean(String key, boolean value) {
+        props.setProperty(key, String.valueOf(value));
+    }
+
+    public static float getFloat(String key) {
+        return Float.parseFloat(props.getProperty(key));
+    }
+
+    public static void setFloat(String key, float value) {
+        props.setProperty(key, String.valueOf(value));
+    }
+
+    public static Key getKey(String key) {
         Map<String, Key> hashMap = new HashMap<>();
         hashMap.put("unknown", Key.UNKNOWN);
         hashMap.put("space", Key.SPACE);
@@ -171,6 +199,6 @@ public class Config {
         hashMap.put("right_super", Key.RIGHT_SUPER);
         hashMap.put("menu", Key.MENU);
         hashMap.put("last", Key.LAST);
-        return hashMap.get(props.getProperty(property));
+        return hashMap.get(props.getProperty(key));
     }
 }

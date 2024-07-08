@@ -13,6 +13,7 @@ public class CornellBox {
 
     public CornellBox() {
         scene = new Scene();
+        scene.setName("Cornell Box");
         scene.setCamera(new Camera().setPosition(50, 100, -99));
         scene.setSky("textures/sky/industrial_sunset_puresky_2k.hdr");
         scene.setPlane(new Plane(true));
