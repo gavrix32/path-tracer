@@ -16,7 +16,7 @@ public class OpenBox {
     public OpenBox() {
         scene = new Scene();
         scene.setName("Open Box");
-        scene.setCamera(new Vector3f(0, 0, -350));
+        scene.setCamera(new Vector3f(0, 0, -250));
         scene.setSky("textures/sky/HDR_111_Parking_Lot_2_Env.hdr").setMaterial(true, 5, 1, 1, false);
         scene.addBoxes(
                 // Floor
