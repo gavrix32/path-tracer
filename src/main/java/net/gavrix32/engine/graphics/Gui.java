@@ -23,7 +23,7 @@ public class Gui {
     private static final int[] vsync = new int[1], fpsLimit = new int[1], samples = new int[1], bounces = new int[1];
     private static final float[] gamma = new float[1], exposure = new float[1], focusDistance = new float[1], aperture = new float[1], fov = new float[1];
     private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(), temporalAntialiasing = new ImBoolean();
-    private static final ImInt sceneId = new ImInt(5);
+    private static final ImInt sceneId = new ImInt(2);
 
     static {
         ImGui.createContext();

@@ -1,6 +1,6 @@
 #version 460 core
 
-out vec3 out_color;
+out vec4 out_color;
 
 #define PI 3.14159
 #define EPSILON 0.001
@@ -484,6 +484,9 @@ void main() {
             temporal_mix_factor = 0.0;
         }
         vec3 prev_color = texture(prev_frame, reproj_uv).rgb;
+        if (abs(hitinfo.minDistance - texture(prev_frame, reproj_uv).a) > 12.0) {
+            temporal_mix_factor = 0.0;
+        }
         color = frames != 0 ? mix(color, prev_color, factor == 0 ? temporal_mix_factor : factor) : mix(color, prev_color, temporal_mix_factor);
     }
     if (frames != 0 && !temporal_reprojection) {
@@ -499,5 +502,5 @@ void main() {
         if (show_depth) color = vec3(hitInfo.minDistance) * 0.001;
     }*/
 
-    out_color = color;
+    out_color = vec4(color, hitinfo.minDistance);
 }

@@ -40,7 +40,6 @@ public class Main implements IApp {
 
         openBox = new OpenBox();
         scenes.add(openBox.getScene());
-
     }
 
     public void update() {
