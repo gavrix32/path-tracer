@@ -5,12 +5,9 @@ import static org.lwjgl.glfw.GLFW.glfwGetTime;
 public class Timer {
     private float time;
 
-    public static float getTime() {
-        return (float) glfwGetTime();
-    }
-
-    public void tick() {
+    public Timer tick() {
         time = (float) glfwGetTime();
+        return this;
     }
 
     public float getDelta() {

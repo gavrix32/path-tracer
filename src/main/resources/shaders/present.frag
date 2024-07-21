@@ -3,7 +3,7 @@
 out vec3 out_color;
 
 uniform float gamma, exposure;
-uniform sampler2D frame_texture;
+uniform sampler2D color_texture;
 uniform vec2 resolution;
 
 vec3 post_process(vec3 col) {
@@ -13,6 +13,6 @@ vec3 post_process(vec3 col) {
 }
 
 void main() {
-    vec3 col = texture(frame_texture, gl_FragCoord.xy / resolution).rgb;
-    out_color = post_process(col);
+    vec3 color = texture(color_texture, gl_FragCoord.xy / resolution).rgb;
+    out_color = post_process(color);
 }

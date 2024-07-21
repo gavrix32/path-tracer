@@ -56,7 +56,7 @@ public class Window {
             }
             glViewport(0, 0, w, h);
             Renderer.resetAccFrames();
-            Renderer.resetFrameBufferTextures();
+            Renderer.resetFramebufferTextures();
         });
         glfwSetWindowPosCallback(window, (window, xpos, ypos) -> {
             if (!fullscreen) {

@@ -24,7 +24,7 @@ struct Material {
 
 struct HitInfo {
     vec3 normal, hitpos;
-    float minDistance;
+    float distance;
     Material material;
 };
 
@@ -76,9 +76,9 @@ uniform Sky sky;
 uniform Plane plane;
 uniform samplerBuffer verticesTexture;
 
-//layout(binding = 0, rgba32f) uniform image2D frame_image;
-
-vec3 p;
+layout(binding = 0, rgba32f) uniform image2D normal_image;
+layout(binding = 1, rgba32f) uniform image2D position_image;
+layout(binding = 2, rgba32f) uniform image2D albedo_image;
 
 float intersect_plane(Ray ray, vec4 p) {
     return -(dot(ray.o, p.xyz) + p.w) / dot(ray.d, p.xyz);
@@ -207,14 +207,14 @@ vec3 calcNormal(in vec3 pos) {
 ////////////////
 
 bool raycast(in Ray ray, out HitInfo hitInfo) {
-    hitInfo.minDistance = MAX_DISTANCE;
+    hitInfo.distance = MAX_DISTANCE;
     bool hit = false;
     float dist;
     if (plane.exists) {
         dist = intersect_plane(ray, vec4(0, 1, 0, 0));
-        if (dist > 0 && dist < hitInfo.minDistance) {
+        if (dist > 0 && dist < hitInfo.distance) {
             hit = true;
-            hitInfo.minDistance = dist;
+            hitInfo.distance = dist;
             hitInfo.material = plane.material;
             hitInfo.normal = vec3(0, 1, 0);
             if (plane.checkerboard) {
@@ -230,32 +230,32 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
     }
     if (use_accel) {
         dist = intersect_aabb(ray, sphAABB);
-        if (dist != -1 && dist < hitInfo.minDistance) {
+        if (dist != -1 && dist < hitInfo.distance) {
             for (int i = 0; i < spheres_count; i++) {
                 dist = intersect_sphere(ray, spheres[i].position, spheres[i].radius);
-                if (dist > 0 && dist < hitInfo.minDistance) {
+                if (dist > 0 && dist < hitInfo.distance) {
                     hit = true;
-                    hitInfo.minDistance = dist;
+                    hitInfo.distance = dist;
                     hitInfo.material = spheres[i].material;
                     hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
                 }
             }
         }
         dist = intersect_aabb(ray, boxAABB);
-        if (dist != -1 && dist < hitInfo.minDistance) {
+        if (dist != -1 && dist < hitInfo.distance) {
             for (int i = 0; i < boxes_count; i++) {
                 vec3 normal;
                 dist = intersect_box(Ray(ray.o - boxes[i].position, ray.d), boxes[i].scale, normal, boxes[i].rotation).x;
-                if (dist > 0 && dist < hitInfo.minDistance) {
+                if (dist > 0 && dist < hitInfo.distance) {
                     hit = true;
-                    hitInfo.minDistance = dist;
+                    hitInfo.distance = dist;
                     hitInfo.material = boxes[i].material;
                     hitInfo.normal = normalize(normal);
                 }
             }
         }
         dist = intersect_aabb(ray, triAABB);
-        if (dist != -1 && dist < hitInfo.minDistance) {
+        if (dist != -1 && dist < hitInfo.distance) {
             int index = 0;
             for (int i = 0; i < triangles_count; i++) {
                 vec3 normal;
@@ -263,9 +263,9 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
                 vec3 v2 = texelFetch(verticesTexture, index++).xyz;
                 vec3 v3 = texelFetch(verticesTexture, index++).xyz;
                 dist = intersect_triangle(ray, v1, v2, v3, normal, triangles[i].rotation).x;
-                if (dist > 0 && dist < hitInfo.minDistance) {
+                if (dist > 0 && dist < hitInfo.distance) {
                     hit = true;
-                    hitInfo.minDistance = dist;
+                    hitInfo.distance = dist;
                     hitInfo.material = triangles[i].material;
                     hitInfo.normal = normalize(normal);
                 }
@@ -275,18 +275,18 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
         for (int i = 0; i < boxes_count; i++) {
             vec3 normal;
             dist = intersect_box(Ray(ray.o - boxes[i].position, ray.d), boxes[i].scale, normal, boxes[i].rotation).x;
-            if (dist > 0 && dist < hitInfo.minDistance) {
+            if (dist > 0 && dist < hitInfo.distance) {
                 hit = true;
-                hitInfo.minDistance = dist;
+                hitInfo.distance = dist;
                 hitInfo.material = boxes[i].material;
                 hitInfo.normal = normalize(normal);
             }
         }
         for (int i = 0; i < spheres_count; i++) {
             dist = intersect_sphere(ray, spheres[i].position, spheres[i].radius);
-            if (dist > 0 && dist < hitInfo.minDistance) {
+            if (dist > 0 && dist < hitInfo.distance) {
                 hit = true;
-                hitInfo.minDistance = dist;
+                hitInfo.distance = dist;
                 hitInfo.material = spheres[i].material;
                 hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
             }
@@ -294,9 +294,9 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
         for (int i = 0; i < triangles_count; i++) {
             vec3 normal;
             dist = intersect_triangle(ray, triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
-            if (dist > 0 && dist < hitInfo.minDistance) {
+            if (dist > 0 && dist < hitInfo.distance) {
                 hit = true;
-                hitInfo.minDistance = dist;
+                hitInfo.distance = dist;
                 hitInfo.material = triangles[i].material;
                 hitInfo.normal = normalize(normal);
             }
@@ -319,10 +319,10 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
         hitInfo.normal = calcNormal(ray.o + ray.d * dist);
     }*/
     ///////////////
-    hitInfo.hitpos = ray.o + ray.d * hitInfo.minDistance;
+    hitInfo.hitpos = ray.o + ray.d * hitInfo.distance;
     if (!hit) {
         hitInfo.material = sky.material;
-        hitInfo.minDistance = MAX_DISTANCE;
+        hitInfo.distance = MAX_DISTANCE;
         if (sky_has_texture) {
             vec2 uv_ = vec2(atan(ray.d.z, ray.d.x) / PI, asin(ray.d.y) * 2 / PI);
             uv_ = uv_ * 0.5 + 0.5;
@@ -384,9 +384,9 @@ float fresnel(vec3 dir, vec3 n, float ior) {
 
 Ray brdf(Ray ray, HitInfo hitInfo) {
     if (hitInfo.material.is_glass)
-        ray.o += ray.d * (hitInfo.minDistance + EPSILON);
+        ray.o += ray.d * (hitInfo.distance + EPSILON);
     else
-        ray.o += ray.d * (hitInfo.minDistance - EPSILON);
+        ray.o += ray.d * (hitInfo.distance - EPSILON);
     vec3 diffused = random_cosine_weighted_hemisphere(hitInfo.normal);
     vec3 reflected = reflect(ray.d, hitInfo.normal);
     vec3 refracted = refract(ray.d, hitInfo.normal, 1 / hitInfo.material.IOR);
@@ -424,7 +424,7 @@ vec2 uv2fragcoord(vec2 uv) {
 }
 
 vec2 reproject(mat3 prev_view, vec3 prev_cam_pos, HitInfo hitinfo, float fov_converted) {
-    vec3 dir = (hitinfo.hitpos - prev_cam_pos) / hitinfo.minDistance;
+    vec3 dir = (hitinfo.hitpos - prev_cam_pos) / hitinfo.distance;
     dir *= inverse(prev_view);
     dir.xy /= fov_converted * dir.z;
     return uv2fragcoord(dir.xy);
@@ -456,7 +456,7 @@ void main() {
             HitInfo autofocus_hitinfo;
             Ray autofocus_ray = Ray(camera_position, normalize(vec3(vec2(0.001), 1) * mat3(camera_rotation)));
             raycast(autofocus_ray, autofocus_hitinfo);
-            focus_dist = autofocus_hitinfo.minDistance >= MAX_DISTANCE ? 1000 : autofocus_hitinfo.minDistance;
+            focus_dist = autofocus_hitinfo.distance >= MAX_DISTANCE ? 1000 : autofocus_hitinfo.distance;
         } else {
             focus_dist = focus_distance;
         }
@@ -483,10 +483,10 @@ void main() {
         if (reproj_uv.x < 0.0 || reproj_uv.y < 0.0 || reproj_uv.x > 1.0 || reproj_uv.y > 1.0) {
             temporal_mix_factor = 0.0;
         }
-        vec3 prev_color = texture(prev_frame, reproj_uv).rgb;
-        if (abs(hitinfo.minDistance - texture(prev_frame, reproj_uv).a) > 12.0) {
+        if (abs(hitinfo.distance - texture(prev_frame, reproj_uv).a) > 15.0) {
             temporal_mix_factor = 0.0;
         }
+        vec3 prev_color = texture(prev_frame, reproj_uv).rgb;
         color = frames != 0 ? mix(color, prev_color, factor == 0 ? temporal_mix_factor : factor) : mix(color, prev_color, temporal_mix_factor);
     }
     if (frames != 0 && !temporal_reprojection) {
@@ -502,5 +502,9 @@ void main() {
         if (show_depth) color = vec3(hitInfo.minDistance) * 0.001;
     }*/
 
-    out_color = vec4(color, hitinfo.minDistance);
+    imageStore(normal_image, ivec2(gl_FragCoord.xy), vec4(hitinfo.normal, 0.0));
+    imageStore(position_image, ivec2(gl_FragCoord.xy), vec4(hitinfo.hitpos, 0.0));
+    imageStore(albedo_image, ivec2(gl_FragCoord.xy), vec4(hitinfo.material.color, 0.0));
+
+    out_color = vec4(color, hitinfo.distance);
 }

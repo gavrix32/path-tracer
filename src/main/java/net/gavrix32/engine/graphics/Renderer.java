@@ -8,14 +8,15 @@ import static org.lwjgl.opengl.GL46C.*;
 
 public class Renderer {
     private static Scene scene;
-    private static Shader pathtraceShader, presentShader;
-    private static int frames = 0, curr = 0, prev = 1;
-    private static final int[] frameBuffer = new int[2], frameTexture = new int[2];
+    private static Shader pathtraceShader, atrousShader, presentShader;
+    private static int frames = 0, currAcc = 0, prevAcc = 1, currAtrous = 0, prevAtrous = 1, sampler, normalImage, positionImage, albedoImage;
+    private static final int[] accFramebuffer = new int[2], accTexture = new int[2];
+    private static final int[] atrousFramebuffer = new int[2], atrousTexture = new int[2];
     // private static int verticesBuffer, verticesTexture;
 
     private static int samples, bounces;
     private static float gamma, exposure, focusDistance, aperture, fov;
-    private static boolean accumulation, temporalReprojection, temporalAntialiasing;
+    private static boolean accumulation, temporalReprojection, temporalAntialiasing, atrousFilter;
 
     // TODO: scene in texture
     // TODO: isKeyUp method
@@ -32,34 +33,75 @@ public class Renderer {
         accumulation = Config.getBoolean("accumulation");
         temporalReprojection = Config.getBoolean("temporal_reprojection");
         temporalAntialiasing = Config.getBoolean("temporal_antialiasing");
+        atrousFilter = Config.getBoolean("atrous_filter");
 
         Quad.init();
 
         pathtraceShader = new Shader("shaders/quad.vert", "shaders/pathtrace.frag");
+        atrousShader = new Shader("shaders/quad.vert", "shaders/atrous.frag");
         presentShader = new Shader("shaders/quad.vert", "shaders/present.frag");
 
         scene = new Scene();
 
         for (int i = 0; i < 2; i++) {
-            frameBuffer[i] = glGenFramebuffers();
-            glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer[i]);
+            accFramebuffer[i] = glGenFramebuffers();
+            glBindFramebuffer(GL_FRAMEBUFFER, accFramebuffer[i]);
 
-            frameTexture[i] = glGenTextures();
-            glBindTexture(GL_TEXTURE_2D, frameTexture[i]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+            accTexture[i] = glGenTextures();
+            glBindTexture(GL_TEXTURE_2D, accTexture[i]);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glBindTexture(GL_TEXTURE_2D, 0);
 
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameTexture[i], 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, accTexture[i], 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
+
+        for (int i = 0; i < 2; i++) {
+            atrousFramebuffer[i] = glGenFramebuffers();
+            glBindFramebuffer(GL_FRAMEBUFFER, atrousFramebuffer[i]);
+
+            atrousTexture[i] = glGenTextures();
+            glBindTexture(GL_TEXTURE_2D, atrousTexture[i]);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, atrousTexture[i], 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+
+        normalImage = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, normalImage);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindImageTexture(0, normalImage, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        positionImage = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, positionImage);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindImageTexture(1, positionImage, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        albedoImage = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, albedoImage);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindImageTexture(2, albedoImage, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        sampler = glGenSamplers();
+        glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     }
 
     public static void render() {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
         pathtraceShader.use();
         pathtraceShader.setMat4("prev_camera_rotation", scene.camera.getRotationMatrix());
         pathtraceShader.setVec3("prev_camera_position", scene.camera.getPosition());
@@ -182,22 +224,51 @@ public class Renderer {
         }*/
 
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, frameTexture[prev]);
+        glBindTexture(GL_TEXTURE_2D, accTexture[prevAcc]);
         pathtraceShader.setInt("prev_frame", 2);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer[curr]);
+        glBindFramebuffer(GL_FRAMEBUFFER, accFramebuffer[currAcc]);
         Quad.draw();
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, frameTexture[curr]);
+        if (atrousFilter) {
+            for (int i = 0; i < Gui.iterations[0]; i++) {
+                glBindFramebuffer(GL_FRAMEBUFFER, atrousFramebuffer[currAtrous]);
+                atrousShader.use();
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, i == 0 ? accTexture[currAcc] : atrousTexture[prevAtrous]);
+                atrousShader.setInt("color_texture", 3);
+                glActiveTexture(GL_TEXTURE4);
+                glBindTexture(GL_TEXTURE_2D, normalImage);
+                glBindSampler(4, sampler);
+                atrousShader.setInt("normal_texture", 4);
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_2D, positionImage);
+                glBindSampler(5, sampler);
+                atrousShader.setInt("position_texture", 5);
+                glActiveTexture(GL_TEXTURE6);
+                glBindTexture(GL_TEXTURE_2D, albedoImage);
+                glBindSampler(6, sampler);
+                atrousShader.setInt("albedo_texture", 6);
+                atrousShader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
+                atrousShader.setFloat("stepWidth", (1 << (i + 1)) - 1 * Gui.stepWidth[0]);
+                atrousShader.setFloat("c_phi", 1.0f / i * Gui.c_phi[0]);
+                atrousShader.setFloat("n_phi", 1.0f / (1 << i) * Gui.n_phi[0]);
+                atrousShader.setFloat("p_phi", 1.0f / (1 << i) * Gui.p_phi[0]);
+                Quad.draw();
+                swapAtrousFrames();
+            }
+        }
         presentShader.use();
-        presentShader.setInt("frame_texture", 0);
         presentShader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
         presentShader.setFloat("gamma", gamma);
         presentShader.setFloat("exposure", exposure);
+        glActiveTexture(GL_TEXTURE7);
+        if (atrousFilter) glBindTexture(GL_TEXTURE_2D, atrousTexture[currAtrous]);
+        else glBindTexture(GL_TEXTURE_2D, accTexture[currAcc]);
+        presentShader.setInt("color_texture", 7);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         Quad.draw();
-        swapFrames();
+        swapAccFrames();
         if (accumulation) frames++;
     }
 
@@ -205,15 +276,30 @@ public class Renderer {
         frames = 0;
     }
 
-    private static void swapFrames() {
-        curr = 1 - curr;
-        prev = 1 - prev;
+    private static void swapAccFrames() {
+        currAcc = 1 - currAcc;
+        prevAcc = 1 - prevAcc;
     }
 
-    public static void resetFrameBufferTextures() {
-        glBindTexture(GL_TEXTURE_2D, frameTexture[0]);
+    private static void swapAtrousFrames() {
+        currAtrous = 1 - currAtrous;
+        prevAtrous = 1 - prevAtrous;
+    }
+
+    public static void resetFramebufferTextures() {
+        glBindTexture(GL_TEXTURE_2D, accTexture[0]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-        glBindTexture(GL_TEXTURE_2D, frameTexture[1]);
+        glBindTexture(GL_TEXTURE_2D, accTexture[1]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, normalImage);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, positionImage);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, albedoImage);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, atrousTexture[0]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, atrousTexture[1]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -296,6 +382,15 @@ public class Renderer {
         resetAccFrames();
         temporalAntialiasing = value;
         Config.setBoolean("temporal_antialiasing", value);
+    }
+
+    public static boolean isAtrousFilter() {
+        return atrousFilter;
+    }
+
+    public static void useAtrousFilter(boolean value) {
+        atrousFilter = value;
+        Config.setBoolean("atrous_filter", value);
     }
 
     public static float getFocusDistance() {

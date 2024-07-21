@@ -1,37 +1,18 @@
-package net.gavrix32.engine.gui;
+package net.gavrix32.engine.graphics;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
-import net.gavrix32.engine.graphics.Renderer;
-import net.gavrix32.engine.graphics.Scene;
 import net.gavrix32.engine.objects.Box;
 import net.gavrix32.engine.objects.Plane;
 import net.gavrix32.engine.objects.Sphere;
 import net.gavrix32.engine.objects.Triangle;
-import net.gavrix32.engine.utils.Logger;
 
-import java.io.File;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 
-// Deprecated
 public class SceneEditor {
-    private static final ImInt sceneID = new ImInt();
-
-    protected static void update(ArrayList<Scene> scenes, ArrayList<String> sceneNames) {
-        ImGui.begin("Scene", ImGuiWindowFlags.NoMove);
-        String[] names = new String[sceneNames.size()];
-        if (ImGui.combo("select scene", sceneID, sceneNames.toArray(names))) {
-            Renderer.resetAccFrames();
-        }
-        Renderer.setScene(scenes.get(sceneID.get()));
-        showSceneObjectProps(scenes.get(sceneID.get()));
-        ImGui.end();
-    }
-
-    private static void showSceneObjectProps(Scene scene) {
+    public static void showSceneObjectProps(Scene scene) {
         if (ImGui.treeNode("camera")) {
             float[] pos = new float[] {
                     scene.getCamera().getPosition().x,
@@ -441,9 +422,5 @@ public class SceneEditor {
                 Renderer.resetAccFrames();
             }
         }
-    }
-
-    public static void setDefaultScene(int numberInList) {
-        sceneID.set(numberInList);
     }
 }

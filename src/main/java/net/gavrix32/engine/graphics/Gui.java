@@ -6,6 +6,7 @@ import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
+import net.gavrix32.app.Main;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.utils.Utils;
@@ -21,9 +22,12 @@ public class Gui {
     private static final String fontPath = "fonts/Inter-Regular.ttf";
 
     private static final int[] vsync = new int[1], fpsLimit = new int[1], samples = new int[1], bounces = new int[1];
+    public static final int[] iterations = new int[] {5};
     private static final float[] gamma = new float[1], exposure = new float[1], focusDistance = new float[1], aperture = new float[1], fov = new float[1];
-    private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(), temporalAntialiasing = new ImBoolean();
-    private static final ImInt sceneId = new ImInt(2);
+    public static final float[] stepWidth = new float[] {1.0f}, c_phi = new float[] {0.5f}, n_phi = new float[] {0.5f}, p_phi = new float[] {1000.0f};
+    private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(),
+            temporalAntialiasing = new ImBoolean(), atrousFilter = new ImBoolean();
+    private static final ImInt sceneId = new ImInt(1);
 
     static {
         ImGui.createContext();
@@ -50,6 +54,7 @@ public class Gui {
         accumulation.set(Renderer.isAccumulation());
         temporalReprojection.set(Renderer.isTemporalReprojection());
         temporalAntialiasing.set(Renderer.isTemporalAntialiasing());
+        atrousFilter.set(Renderer.isAtrousFilter());
     }
 
     public static void update(ArrayList<Scene> scenes) {
@@ -92,6 +97,14 @@ public class Gui {
             if (ImGui.checkbox("Accumulation", accumulation)) Renderer.useAccumulation(accumulation.get());
             if (ImGui.checkbox("Temporal Reprojection", temporalReprojection)) Renderer.useTemporalReprojection(temporalReprojection.get());
             if (ImGui.checkbox("Temporal Anti-Aliasing", temporalAntialiasing)) Renderer.useTemporalAntialiasing(temporalAntialiasing.get());
+            if (ImGui.checkbox("À-Trous Filter", atrousFilter)) Renderer.useAtrousFilter(atrousFilter.get());
+            ImGui.beginDisabled(!atrousFilter.get());
+            ImGui.sliderInt("iterations", iterations, 1, 10);
+            ImGui.sliderFloat("stepWidth", stepWidth, 0.0f, 10.0f);
+            ImGui.sliderFloat("c_phi", c_phi, 0.0f, 10.0f);
+            ImGui.sliderFloat("n_phi", n_phi, 0.0f, 10.0f);
+            ImGui.sliderFloat("p_phi", p_phi, 0.0f, 10.0f);
+            ImGui.endDisabled();
             if (ImGui.button("Save")) Config.save(); ImGui.sameLine();
             if (ImGui.button("Reset")) {
                 Config.reset();
@@ -112,7 +125,9 @@ public class Gui {
                 accumulation.set(Config.getBoolean("accumulation")); Renderer.useAccumulation(accumulation.get());
                 temporalReprojection.set(Config.getBoolean("temporal_reprojection")); Renderer.useTemporalReprojection(temporalReprojection.get());
                 temporalAntialiasing.set(Config.getBoolean("temporal_antialiasing")); Renderer.useTemporalAntialiasing(temporalAntialiasing.get());
+                atrousFilter.set(Config.getBoolean("atrous_filter")); Renderer.useAtrousFilter(atrousFilter.get());
             }
+
             ImGui.treePop();
         }
         if (ImGui.treeNode("Scene")) {
@@ -123,6 +138,7 @@ public class Gui {
             if (ImGui.combo("Select", sceneId, names)) {
                 Renderer.resetAccFrames();
             }
+            SceneEditor.showSceneObjectProps(scenes.get(sceneId.get()));
             ImGui.treePop();
         }
         Renderer.setScene(scenes.get(sceneId.get()));
