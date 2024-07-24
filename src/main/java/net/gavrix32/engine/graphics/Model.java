@@ -2,9 +2,12 @@ package net.gavrix32.engine.graphics;
 
 import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.objects.Triangle;
+import net.gavrix32.engine.utils.Utils;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +17,10 @@ public class Model {
     private static float[] verticesData;
 
     public Model(String filepath, float scale) {
-        AIScene scene = Assimp.aiImportFile(filepath, Assimp.aiProcess_Triangulate);
+        byte[] data = Utils.loadBytes(filepath);
+        ByteBuffer dataBuffer = BufferUtils.createByteBuffer(data.length);
+        dataBuffer.put(data).flip();
+        AIScene scene = Assimp.aiImportFileFromMemory(dataBuffer, Assimp.aiProcess_Triangulate, "");
         PointerBuffer buffer = scene.mMeshes();
         for (int i = 0; i < buffer.limit(); i++) {
             AIMesh mesh = AIMesh.create(buffer.get(i));

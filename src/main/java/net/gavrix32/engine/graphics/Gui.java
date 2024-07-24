@@ -27,7 +27,11 @@ public class Gui {
     public static final float[] stepWidth = new float[] {1.0f}, c_phi = new float[] {0.5f}, n_phi = new float[] {0.5f}, p_phi = new float[] {1000.0f};
     private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(),
             temporalAntialiasing = new ImBoolean(), atrousFilter = new ImBoolean();
-    private static final ImInt sceneId = new ImInt(1);
+    private static final ImInt sceneId = new ImInt(6);
+
+    // Debug BVH
+    public static final ImBoolean debugBVH = new ImBoolean(true);
+    public static final int[] boundsTestThreshold = new int[] {400}, triangleTestThreshold = new int[] {50};
 
     static {
         ImGui.createContext();
@@ -127,7 +131,6 @@ public class Gui {
                 temporalAntialiasing.set(Config.getBoolean("temporal_antialiasing")); Renderer.useTemporalAntialiasing(temporalAntialiasing.get());
                 atrousFilter.set(Config.getBoolean("atrous_filter")); Renderer.useAtrousFilter(atrousFilter.get());
             }
-
             ImGui.treePop();
         }
         if (ImGui.treeNode("Scene")) {
@@ -149,6 +152,14 @@ public class Gui {
             if (!screenshotsDir.exists()) screenshotsDir.mkdir();
             Utils.takeScreenshot(System.getProperty("user.dir") + "/screenshots/" + dtf.format(now) + ".png");
         }
+
+        // Debug BVH
+        ImGui.checkbox("BVH Debug View", debugBVH);
+        ImGui.beginDisabled(!debugBVH.get());
+        ImGui.dragInt("Bounds Test Threshold", boundsTestThreshold, 1);
+        ImGui.dragInt("Triangles Test Threshold", triangleTestThreshold, 1);
+        ImGui.endDisabled();
+
         ImGui.end();
         ImGui.endDisabled();
 

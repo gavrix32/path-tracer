@@ -44,8 +44,7 @@ public class Sky {
         int[] width = new int[1], height = new int[1];
         byte[] bytes = Utils.loadBytes(path);
         ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
-        buffer.put(bytes);
-        buffer.flip();
+        buffer.put(bytes).flip();
         stbi_set_flip_vertically_on_load(true);
         FloatBuffer data = stbi_loadf_from_memory(buffer, width, height, new int[1], 3);
         if (data == null) Logger.error("Failed to load texture: \"\"" + path + " " + stbi_failure_reason());

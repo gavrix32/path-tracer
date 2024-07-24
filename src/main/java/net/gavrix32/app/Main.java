@@ -16,11 +16,11 @@ public class Main implements IApp {
     private Spheres spheres;
     private Liminal liminal;
     private OpenBox openBox;
+    private BVHTest bvhTest;
 
     public void init() {
         Window.init();
         Window.setFullscreen(true);
-        Renderer.init();
 
         //GLUtil.setupDebugMessageCallback();
         cornellBox = new CornellBox();
@@ -40,6 +40,19 @@ public class Main implements IApp {
 
         openBox = new OpenBox();
         scenes.add(openBox.getScene());
+
+        bvhTest = new BVHTest();
+        scenes.add(bvhTest.getScene());
+
+        // Material texture
+        //
+        // 0 ---- X
+        // emission
+        //
+        // -1 --------- 0 --------- 1
+        // plastic -- mirror -- metal
+
+        Renderer.init();
     }
 
     public void update() {

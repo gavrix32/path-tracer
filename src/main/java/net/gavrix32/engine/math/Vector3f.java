@@ -70,9 +70,43 @@ public final class Vector3f {
             case 0 -> val = x;
             case 1 -> val = y;
             case 2 -> val = z;
-            default -> Logger.error("Unknown axe " + axis);
+            default -> Logger.error("Unknown axis " + axis);
         }
         return val;
+    }
+
+    public static Vector3f sum(Vector3f... v) {
+        Vector3f sum = new Vector3f();
+        for (Vector3f vector : v) {
+            sum.x += vector.x;
+            sum.y += vector.y;
+            sum.z += vector.z;
+        }
+        return sum;
+    }
+
+    public static Vector3f sum(Vector3f v, float s) {
+        Vector3f sum = new Vector3f();
+        sum.x = v.x + s;
+        sum.y = v.y + s;
+        sum.z = v.z + s;
+        return sum;
+    }
+
+    public static Vector3f diff(Vector3f v1, Vector3f v2) {
+        Vector3f diff = new Vector3f();
+        diff.x = v1.x - v2.x;
+        diff.y = v1.y - v2.y;
+        diff.z = v1.z - v2.z;
+        return diff;
+    }
+
+    public static Vector3f diff(Vector3f v, float s) {
+        Vector3f diff = new Vector3f();
+        diff.x = v.x - s;
+        diff.y = v.y - s;
+        diff.z = v.z - s;
+        return diff;
     }
 
     public Vector3f add(float s) {
@@ -147,6 +181,10 @@ public final class Vector3f {
         return this;
     }
 
+    public static Vector3f mul(Vector3f v, float s) {
+        return new Vector3f(v.x * s, v.y * s, v.z * s);
+    }
+
     public Vector3f mul(float s) {
         this.x *= s;
         this.y *= s;
@@ -173,6 +211,22 @@ public final class Vector3f {
                 m.m[0][0] * x + m.m[0][1] * y + m.m[0][2] * z,
                 m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z,
                 m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z
+        );
+    }
+
+    public static Vector3f div(Vector3f v1, Vector3f v2) {
+        return new Vector3f(
+                v1.x / v2.x,
+                v1.y / v2.y,
+                v1.z / v2.z
+        );
+    }
+
+    public static Vector3f div(Vector3f v1, float s) {
+        return new Vector3f(
+                v1.x / s,
+                v1.y / s,
+                v1.z / s
         );
     }
 
@@ -225,7 +279,11 @@ public final class Vector3f {
         return this;
     }
 
+    public float[] toArray() {
+        return new float[] {x, y, z};
+    }
+
     public String toString() {
-        return x + " " + y + " " + z;
+        return x + ", " + y + ", " + z;
     }
 }

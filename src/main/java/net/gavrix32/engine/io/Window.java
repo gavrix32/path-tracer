@@ -123,8 +123,9 @@ public class Window {
         }
     }
 
-    public static void setSwapInterval(int interval) {
-        glfwSwapInterval(interval);
+    public static void setSwapInterval(int value) {
+        glfwSwapInterval(value);
+        Config.setInt("swap_interval", value);
     }
 
     public static int getWidth() {

@@ -4,10 +4,9 @@ out vec4 out_color;
 
 #define PI 3.14159
 #define EPSILON 0.001
-#define MAX_DISTANCE 999999999
-#define MAX_SPHERES 128
-#define MAX_BOXES 128
-#define MAX_TRIANGLES 300
+#define MAX_DISTANCE 1. / 0.
+#define MAX_SPHERES 64
+#define MAX_BOXES 64
 
 struct Ray {
     vec3 o, d;
@@ -42,8 +41,6 @@ struct Box {
 
 struct Triangle {
     vec3 v1, v2, v3;
-    mat4 rotation;
-    Material material;
 };
 
 struct Sky {
@@ -57,28 +54,43 @@ struct Plane {
     Material material;
 };
 
-struct AABB {
+struct BoundingBox {
     vec3 min, max;
 };
 
+struct Node {
+    BoundingBox bounds;
+    float triangle_start_index, triangles_count, child_index;
+};
+
 uniform vec2 resolution;
-uniform vec3 camera_position, prev_camera_position;
-uniform mat4 camera_rotation, prev_camera_rotation;
-uniform int samples, bounces, spheres_count, boxes_count, triangles_count, frames;
-uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture, use_accel;
+uniform vec3 camera_position, prev_camera_position, triangles_offset;
+uniform mat4 camera_rotation, prev_camera_rotation, triangles_rotation;
+uniform int samples, bounces, spheres_count, boxes_count, frames;
+uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture;
 uniform sampler2D sky_texture, prev_frame;
 uniform float time, fov, focus_distance, aperture;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
-uniform Triangle triangles[MAX_TRIANGLES];
-uniform AABB sphAABB, boxAABB, triAABB;
+uniform BoundingBox sph_bounds, box_bounds;
 uniform Sky sky;
 uniform Plane plane;
-uniform samplerBuffer verticesTexture;
+
+// Debug BVH
+uniform bool debug_bvh;
+uniform int bounds_test_threshold, triangle_test_threshold;
 
 layout(binding = 0, rgba32f) uniform image2D normal_image;
 layout(binding = 1, rgba32f) uniform image2D position_image;
 layout(binding = 2, rgba32f) uniform image2D albedo_image;
+
+layout(binding = 0) readonly buffer node_buffer {
+    Node nodes[];
+};
+
+layout(binding = 1) readonly buffer triangle_buffer {
+    Triangle triangles[];
+};
 
 float intersect_plane(Ray ray, vec4 p) {
     return -(dot(ray.o, p.xyz) + p.w) / dot(ray.d, p.xyz);
@@ -110,21 +122,24 @@ float intersect_box(Ray ray, vec3 scale, out vec3 normal, mat4 rotation) {
     return tN;
 }
 
-float intersect_aabb(Ray ray, AABB aabb/*, out vec3 normal*/) {
-    vec3 tMin = (aabb.min - ray.o) / ray.d;
-    vec3 tMax = (aabb.max - ray.o) / ray.d;
+float intersect_bounding_box(Ray ray, BoundingBox bounds) {
+    vec3 tMin = (bounds.min - ray.o) / ray.d;
+    vec3 tMax = (bounds.max - ray.o) / ray.d;
     vec3 t1 = min(tMin, tMax);
     vec3 t2 = max(tMin, tMax);
-    float tNear = max(max(t1.x, t1.y), t1.z);
     float tFar = min(min(t2.x, t2.y), t2.z);
-    if (tNear > tFar || tFar < 0) return -1;
-    //normal = vec3(equal(t1, vec3(tNear))) * sign(-ray.d);
-    return tNear;
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    bool hit = tFar >= tNear && tFar > 0;
+    return hit ? tNear : MAX_DISTANCE;
+    /*if (tNear > tFar || tFar < 0) return -1;
+    return tNear;*/
 }
 
-vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 normal, mat4 rotation) {
-    vec3 ro = (rotation * vec4(ray.o, 1)).xyz;
-    vec3 rd = (rotation * vec4(ray.d, 0)).xyz;
+vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 normal/*, mat4 rotation*/) {
+    /*vec3 ro = (rotation * vec4(ray.o, 1)).xyz;
+    vec3 rd = (rotation * vec4(ray.d, 0)).xyz;*/
+    vec3 ro = ray.o;
+    vec3 rd = ray.d;
     vec3 v1v0 = v1 - v0;
     vec3 v2v0 = v2 - v0;
     vec3 rov0 = ro - v0;
@@ -135,8 +150,8 @@ vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 no
     float v = d * dot(q, v1v0);
     float t = d * dot(-normal, rov0);
     if (u < 0.0 || v < 0.0 || (u + v) > 1.0) t = -1.0;
-    if (dot(normal, ray.d) > 0) normal = -normal;
-    normal *= mat3(rotation);
+    if (dot(normal, rd) > 0) normal = -normal;
+    //normal *= mat3(rotation);
     return vec3(t, u, v);
 }
 
@@ -145,7 +160,7 @@ float checkerboard(vec2 p) {
 }
 
 // ray marching
-float sdBox(vec3 p, vec3 b) {
+/*float sdBox(vec3 p, vec3 b) {
     vec3 di = abs(p) - b;
     float mc = max(di.x, max(di.y, di.z));
     return min(mc, length(max(di, 0.0)));
@@ -178,10 +193,10 @@ float map(in vec3 p, out vec3 trap) {
     return 0.25 * log(m) * sqrt(m) / dz;
 }
 
-/*float map(vec3 p) {
+float map(vec3 p) {
     float d = sdBox(p, vec3(100));
     return d;
-}*/
+}
 
 float intersect(in vec3 ro, in vec3 rd, out vec3 trap) {
     float tmax = MAX_DISTANCE;
@@ -203,8 +218,11 @@ vec3 calcNormal(in vec3 pos) {
     e.yyx*map(pos + e.yyx, a) +
     e.yxy*map(pos + e.yxy, a) +
     e.xxx*map(pos + e.xxx, a) );
-}
+}*/
 ////////////////
+
+int boundsTests = 0;
+int triangleTests = 0;
 
 bool raycast(in Ray ray, out HitInfo hitInfo) {
     hitInfo.distance = MAX_DISTANCE;
@@ -228,50 +246,20 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
             }
         }
     }
-    if (use_accel) {
-        dist = intersect_aabb(ray, sphAABB);
-        if (dist != -1 && dist < hitInfo.distance) {
-            for (int i = 0; i < spheres_count; i++) {
-                dist = intersect_sphere(ray, spheres[i].position, spheres[i].radius);
-                if (dist > 0 && dist < hitInfo.distance) {
-                    hit = true;
-                    hitInfo.distance = dist;
-                    hitInfo.material = spheres[i].material;
-                    hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
-                }
+    dist = intersect_bounding_box(ray, sph_bounds);
+    if (dist != -1 && dist < hitInfo.distance) {
+        for (int i = 0; i < spheres_count; i++) {
+            dist = intersect_sphere(ray, spheres[i].position, spheres[i].radius);
+            if (dist > 0 && dist < hitInfo.distance) {
+                hit = true;
+                hitInfo.distance = dist;
+                hitInfo.material = spheres[i].material;
+                hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
             }
         }
-        dist = intersect_aabb(ray, boxAABB);
-        if (dist != -1 && dist < hitInfo.distance) {
-            for (int i = 0; i < boxes_count; i++) {
-                vec3 normal;
-                dist = intersect_box(Ray(ray.o - boxes[i].position, ray.d), boxes[i].scale, normal, boxes[i].rotation).x;
-                if (dist > 0 && dist < hitInfo.distance) {
-                    hit = true;
-                    hitInfo.distance = dist;
-                    hitInfo.material = boxes[i].material;
-                    hitInfo.normal = normalize(normal);
-                }
-            }
-        }
-        dist = intersect_aabb(ray, triAABB);
-        if (dist != -1 && dist < hitInfo.distance) {
-            int index = 0;
-            for (int i = 0; i < triangles_count; i++) {
-                vec3 normal;
-                vec3 v1 = texelFetch(verticesTexture, index++).xyz;
-                vec3 v2 = texelFetch(verticesTexture, index++).xyz;
-                vec3 v3 = texelFetch(verticesTexture, index++).xyz;
-                dist = intersect_triangle(ray, v1, v2, v3, normal, triangles[i].rotation).x;
-                if (dist > 0 && dist < hitInfo.distance) {
-                    hit = true;
-                    hitInfo.distance = dist;
-                    hitInfo.material = triangles[i].material;
-                    hitInfo.normal = normalize(normal);
-                }
-            }
-        }
-    } else {
+    }
+    dist = intersect_bounding_box(ray, box_bounds);
+    if (dist != -1 && dist < hitInfo.distance) {
         for (int i = 0; i < boxes_count; i++) {
             vec3 normal;
             dist = intersect_box(Ray(ray.o - boxes[i].position, ray.d), boxes[i].scale, normal, boxes[i].rotation).x;
@@ -282,24 +270,45 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
                 hitInfo.normal = normalize(normal);
             }
         }
-        for (int i = 0; i < spheres_count; i++) {
-            dist = intersect_sphere(ray, spheres[i].position, spheres[i].radius);
-            if (dist > 0 && dist < hitInfo.distance) {
-                hit = true;
-                hitInfo.distance = dist;
-                hitInfo.material = spheres[i].material;
-                hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
+    }
+    // BVH
+    int stack[32];
+    int index = 0;
+    stack[index++] = 0;
+    while (index > 0) {
+        int nodeIndex = stack[--index];
+        Node node = nodes[nodeIndex];
+        if (node.child_index == 0) {
+            for (int i = int(node.triangle_start_index); i < int(node.triangle_start_index + node.triangles_count); i++) {
+                vec3 normal;
+                Triangle tri = triangles[i];
+                dist = intersect_triangle(ray, tri.v1, tri.v2, tri.v3, normal/*, triangles_rotation*/).x;
+                triangleTests++;
+                if (dist > 0 && dist < hitInfo.distance) {
+                    hit = true;
+                    hitInfo.distance = dist;
+                    hitInfo.material = Material(vec3(1, 0.5, 0.2), true, 0, 0.3, false, 0);
+                    hitInfo.normal = normalize(normal);
+                }
             }
-        }
-        for (int i = 0; i < triangles_count; i++) {
-            vec3 normal;
-            dist = intersect_triangle(ray, triangles[i].v1, triangles[i].v2, triangles[i].v3, normal, triangles[i].rotation).x;
-            if (dist > 0 && dist < hitInfo.distance) {
-                hit = true;
-                hitInfo.distance = dist;
-                hitInfo.material = triangles[i].material;
-                hitInfo.normal = normalize(normal);
-            }
+        } else {
+            int firstChildIndex = int(node.child_index);
+            int secondChildIndex = int(node.child_index) + 1;
+            Node firstChild = nodes[firstChildIndex];
+            Node secondChild = nodes[secondChildIndex];
+
+            float firstChildDist = intersect_bounding_box(ray, firstChild.bounds);
+            float secondChildDist = intersect_bounding_box(ray, secondChild.bounds);
+            boundsTests += 2;
+
+            bool isNearestFirst = firstChildDist < secondChildDist;
+            float distNear = isNearestFirst ? firstChildDist : secondChildDist;
+            float distFar = isNearestFirst ? secondChildDist : firstChildDist;
+            int childIndexNear = isNearestFirst ? firstChildIndex : secondChildIndex;
+            int childIndexFar = isNearestFirst ? secondChildIndex : firstChildIndex;
+
+            if (distFar < hitInfo.distance) stack[index++] = childIndexFar;
+            if (distNear < hitInfo.distance) stack[index++] = childIndexNear;
         }
     }
     // ray marching
@@ -475,6 +484,12 @@ void main() {
     }
     color /= samples;
 
+    if (debug_bvh) {
+        float bounds_weight = boundsTests / float(bounds_test_threshold);
+        float triangles_weight = triangleTests / float(triangle_test_threshold);
+        color = max(bounds_weight, triangles_weight) > 1 ? vec3(1) : vec3(triangles_weight, 0, bounds_weight);
+    }
+
     float factor = (frames) / (frames + 1.0);
     if (temporal_reprojection) {
         vec2 reproj_fragcoord = reproject(mat3(prev_camera_rotation), prev_camera_position, hitinfo, fov_converted);
@@ -493,14 +508,6 @@ void main() {
         vec3 prev_color = texture(prev_frame, gl_FragCoord.xy / resolution).rgb;
         color = mix(color, prev_color, factor);
     }
-
-    /*if (show_depth || show_albedo || show_normals) {
-        HitInfo hitInfo;
-        raycast(ray, hitInfo);
-        color = hitInfo.material.color;
-        if (show_normals) color = hitInfo.normal * 0.5 + 0.5;
-        if (show_depth) color = vec3(hitInfo.minDistance) * 0.001;
-    }*/
 
     imageStore(normal_image, ivec2(gl_FragCoord.xy), vec4(hitinfo.normal, 0.0));
     imageStore(position_image, ivec2(gl_FragCoord.xy), vec4(hitinfo.hitpos, 0.0));

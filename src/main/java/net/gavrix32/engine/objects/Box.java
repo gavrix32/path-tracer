@@ -1,6 +1,5 @@
 package net.gavrix32.engine.objects;
 
-import net.gavrix32.engine.graphics.AABB;
 import net.gavrix32.engine.graphics.Material;
 import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector3f;
@@ -40,12 +39,5 @@ public class Box extends Shape {
 
     public Matrix4f getRotationMatrix() {
         return rotationMatrix;
-    }
-
-    public AABB getAABB() {
-        return new AABB(
-                new Vector3f(pos).sub(scale),
-                new Vector3f(pos).add(scale)
-        );
     }
 }

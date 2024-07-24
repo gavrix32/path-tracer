@@ -1,7 +1,10 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.app.scenes.BVHTest;
 import net.gavrix32.engine.io.Window;
+import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector2f;
+import net.gavrix32.engine.math.Vector3f;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
@@ -9,16 +12,18 @@ import static org.lwjgl.opengl.GL46C.*;
 public class Renderer {
     private static Scene scene;
     private static Shader pathtraceShader, atrousShader, presentShader;
-    private static int frames = 0, currAcc = 0, prevAcc = 1, currAtrous = 0, prevAtrous = 1, sampler, normalImage, positionImage, albedoImage;
+    private static int frames = 0, currAcc = 0, prevAcc = 1, currAtrous = 0, prevAtrous = 1,
+            sampler, normalImage, positionImage, albedoImage, bvh_nodes_ssbo, bvh_triangles_ssbo;
     private static final int[] accFramebuffer = new int[2], accTexture = new int[2];
     private static final int[] atrousFramebuffer = new int[2], atrousTexture = new int[2];
-    // private static int verticesBuffer, verticesTexture;
+    public static Vector3f triangles_offset = new Vector3f(0, 0, 0), triangles_rotation = new Vector3f(0, 0, 0);
 
     private static int samples, bounces;
     private static float gamma, exposure, focusDistance, aperture, fov;
     private static boolean accumulation, temporalReprojection, temporalAntialiasing, atrousFilter;
 
-    // TODO: scene in texture
+    private static float[] bvh_node_data, bvh_triangles_data;
+
     // TODO: isKeyUp method
     // TODO: try inverse view matrix on CPU
 
@@ -98,6 +103,51 @@ public class Renderer {
         sampler = glGenSamplers();
         glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        // Send BVH data to GPU
+        BoundingVolumeHierarchy bvh = BVHTest.bvh;
+
+        bvh_node_data = new float[12 * bvh.nodes.size()];
+        int index = 0;
+        for (int i = 0; i < bvh.nodes.size(); i++) {
+            bvh_node_data[index++] = bvh.nodes.get(i).bounds.min.x;
+            bvh_node_data[index++] = bvh.nodes.get(i).bounds.min.y;
+            bvh_node_data[index++] = bvh.nodes.get(i).bounds.min.z;
+            bvh_node_data[index++] = 0.0f;
+            bvh_node_data[index++] = bvh.nodes.get(i).bounds.max.x;
+            bvh_node_data[index++] = bvh.nodes.get(i).bounds.max.y;
+            bvh_node_data[index++] = bvh.nodes.get(i).bounds.max.z;
+            bvh_node_data[index++] = 0.0f;
+            bvh_node_data[index++] = bvh.nodes.get(i).triangleStartIndex;
+            bvh_node_data[index++] = bvh.nodes.get(i).trianglesCount;
+            bvh_node_data[index++] = bvh.nodes.get(i).childIndex;
+            bvh_node_data[index++] = 0.0f;
+        }
+        bvh_nodes_ssbo = glGenBuffers();
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, bvh_nodes_ssbo);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, bvh_node_data, GL_STATIC_DRAW);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, bvh_nodes_ssbo);
+
+        bvh_triangles_data = new float[12 * bvh.triangles.size()];
+        index = 0;
+        for (int i = 0; i < bvh.triangles.size(); i++) {
+            bvh_triangles_data[index++] = bvh.triangles.get(i).v1.x;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).v1.y;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).v1.z;
+            bvh_triangles_data[index++] = 0.0f;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).v2.x;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).v2.y;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).v2.z;
+            bvh_triangles_data[index++] = 0.0f;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).v3.x;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).v3.y;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).v3.z;
+            bvh_triangles_data[index++] = 0.0f;
+        }
+        bvh_triangles_ssbo = glGenBuffers();
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, bvh_triangles_ssbo);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, bvh_triangles_data, GL_STATIC_DRAW);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, bvh_triangles_ssbo);
     }
 
     public static void render() {
@@ -119,7 +169,9 @@ public class Renderer {
         pathtraceShader.setFloat("focus_distance", focusDistance);
         pathtraceShader.setFloat("aperture", aperture);
         pathtraceShader.setBool("sky_has_texture", scene.sky.hasTexture());
-        pathtraceShader.setBool("use_accel", true);
+        pathtraceShader.setBool("debug_bvh", Gui.debugBVH.get());
+        pathtraceShader.setInt("bounds_test_threshold", Gui.boundsTestThreshold[0]);
+        pathtraceShader.setInt("triangle_test_threshold", Gui.triangleTestThreshold[0]);
         if (scene.sky.hasTexture()) {
             glActiveTexture(GL_TEXTURE1);
             scene.sky.bindTexture();
@@ -151,24 +203,24 @@ public class Renderer {
         } else {
             pathtraceShader.setInt("plane.exists", 0);
         }
-        Accelerator accelerator = new Accelerator(scene);
         // Spheres
-        pathtraceShader.setVec3("sphAABB.min", accelerator.getSpheresBoundingBox().min);
-        pathtraceShader.setVec3("sphAABB.max", accelerator.getSpheresBoundingBox().max);
+        BoundingBox sphBounds = new BoundingBox();
         pathtraceShader.setInt("spheres_count", scene.spheres.size());
         for (int i = 0; i < scene.spheres.size(); i++) {
-            pathtraceShader.setVec3("spheres[" + i + "].position", scene.spheres.get(i).getPos());
-            pathtraceShader.setFloat("spheres[" + i + "].radius", scene.spheres.get(i).getRadius());
-            pathtraceShader.setVec3("spheres[" + i + "].material.color", scene.spheres.get(i).getColor());
-            pathtraceShader.setBool("spheres[" + i + "].material.is_metal", scene.spheres.get(i).getMaterial().isMetal());
-            pathtraceShader.setFloat("spheres[" + i + "].material.emission", scene.spheres.get(i).getMaterial().getEmission());
-            pathtraceShader.setFloat("spheres[" + i + "].material.roughness", scene.spheres.get(i).getMaterial().getRoughness());
-            pathtraceShader.setBool("spheres[" + i + "].material.is_glass", scene.spheres.get(i).getMaterial().isGlass());
-            pathtraceShader.setFloat("spheres[" + i + "].material.IOR", scene.spheres.get(i).getMaterial().getIOR());
+            pathtraceShader.setVec3("spheres[" + i + "].position", scene.getSphere(i).getPos());
+            pathtraceShader.setFloat("spheres[" + i + "].radius", scene.getSphere(i).getRadius());
+            pathtraceShader.setVec3("spheres[" + i + "].material.color", scene.getSphere(i).getColor());
+            pathtraceShader.setBool("spheres[" + i + "].material.is_metal", scene.getSphere(i).getMaterial().isMetal());
+            pathtraceShader.setFloat("spheres[" + i + "].material.emission", scene.getSphere(i).getMaterial().getEmission());
+            pathtraceShader.setFloat("spheres[" + i + "].material.roughness", scene.getSphere(i).getMaterial().getRoughness());
+            pathtraceShader.setBool("spheres[" + i + "].material.is_glass", scene.getSphere(i).getMaterial().isGlass());
+            pathtraceShader.setFloat("spheres[" + i + "].material.IOR", scene.getSphere(i).getMaterial().getIOR());
+            sphBounds.addSphere(scene.getSphere(i));
         }
+        pathtraceShader.setVec3("sph_bounds.min", sphBounds.min);
+        pathtraceShader.setVec3("sph_bounds.max", sphBounds.max);
         // Boxes
-        pathtraceShader.setVec3("boxAABB.min", accelerator.getBoxesBoundingBox().min);
-        pathtraceShader.setVec3("boxAABB.max", accelerator.getBoxesBoundingBox().max);
+        BoundingBox boxBounds = new BoundingBox();
         pathtraceShader.setInt("boxes_count", scene.boxes.size());
         for (int i = 0; i < scene.boxes.size(); i++) {
             pathtraceShader.setVec3("boxes[" + i + "].position", scene.boxes.get(i).getPos());
@@ -177,51 +229,21 @@ public class Renderer {
                     scene.boxes.get(i).getRot().y,
                     scene.boxes.get(i).getRot().z
             );
-            pathtraceShader.setMat4("boxes[" + i + "].rotation", scene.boxes.get(i).getRotationMatrix());
-            pathtraceShader.setVec3("boxes[" + i + "].scale", scene.boxes.get(i).getScale());
-            pathtraceShader.setVec3("boxes[" + i + "].material.color", scene.boxes.get(i).getColor());
-            pathtraceShader.setBool("boxes[" + i + "].material.is_metal", scene.boxes.get(i).getMaterial().isMetal());
-            pathtraceShader.setFloat("boxes[" + i + "].material.emission", scene.boxes.get(i).getMaterial().getEmission());
-            pathtraceShader.setFloat("boxes[" + i + "].material.roughness", scene.boxes.get(i).getMaterial().getRoughness());
-            pathtraceShader.setBool("boxes[" + i + "].material.is_glass", scene.boxes.get(i).getMaterial().isGlass());
-            pathtraceShader.setFloat("boxes[" + i + "].material.IOR", scene.boxes.get(i).getMaterial().getIOR());
+            pathtraceShader.setMat4("boxes[" + i + "].rotation", scene.getBox(i).getRotationMatrix());
+            pathtraceShader.setVec3("boxes[" + i + "].scale", scene.getBox(i).getScale());
+            pathtraceShader.setVec3("boxes[" + i + "].material.color", scene.getBox(i).getColor());
+            pathtraceShader.setBool("boxes[" + i + "].material.is_metal", scene.getBox(i).getMaterial().isMetal());
+            pathtraceShader.setFloat("boxes[" + i + "].material.emission", scene.getBox(i).getMaterial().getEmission());
+            pathtraceShader.setFloat("boxes[" + i + "].material.roughness", scene.getBox(i).getMaterial().getRoughness());
+            pathtraceShader.setBool("boxes[" + i + "].material.is_glass", scene.getBox(i).getMaterial().isGlass());
+            pathtraceShader.setFloat("boxes[" + i + "].material.IOR", scene.getBox(i).getMaterial().getIOR());
+            boxBounds.addBox(scene.getBox(i));
         }
-        // Triangles
-        /*pt_shader.setVec3("triAABB.min", accelerator.getTrianglesBoundingBox().min);
-        pt_shader.setVec3("triAABB.max", accelerator.getTrianglesBoundingBox().max);
+        pathtraceShader.setVec3("box_bounds.min", boxBounds.min);
+        pathtraceShader.setVec3("box_bounds.max", boxBounds.max);
 
-        if (OpenBox.getModel() != null) {
-            verticesBuffer = glGenBuffers();
-            glBindBuffer(GL_TEXTURE_BUFFER, verticesBuffer);
-            glBufferData(GL_TEXTURE_BUFFER, OpenBox.getModel().getVerticesData(), GL_STATIC_DRAW);
-            //glBufferData(GL_TEXTURE_BUFFER, OpenBox.getModel().getVerticesData(), GL_STATIC_DRAW);
-        }
-
-        verticesTexture = glGenTextures();
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_BUFFER, verticesTexture);
-        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, verticesBuffer);
-        pt_shader.setInt("verticesTexture", 2);
-
-        // Triangles BVH data
-        pt_shader.setInt("triangles_count", scene.triangles.size());
-        for (int i = 0; i < scene.triangles.size(); i++) {
-            pt_shader.setVec3("triangles[" + i + "].v1", scene.triangles.get(i).getV1());
-            pt_shader.setVec3("triangles[" + i + "].v2", scene.triangles.get(i).getV2());
-            pt_shader.setVec3("triangles[" + i + "].v3", scene.triangles.get(i).getV3());
-            scene.triangles.get(i).getRotationMatrix().rotate(
-                    scene.triangles.get(i).getRot().x,
-                    scene.triangles.get(i).getRot().y,
-                    scene.triangles.get(i).getRot().z
-            );
-            pt_shader.setMat4("triangles[" + i + "].rotation", scene.triangles.get(i).getRotationMatrix());
-            pt_shader.setVec3("triangles[" + i + "].material.color", scene.triangles.get(i).getColor());
-            pt_shader.setBool("triangles[" + i + "].material.is_metal", scene.triangles.get(i).getMaterial().isMetal());
-            pt_shader.setFloat("triangles[" + i + "].material.emission", scene.triangles.get(i).getMaterial().getEmission());
-            pt_shader.setFloat("triangles[" + i + "].material.roughness", scene.triangles.get(i).getMaterial().getRoughness());
-            pt_shader.setBool("triangles[" + i + "].material.is_glass", scene.triangles.get(i).getMaterial().isGlass());
-            pt_shader.setFloat("triangles[" + i + "].material.IOR", scene.triangles.get(i).getMaterial().getIOR());
-        }*/
+        pathtraceShader.setVec3("triangles_offset", triangles_offset);
+        pathtraceShader.setMat4("triangles_rotation", new Matrix4f().rotate(triangles_rotation));
 
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, accTexture[prevAcc]);
