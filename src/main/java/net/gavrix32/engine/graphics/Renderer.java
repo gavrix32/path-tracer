@@ -11,24 +11,29 @@ import static org.lwjgl.opengl.GL46C.*;
 
 public class Renderer {
     private static Scene scene;
-    private static Shader pathtraceShader, atrousShader, presentShader;
-    private static int frames = 0, currAcc = 0, prevAcc = 1, currAtrous = 0, prevAtrous = 1,
-            sampler, normalImage, positionImage, albedoImage, bvh_nodes_ssbo, bvh_triangles_ssbo;
+    private static Shader pathtraceShader;
+    private static Shader atrousShader;
+    private static Shader presentShader;
+    private static int accumulatedSamples = 0;
+    private static int prevAcc = 1, currAcc = 0;
+    private static int prevAtrous = 1, currAtrous = 0;
+    private static int albedoImage, positionImage, normalImage;
+    private static int sampler;
     private static final int[] accFramebuffer = new int[2], accTexture = new int[2];
     private static final int[] atrousFramebuffer = new int[2], atrousTexture = new int[2];
     public static Vector3f triangles_offset = new Vector3f(0, 0, 0), triangles_rotation = new Vector3f(0, 0, 0);
 
-    private static int samples, bounces;
+    // Config variables
+    private static int samples, maxAccumulatedSamples, bounces;
     private static float gamma, exposure, focusDistance, aperture, fov;
     private static boolean accumulation, temporalReprojection, temporalAntialiasing, atrousFilter;
-
-    private static float[] bvh_node_data, bvh_triangles_data;
 
     // TODO: isKeyUp method
     // TODO: try inverse view matrix on CPU
 
     public static void init() {
         samples = Config.getInt("samples");
+        maxAccumulatedSamples = Config.getInt("max_accumulated_samples");
         bounces = Config.getInt("bounces");
         gamma = Config.getFloat("gamma");
         exposure = Config.getFloat("exposure");
@@ -107,7 +112,7 @@ public class Renderer {
         // Send BVH data to GPU
         BoundingVolumeHierarchy bvh = BVHTest.bvh;
 
-        bvh_node_data = new float[12 * bvh.nodes.size()];
+        float[] bvh_node_data = new float[12 * bvh.nodes.size()];
         int index = 0;
         for (int i = 0; i < bvh.nodes.size(); i++) {
             bvh_node_data[index++] = bvh.nodes.get(i).bounds.min.x;
@@ -123,12 +128,12 @@ public class Renderer {
             bvh_node_data[index++] = bvh.nodes.get(i).childIndex;
             bvh_node_data[index++] = 0.0f;
         }
-        bvh_nodes_ssbo = glGenBuffers();
+        int bvh_nodes_ssbo = glGenBuffers();
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, bvh_nodes_ssbo);
         glBufferData(GL_SHADER_STORAGE_BUFFER, bvh_node_data, GL_STATIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, bvh_nodes_ssbo);
 
-        bvh_triangles_data = new float[12 * bvh.triangles.size()];
+        float[] bvh_triangles_data = new float[12 * bvh.triangles.size()];
         index = 0;
         for (int i = 0; i < bvh.triangles.size(); i++) {
             bvh_triangles_data[index++] = bvh.triangles.get(i).v1.x;
@@ -144,7 +149,7 @@ public class Renderer {
             bvh_triangles_data[index++] = bvh.triangles.get(i).v3.z;
             bvh_triangles_data[index++] = 0.0f;
         }
-        bvh_triangles_ssbo = glGenBuffers();
+        int bvh_triangles_ssbo = glGenBuffers();
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, bvh_triangles_ssbo);
         glBufferData(GL_SHADER_STORAGE_BUFFER, bvh_triangles_data, GL_STATIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, bvh_triangles_ssbo);
@@ -160,8 +165,9 @@ public class Renderer {
         pathtraceShader.setVec3("camera_position", scene.camera.getPosition());
         pathtraceShader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
         pathtraceShader.setFloat("time", (float) glfwGetTime());
-        pathtraceShader.setInt("frames", frames);
         pathtraceShader.setInt("samples", samples);
+        pathtraceShader.setInt("accumulated_samples", accumulatedSamples);
+        pathtraceShader.setInt("max_accumulated_samples", maxAccumulatedSamples);
         pathtraceShader.setInt("bounces", bounces);
         pathtraceShader.setFloat("fov", fov);
         pathtraceShader.setBool("temporal_reprojection", temporalReprojection);
@@ -277,6 +283,7 @@ public class Renderer {
                 atrousShader.setFloat("n_phi", 1.0f / (1 << i) * Gui.n_phi[0]);
                 atrousShader.setFloat("p_phi", 1.0f / (1 << i) * Gui.p_phi[0]);
                 Quad.draw();
+
                 swapAtrousFrames();
             }
         }
@@ -291,11 +298,11 @@ public class Renderer {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         Quad.draw();
         swapAccFrames();
-        if (accumulation) frames++;
+        if (accumulation && accumulatedSamples != maxAccumulatedSamples) accumulatedSamples++;
     }
 
     public static void resetAccFrames() {
-        frames = 0;
+        accumulatedSamples = 0;
     }
 
     private static void swapAccFrames() {
@@ -345,6 +352,16 @@ public class Renderer {
         Config.setInt("samples", value);
     }
 
+    public static int getMaxAccumulatedSamples() {
+        return maxAccumulatedSamples;
+    }
+
+    public static void setMaxAccumulatedSamples(int value) {
+        resetAccFrames();
+        maxAccumulatedSamples = value;
+        Config.setInt("max_accumulated_samples", value);
+    }
+
     public static int getBounces() {
         return bounces;
     }
@@ -355,8 +372,8 @@ public class Renderer {
         Config.setInt("bounces", value);
     }
 
-    public static int getFrames() {
-        return frames;
+    public static int getAccumulatedSamples() {
+        return accumulatedSamples;
     }
 
     public static boolean isAccumulation() {

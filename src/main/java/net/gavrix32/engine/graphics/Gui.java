@@ -6,7 +6,6 @@ import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
-import net.gavrix32.app.Main;
 import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.utils.Utils;
@@ -21,7 +20,7 @@ public class Gui {
     private static final ImGuiImplGlfw imGuiImplGlfw = new ImGuiImplGlfw();
     private static final String fontPath = "fonts/Inter-Regular.ttf";
 
-    private static final int[] vsync = new int[1], fpsLimit = new int[1], samples = new int[1], bounces = new int[1];
+    private static final int[] vsync = new int[1], fpsLimit = new int[1], samples = new int[1], bounces = new int[1], maxAccumulatedSamples = new int[1];
     public static final int[] iterations = new int[] {5};
     private static final float[] gamma = new float[1], exposure = new float[1], focusDistance = new float[1], aperture = new float[1], fov = new float[1];
     public static final float[] stepWidth = new float[] {1.0f}, c_phi = new float[] {0.5f}, n_phi = new float[] {0.5f}, p_phi = new float[] {1000.0f};
@@ -30,7 +29,7 @@ public class Gui {
     private static final ImInt sceneId = new ImInt(6);
 
     // Debug BVH
-    public static final ImBoolean debugBVH = new ImBoolean(true);
+    public static final ImBoolean debugBVH = new ImBoolean(false);
     public static final int[] boundsTestThreshold = new int[] {400}, triangleTestThreshold = new int[] {50};
 
     static {
@@ -55,6 +54,7 @@ public class Gui {
         focusDistance[0] = Renderer.getFocusDistance();
         aperture[0] = Renderer.getAperture();
         fov[0] = Renderer.getFOV();
+        maxAccumulatedSamples[0] = Renderer.getMaxAccumulatedSamples();
         accumulation.set(Renderer.isAccumulation());
         temporalReprojection.set(Renderer.isTemporalReprojection());
         temporalAntialiasing.set(Renderer.isTemporalAntialiasing());
@@ -70,7 +70,7 @@ public class Gui {
         ImGui.pushItemWidth(150);
         ImGui.text("Frametime: " + Math.floor(Engine.getDeltaTime() * 1000) + " ms ("
                 + (int) (1 / Engine.getDeltaTime()) + " FPS)");
-        ImGui.text("Accumulated frames: " + Renderer.getFrames());
+        ImGui.text("Accumulated samples: " + Renderer.getAccumulatedSamples());
         ImGui.separator();
         if (ImGui.treeNode("Renderer")) {
             String vsyncFormat = "";
@@ -99,6 +99,9 @@ public class Gui {
             if (ImGui.sliderFloat("Aperture", aperture, 0.0f, 50.0f, apertureFormat)) Renderer.setAperture(aperture[0]);
             if (ImGui.sliderFloat("FOV", fov, 0.0f, 180.0f, "%.1f")) Renderer.setFOV(fov[0]);
             if (ImGui.checkbox("Accumulation", accumulation)) Renderer.useAccumulation(accumulation.get());
+            ImGui.beginDisabled(!accumulation.get());
+            if (ImGui.sliderInt("Max Accumulated Samples", maxAccumulatedSamples, -1, 100)) Renderer.setMaxAccumulatedSamples(maxAccumulatedSamples[0]);
+            ImGui.endDisabled();
             if (ImGui.checkbox("Temporal Reprojection", temporalReprojection)) Renderer.useTemporalReprojection(temporalReprojection.get());
             if (ImGui.checkbox("Temporal Anti-Aliasing", temporalAntialiasing)) Renderer.useTemporalAntialiasing(temporalAntialiasing.get());
             if (ImGui.checkbox("À-Trous Filter", atrousFilter)) Renderer.useAtrousFilter(atrousFilter.get());
@@ -126,6 +129,7 @@ public class Gui {
                 focusDistance[0] = Config.getFloat("focus_distance"); Renderer.setFocusDistance(focusDistance[0]);
                 aperture[0] = Config.getFloat("aperture"); Renderer.setAperture(aperture[0]);
                 fov[0] = Config.getFloat("fov"); Renderer.setFOV(fov[0]);
+                maxAccumulatedSamples[0] = Config.getInt("max_accumulated_samples"); Renderer.setMaxAccumulatedSamples(maxAccumulatedSamples[0]);
                 accumulation.set(Config.getBoolean("accumulation")); Renderer.useAccumulation(accumulation.get());
                 temporalReprojection.set(Config.getBoolean("temporal_reprojection")); Renderer.useTemporalReprojection(temporalReprojection.get());
                 temporalAntialiasing.set(Config.getBoolean("temporal_antialiasing")); Renderer.useTemporalAntialiasing(temporalAntialiasing.get());

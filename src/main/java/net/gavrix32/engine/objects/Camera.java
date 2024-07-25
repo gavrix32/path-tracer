@@ -1,6 +1,5 @@
 package net.gavrix32.engine.objects;
 
-import net.gavrix32.engine.graphics.Renderer;
 import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector3f;
 

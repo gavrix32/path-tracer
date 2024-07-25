@@ -4,12 +4,12 @@ out vec4 out_color;
 
 #define PI 3.14159
 #define EPSILON 0.001
-#define MAX_DISTANCE 1. / 0.
+#define MAX_DISTANCE 1e10
 #define MAX_SPHERES 64
 #define MAX_BOXES 64
 
 struct Ray {
-    vec3 o, d;
+    vec3 origin, dir, invdir;
 };
 
 struct Material {
@@ -66,7 +66,7 @@ struct Node {
 uniform vec2 resolution;
 uniform vec3 camera_position, prev_camera_position, triangles_offset;
 uniform mat4 camera_rotation, prev_camera_rotation, triangles_rotation;
-uniform int samples, bounces, spheres_count, boxes_count, frames;
+uniform int samples, bounces, spheres_count, boxes_count, accumulated_samples, max_accumulated_samples;
 uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture;
 uniform sampler2D sky_texture, prev_frame;
 uniform float time, fov, focus_distance, aperture;
@@ -93,21 +93,21 @@ layout(binding = 1) readonly buffer triangle_buffer {
 };
 
 float intersect_plane(Ray ray, vec4 p) {
-    return -(dot(ray.o, p.xyz) + p.w) / dot(ray.d, p.xyz);
+    return -(dot(ray.origin, p.xyz) + p.w) / dot(ray.dir, p.xyz);
 }
 
 float intersect_sphere(Ray ray, vec3 ce, float ra) {
-    vec3 oc = ray.o - ce;
-    float b = dot(oc, ray.d);
+    vec3 oc = ray.origin - ce;
+    float b = dot(oc, ray.dir);
     float c = dot(oc, oc) - ra * ra;
     float h = b * b - c;
-    if (h < 0) return -1;
+    if (h < 0.0) return -1.0;
     return -b - sqrt(h);
 }
 
 float intersect_box(Ray ray, vec3 scale, out vec3 normal, mat4 rotation) {
-    vec3 ro = (rotation * vec4(ray.o, 1)).xyz;
-    vec3 rd = (rotation * vec4(ray.d, 0)).xyz;
+    vec3 ro = (rotation * vec4(ray.origin, 1.0)).xyz;
+    vec3 rd = (rotation * vec4(ray.dir, 0.0)).xyz;
     vec3 m = 1 / rd;
     vec3 n = m * ro;
     vec3 k = abs(m) * scale;
@@ -115,31 +115,29 @@ float intersect_box(Ray ray, vec3 scale, out vec3 normal, mat4 rotation) {
     vec3 t2 = -n + k;
     float tN = max(max(t1.x, t1.y), t1.z);
     float tF = min(min(t2.x, t2.y), t2.z);
-    if (tN > tF || tF < 0) return -1;
-    normal = (tN > 0) ? step(vec3(tN), t1) : step(t2, vec3(tF));
+    if (tN > tF || tF < 0.0) return -1.0;
+    normal = (tN > 0.0) ? step(vec3(tN), t1) : step(t2, vec3(tF));
     normal *= -sign(rd);
     normal *= mat3(rotation);
     return tN;
 }
 
 float intersect_bounding_box(Ray ray, BoundingBox bounds) {
-    vec3 tMin = (bounds.min - ray.o) / ray.d;
-    vec3 tMax = (bounds.max - ray.o) / ray.d;
+    vec3 tMin = (bounds.min - ray.origin) * ray.invdir;
+    vec3 tMax = (bounds.max - ray.origin) * ray.invdir;
     vec3 t1 = min(tMin, tMax);
     vec3 t2 = max(tMin, tMax);
     float tFar = min(min(t2.x, t2.y), t2.z);
     float tNear = max(max(t1.x, t1.y), t1.z);
-    bool hit = tFar >= tNear && tFar > 0;
-    return hit ? tNear : MAX_DISTANCE;
-    /*if (tNear > tFar || tFar < 0) return -1;
-    return tNear;*/
+    if (tNear > tFar || tFar < 0.0) return -1.0;
+    return tNear;
 }
 
 vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 normal/*, mat4 rotation*/) {
     /*vec3 ro = (rotation * vec4(ray.o, 1)).xyz;
     vec3 rd = (rotation * vec4(ray.d, 0)).xyz;*/
-    vec3 ro = ray.o;
-    vec3 rd = ray.d;
+    vec3 ro = ray.origin;
+    vec3 rd = ray.dir;
     vec3 v1v0 = v1 - v0;
     vec3 v2v0 = v2 - v0;
     vec3 rov0 = ro - v0;
@@ -150,13 +148,13 @@ vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 no
     float v = d * dot(q, v1v0);
     float t = d * dot(-normal, rov0);
     if (u < 0.0 || v < 0.0 || (u + v) > 1.0) t = -1.0;
-    if (dot(normal, rd) > 0) normal = -normal;
+    if (dot(normal, rd) > 0.0) normal = -normal;
     //normal *= mat3(rotation);
     return vec3(t, u, v);
 }
 
 float checkerboard(vec2 p) {
-    return mod(floor(p.x) + floor(p.y), 2);
+    return mod(floor(p.x) + floor(p.y), 2.0);
 }
 
 // ray marching
@@ -229,15 +227,15 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
     bool hit = false;
     float dist;
     if (plane.exists) {
-        dist = intersect_plane(ray, vec4(0, 1, 0, 0));
-        if (dist > 0 && dist < hitInfo.distance) {
+        dist = intersect_plane(ray, vec4(0.0, 1.0, 0.0, 0.0));
+        if (dist > 0.0 && dist < hitInfo.distance) {
             hit = true;
             hitInfo.distance = dist;
             hitInfo.material = plane.material;
-            hitInfo.normal = vec3(0, 1, 0);
+            hitInfo.normal = vec3(0.0, 1.0, 0.0);
             if (plane.checkerboard) {
-                float cb = checkerboard(vec3(ray.d * dist + ray.o).xz / (plane.scale * 0.4f));
-                if (cb != 0)
+                float cb = checkerboard(vec3(ray.dir * dist + ray.origin).xz / (plane.scale * 0.4f));
+                if (cb != 0.0)
                     hitInfo.material.color = plane.color1;
                 else
                     hitInfo.material.color = plane.color2;
@@ -247,23 +245,23 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
         }
     }
     dist = intersect_bounding_box(ray, sph_bounds);
-    if (dist != -1 && dist < hitInfo.distance) {
+    if (dist != -1.0 && dist < hitInfo.distance) {
         for (int i = 0; i < spheres_count; i++) {
             dist = intersect_sphere(ray, spheres[i].position, spheres[i].radius);
-            if (dist > 0 && dist < hitInfo.distance) {
+            if (dist > 0.0 && dist < hitInfo.distance) {
                 hit = true;
                 hitInfo.distance = dist;
                 hitInfo.material = spheres[i].material;
-                hitInfo.normal = normalize(ray.o + ray.d * dist - spheres[i].position);
+                hitInfo.normal = normalize(ray.origin + ray.dir * dist - spheres[i].position);
             }
         }
     }
     dist = intersect_bounding_box(ray, box_bounds);
-    if (dist != -1 && dist < hitInfo.distance) {
+    if (dist != -1.0 && dist < hitInfo.distance) {
         for (int i = 0; i < boxes_count; i++) {
             vec3 normal;
-            dist = intersect_box(Ray(ray.o - boxes[i].position, ray.d), boxes[i].scale, normal, boxes[i].rotation).x;
-            if (dist > 0 && dist < hitInfo.distance) {
+            dist = intersect_box(Ray(ray.origin - boxes[i].position, ray.dir, ray.invdir), boxes[i].scale, normal, boxes[i].rotation).x;
+            if (dist > 0.0 && dist < hitInfo.distance) {
                 hit = true;
                 hitInfo.distance = dist;
                 hitInfo.material = boxes[i].material;
@@ -282,12 +280,12 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
             for (int i = int(node.triangle_start_index); i < int(node.triangle_start_index + node.triangles_count); i++) {
                 vec3 normal;
                 Triangle tri = triangles[i];
-                dist = intersect_triangle(ray, tri.v1, tri.v2, tri.v3, normal/*, triangles_rotation*/).x;
+                dist = intersect_triangle(ray, tri.v1, tri.v2, tri.v3, normal).x;
                 triangleTests++;
                 if (dist > 0 && dist < hitInfo.distance) {
                     hit = true;
                     hitInfo.distance = dist;
-                    hitInfo.material = Material(vec3(1, 0.5, 0.2), true, 0, 0.3, false, 0);
+                    hitInfo.material = Material(vec3(1.0, 0.5, 0.2), true, 0.0, 0.3, false, 0.0);
                     hitInfo.normal = normalize(normal);
                 }
             }
@@ -307,8 +305,8 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
             int childIndexNear = isNearestFirst ? firstChildIndex : secondChildIndex;
             int childIndexFar = isNearestFirst ? secondChildIndex : firstChildIndex;
 
-            if (distFar < hitInfo.distance) stack[index++] = childIndexFar;
-            if (distNear < hitInfo.distance) stack[index++] = childIndexNear;
+            if (distFar != -1.0 && distFar < hitInfo.distance) stack[index++] = childIndexFar;
+            if (distNear != -1.0 && distNear < hitInfo.distance) stack[index++] = childIndexNear;
         }
     }
     // ray marching
@@ -328,12 +326,11 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
         hitInfo.normal = calcNormal(ray.o + ray.d * dist);
     }*/
     ///////////////
-    hitInfo.hitpos = ray.o + ray.d * hitInfo.distance;
+    hitInfo.hitpos = ray.origin + ray.dir * hitInfo.distance;
     if (!hit) {
         hitInfo.material = sky.material;
-        hitInfo.distance = MAX_DISTANCE;
         if (sky_has_texture) {
-            vec2 uv_ = vec2(atan(ray.d.z, ray.d.x) / PI, asin(ray.d.y) * 2 / PI);
+            vec2 uv_ = vec2(atan(ray.dir.z, ray.dir.x) / PI, asin(ray.dir.y) * 2.0 / PI);
             uv_ = uv_ * 0.5 + 0.5;
             hitInfo.material.color = texture(sky_texture, uv_).rgb;
         } else {
@@ -355,13 +352,13 @@ uint pcg_hash(uint seed) {
 
 float random() {
     seed = pcg_hash(seed);
-    return float(seed) * (1 / 4294967296.0);
+    return float(seed) * (1.0 / 4294967296.0);
 }
 
 vec3 random_cosine_weighted_hemisphere(vec3 normal) {
-    float a = random() * 2 * PI;
-    float z = random() * 2 - 1;
-    float r = sqrt(1 - z * z);
+    float a = random() * 2.0 * PI;
+    float z = random() * 2.0 - 1.0;
+    float r = sqrt(1.0 - z * z);
     float x = r * cos(a);
     float y = r * sin(a);
     return normalize(normal + vec3(x, y, z));
@@ -370,7 +367,7 @@ vec3 random_cosine_weighted_hemisphere(vec3 normal) {
 void update_seed() {
     seed = pcg_hash(uint(gl_FragCoord.x));
     seed = pcg_hash(seed + uint(gl_FragCoord.y));
-    seed = pcg_hash(seed + uint(time * 1000));
+    seed = pcg_hash(seed + uint(time * 1000.0));
 }
 
 float fresnel(vec3 dir, vec3 n, float ior) {
@@ -393,35 +390,36 @@ float fresnel(vec3 dir, vec3 n, float ior) {
 
 Ray brdf(Ray ray, HitInfo hitInfo) {
     if (hitInfo.material.is_glass)
-        ray.o += ray.d * (hitInfo.distance + EPSILON);
+        ray.origin += ray.dir * (hitInfo.distance + EPSILON);
     else
-        ray.o += ray.d * (hitInfo.distance - EPSILON);
+        ray.origin += ray.dir * (hitInfo.distance - EPSILON);
     vec3 diffused = random_cosine_weighted_hemisphere(hitInfo.normal);
-    vec3 reflected = reflect(ray.d, hitInfo.normal);
-    vec3 refracted = refract(ray.d, hitInfo.normal, 1 / hitInfo.material.IOR);
+    vec3 reflected = reflect(ray.dir, hitInfo.normal);
+    vec3 refracted = refract(ray.dir, hitInfo.normal, 1.0 / hitInfo.material.IOR);
     if (hitInfo.material.is_glass) {
-        if (fresnel(ray.d, hitInfo.normal, hitInfo.material.IOR) > random()) refracted = reflected;
+        if (fresnel(ray.dir, hitInfo.normal, hitInfo.material.IOR) > random()) refracted = reflected;
         if (hitInfo.material.is_metal)
-            ray.d = mix(refracted, diffused, hitInfo.material.roughness > 0.5 ? 0.5 : hitInfo.material.roughness);
+            ray.dir = mix(refracted, diffused, hitInfo.material.roughness > 0.5 ? 0.5 : hitInfo.material.roughness);
         else
-            ray.d = mix(refracted, diffused, random() < hitInfo.material.roughness ? 1 : 0);
+            ray.dir = mix(refracted, diffused, random() < hitInfo.material.roughness ? 1.0 : 0.0);
     } else {
         if (hitInfo.material.is_metal)
-            ray.d = mix(reflected, diffused, hitInfo.material.roughness);
+            ray.dir = mix(reflected, diffused, hitInfo.material.roughness);
         else
-            ray.d = mix(reflected, diffused, random() < hitInfo.material.roughness ? 1 : 0);
+            ray.dir = mix(reflected, diffused, random() < hitInfo.material.roughness ? 1.0 : 0.0);
     }
+    ray.invdir = 1.0 / ray.dir;
     return ray;
 }
 
 vec3 trace(Ray ray) {
-    vec3 energy = vec3(1);
+    vec3 energy = vec3(1.0);
     for (int i = 0; i <= bounces; i++) {
         HitInfo hitinfo;
         if (raycast(ray, hitinfo)) {
             ray = brdf(ray, hitinfo);
             energy *= hitinfo.material.color;
-            if (hitinfo.material.emission > 0)
+            if (hitinfo.material.emission > 0.0)
                 return energy * hitinfo.material.emission;
         }
     }
@@ -429,7 +427,7 @@ vec3 trace(Ray ray) {
 }
 
 vec2 uv2fragcoord(vec2 uv) {
-    return vec2((uv * resolution.y + resolution) / 2);
+    return vec2((uv * resolution.y + resolution) / 2.0);
 }
 
 vec2 reproject(mat3 prev_view, vec3 prev_cam_pos, HitInfo hitinfo, float fov_converted) {
@@ -443,7 +441,7 @@ void main() {
     update_seed();
     //seed = pcg_hash(uint(gl_FragCoord.x * gl_FragCoord.y));
 
-    vec2 uv = (2 * gl_FragCoord.xy - resolution) / resolution.y;
+    vec2 uv = (2.0 * gl_FragCoord.xy - resolution) / resolution.y;
     float fov_converted = tan(radians(fov / 2.0));
     vec3 direction;
 
@@ -456,27 +454,29 @@ void main() {
     } else {
         direction = normalize(vec3(uv * fov_converted, 1.0) * mat3(camera_rotation));
     }
-    Ray ray = Ray(camera_position, direction);
+    Ray ray = Ray(camera_position, direction, 1.0 / direction);
 
     // depth of field
     if (aperture != 0.0) {
         float focus_dist;
         if (focus_distance == 0.0) {
             HitInfo autofocus_hitinfo;
-            Ray autofocus_ray = Ray(camera_position, normalize(vec3(vec2(0.001), 1) * mat3(camera_rotation)));
+            vec3 dir = normalize(vec3(vec2(0.001), 1.0) * mat3(camera_rotation));
+            Ray autofocus_ray = Ray(camera_position, dir, 1.0 / dir);
             raycast(autofocus_ray, autofocus_hitinfo);
             focus_dist = autofocus_hitinfo.distance >= MAX_DISTANCE ? 1000 : autofocus_hitinfo.distance;
         } else {
             focus_dist = focus_distance;
         }
         vec3 dof_position = (50.0 / aperture) * vec3(random_cosine_weighted_hemisphere(vec3(0)));
-        vec3 dof_direction = normalize(ray.d * focus_dist - dof_position);
-        ray.o += dof_position;
-        ray.d = normalize(dof_direction);
+        vec3 dof_direction = normalize(ray.dir * focus_dist - dof_position);
+        ray.origin += dof_position;
+        ray.dir = normalize(dof_direction);
     }
 
     HitInfo hitinfo;
-    bool hit = raycast(Ray(camera_position, normalize(vec3(uv * fov_converted, 1.0) * mat3(camera_rotation))), hitinfo);
+    vec3 dir = normalize(vec3(uv * fov_converted, 1.0) * mat3(camera_rotation));
+    raycast(Ray(camera_position, dir, 1.0 / dir), hitinfo);
 
     vec3 color;
     for (int i = 0; i < samples; i++) {
@@ -487,10 +487,10 @@ void main() {
     if (debug_bvh) {
         float bounds_weight = boundsTests / float(bounds_test_threshold);
         float triangles_weight = triangleTests / float(triangle_test_threshold);
-        color = max(bounds_weight, triangles_weight) > 1 ? vec3(1) : vec3(triangles_weight, 0, bounds_weight);
+        color = max(bounds_weight, triangles_weight) > 1.0 ? vec3(1.0) : vec3(triangles_weight, 0.0, bounds_weight);
     }
 
-    float factor = (frames) / (frames + 1.0);
+    float factor = accumulated_samples / (accumulated_samples + 1.0);
     if (temporal_reprojection) {
         vec2 reproj_fragcoord = reproject(mat3(prev_camera_rotation), prev_camera_position, hitinfo, fov_converted);
         vec2 reproj_uv = reproj_fragcoord / resolution;
@@ -502,11 +502,11 @@ void main() {
             temporal_mix_factor = 0.0;
         }
         vec3 prev_color = texture(prev_frame, reproj_uv).rgb;
-        color = frames != 0 ? mix(color, prev_color, factor == 0 ? temporal_mix_factor : factor) : mix(color, prev_color, temporal_mix_factor);
+        color = accumulated_samples != 0 ? mix(color, prev_color, factor == 0.0 ? temporal_mix_factor : factor) : mix(color, prev_color, temporal_mix_factor);
     }
-    if (frames != 0 && !temporal_reprojection) {
+    if (accumulated_samples != 0 && !temporal_reprojection) {
         vec3 prev_color = texture(prev_frame, gl_FragCoord.xy / resolution).rgb;
-        color = mix(color, prev_color, factor);
+        color = accumulated_samples == max_accumulated_samples ? prev_color : mix(color, prev_color, factor);
     }
 
     imageStore(normal_image, ivec2(gl_FragCoord.xy), vec4(hitinfo.normal, 0.0));

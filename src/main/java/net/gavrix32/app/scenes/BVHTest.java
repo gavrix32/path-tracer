@@ -12,7 +12,9 @@ public class BVHTest {
     public BVHTest() {
         scene = new Scene();
         scene.setName("BVH Test");
-        scene.setCamera(new Vector3f(20, 0, -100));
+        scene.setCamera(new Vector3f(-25, 90, -150)); // bunny
+        //scene.setCamera(new Vector3f(0, 100, 300)).rotateY(180);
+        //scene.setCamera(new Vector3f(-80, 0, 0)).rotateY(90); // dragon
         scene.setSky("textures/sky/HDR_041_Path_Env.hdr").setMaterial(true, 1, 1, 1, false);
         model = new Model("models/bunny.obj", 100.0f);
         for (int i = 0; i < model.getTriangles().size(); i++) {

@@ -19,6 +19,8 @@ public class BoundingVolumeHierarchy {
         for (Triangle triangle : triangles) {
             rootNode.bounds.addTriangle(triangle);
         }
+        System.out.println(rootNode.bounds.min);
+        System.out.println(rootNode.bounds.max);
         nodes.add(rootNode);
         split(rootNode, 0);
     }

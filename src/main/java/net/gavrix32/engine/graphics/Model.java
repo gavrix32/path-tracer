@@ -20,7 +20,7 @@ public class Model {
         byte[] data = Utils.loadBytes(filepath);
         ByteBuffer dataBuffer = BufferUtils.createByteBuffer(data.length);
         dataBuffer.put(data).flip();
-        AIScene scene = Assimp.aiImportFileFromMemory(dataBuffer, Assimp.aiProcess_Triangulate, "");
+        AIScene scene = Assimp.aiImportFileFromMemory(dataBuffer, Assimp.aiProcess_Triangulate, "obj");
         PointerBuffer buffer = scene.mMeshes();
         for (int i = 0; i < buffer.limit(); i++) {
             AIMesh mesh = AIMesh.create(buffer.get(i));
