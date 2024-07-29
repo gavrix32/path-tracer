@@ -2,6 +2,7 @@ package net.gavrix32.engine.graphics;
 
 import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.objects.Triangle;
+import net.gavrix32.engine.utils.Logger;
 import net.gavrix32.engine.utils.Utils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
@@ -12,9 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Model {
-    private static final List<Vector3f> positions = new ArrayList<>();
     private static final List<Triangle> triangles = new ArrayList<>();
-    private static float[] verticesData;
 
     public Model(String filepath, float scale) {
         byte[] data = Utils.loadBytes(filepath);
@@ -22,7 +21,7 @@ public class Model {
         dataBuffer.put(data).flip();
         AIScene scene = Assimp.aiImportFileFromMemory(dataBuffer, Assimp.aiProcess_Triangulate, "obj");
         PointerBuffer buffer = scene.mMeshes();
-        for (int i = 0; i < buffer.limit(); i++) {
+        for (int i = 0; i < scene.mNumMeshes(); i++) {
             AIMesh mesh = AIMesh.create(buffer.get(i));
             loadMesh(mesh, scale);
         }
@@ -44,26 +43,13 @@ public class Model {
             }
         }
 
-        for (int i : indices) {
-            positions.add(vertices.get(i));
+        int i = 0;
+        while (i < indices.size()) {
+            Vector3f v1 = vertices.get(indices.get(i++));
+            Vector3f v2 = vertices.get(indices.get(i++));
+            Vector3f v3 = vertices.get(indices.get(i++));
+            triangles.add(new Triangle(v1, v2, v3));
         }
-
-        for (int i = 0; i < positions.size(); i += 3) {
-            triangles.add(i / 3, new Triangle(positions.get(i), positions.get(i + 1), positions.get(i + 2)));
-        }
-
-        verticesData = new float[positions.size() * 4];
-        int index = 0;
-        for (Vector3f pos : positions) {
-            verticesData[index++] = pos.x;
-            verticesData[index++] = pos.y;
-            verticesData[index++] = pos.z;
-            verticesData[index++] = 1.0f;
-        }
-    }
-
-    public float[] getVerticesData() {
-        return verticesData;
     }
 
     public List<Triangle> getTriangles() {

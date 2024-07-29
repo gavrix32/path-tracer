@@ -6,6 +6,7 @@ import net.gavrix32.engine.objects.Triangle;
 import java.util.ArrayList;
 import java.util.List;
 
+// Thanks https://youtu.be/C1H4zIiCOaI?si=7Ljb703Gs02Vxgdt
 public class BoundingVolumeHierarchy {
     private static final int MAX_DEPTH = 32;
 
@@ -16,22 +17,26 @@ public class BoundingVolumeHierarchy {
         this.triangles = triangles;
         Node rootNode = new Node();
         rootNode.trianglesCount = triangles.size();
-        for (Triangle triangle : triangles) {
+        for (Triangle triangle : triangles)
             rootNode.bounds.addTriangle(triangle);
-        }
-        System.out.println(rootNode.bounds.min);
-        System.out.println(rootNode.bounds.max);
         nodes.add(rootNode);
         split(rootNode, 0);
     }
 
     private void split(Node parent, int depth) {
-        if (depth == MAX_DEPTH) return;
+        if (depth == MAX_DEPTH)
+            return;
 
         // Поиск самой длинной оси ограничивающего объёма
-        Vector3f boundsSize = parent.bounds.getSize();
+        /*Vector3f boundsSize = parent.bounds.getSize();
         Vector3f boundsCentre = parent.bounds.getCentre();
         int splitAxis = boundsSize.x > Math.max(boundsSize.y, boundsSize.z) ? 0 : boundsSize.y > boundsSize.z ? 1 : 2;
+        float splitPos = boundsCentre.get(splitAxis);*/
+
+        SplitData splitData = chooseSplit(parent);
+        if (splitData.cost >= nodeCost(parent.bounds.getSize(), parent.triangleStartIndex + parent.trianglesCount)) return;
+        int splitAxis = splitData.axis;
+        float splitPos = splitData.pos;
 
         Node firstChild = new Node();
         Node secondChild = new Node();
@@ -40,7 +45,7 @@ public class BoundingVolumeHierarchy {
 
         // Распределние треугольников по дочерним узлам
         for (int i = parent.triangleStartIndex; i < parent.triangleStartIndex + parent.trianglesCount; i++) {
-            boolean triangleInFirstChild = triangles.get(i).getCentre().get(splitAxis) < boundsCentre.get(splitAxis);
+            boolean triangleInFirstChild = triangles.get(i).getCentre().get(splitAxis) < splitPos;
             Node child = triangleInFirstChild ? firstChild : secondChild;
             child.bounds.addTriangle(triangles.get(i));
             child.trianglesCount++;
@@ -61,5 +66,64 @@ public class BoundingVolumeHierarchy {
             split(firstChild, depth + 1);
             split(secondChild, depth + 1);
         }
+    }
+
+    private float nodeCost(Vector3f size, int numTriangles) {
+        float halfArea = size.x * (size.y + size.z) + size.y * size.z;
+        return halfArea * numTriangles;
+    }
+
+    class SplitData {
+        int axis;
+        float pos, cost;
+
+        public SplitData(int axis, float pos, float cost) {
+            this.axis = axis;
+            this.pos = pos;
+            this.cost = cost;
+        }
+    }
+
+    private SplitData chooseSplit(Node node) {
+        int testsPerAxis = 3;
+        int bestAxis = 0;
+        float bestPos = 0.0f;
+        float bestCost = Float.POSITIVE_INFINITY;
+
+        for (int axis = 0; axis < 3; axis++) {
+            float boundsStart = node.bounds.min.get(axis);
+            float boundsEnd = node.bounds.max.get(axis);
+
+            for (int i = 0; i < testsPerAxis; i++) {
+                float splitT = (i + 1) / (testsPerAxis + 1.0f);
+                float pos = boundsStart + (boundsEnd - boundsStart) * splitT;
+                float cost = evaluateSplit(node, axis, pos);
+                if (cost < bestCost) {
+                    bestAxis = axis;
+                    bestPos = pos;
+                    bestCost = cost;
+                }
+            }
+        }
+        return new SplitData(bestAxis, bestPos, bestCost);
+    }
+
+    private float evaluateSplit(Node node, int splitAxis, float splitPos) {
+        BoundingBox firstBounds = new BoundingBox();
+        BoundingBox secondBounds = new BoundingBox();
+        int numInFirst = 0;
+        int numInSecond = 0;
+
+        for (int i = node.triangleStartIndex; i < node.triangleStartIndex + node.trianglesCount; i++) {
+            Triangle triangle = triangles.get(i);
+            if (triangle.getCentre().get(splitAxis) < splitPos) {
+                firstBounds.addTriangle(triangle);
+                numInFirst++;
+            } else {
+                secondBounds.addTriangle(triangle);
+                numInSecond++;
+            }
+        }
+        return nodeCost(firstBounds.getSize(), numInFirst) + nodeCost(secondBounds.getSize(), numInSecond);
     }
 }

@@ -5,6 +5,7 @@ import net.gavrix32.engine.Engine;
 import net.gavrix32.engine.IApp;
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.io.*;
+import org.lwjgl.opengl.GLUtil;
 
 import java.util.ArrayList;
 

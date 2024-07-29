@@ -7,38 +7,33 @@ import net.gavrix32.engine.math.Vector4f;
 import net.gavrix32.engine.utils.Logger;
 import net.gavrix32.engine.utils.Utils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.lwjgl.opengl.GL20.*;
 
 public class Shader {
-    private final int program;
+    private List<Integer> shaders = new ArrayList<>();
+    private int program;
 
-    public Shader(String vertexPath, String fragmentPath) {
-        int vertex = glCreateShader(GL_VERTEX_SHADER);
-        //glShaderSource(vertex, parseIncludes(Utils.loadString(vertexPath)));
-        glShaderSource(vertex, Utils.loadString(vertexPath));
-        glCompileShader(vertex);
-        if (glGetShaderi(vertex, GL_COMPILE_STATUS) == 0) {
-            Logger.error(vertexPath + System.lineSeparator() + glGetShaderInfoLog(vertex));
-        }
-
-        int fragment = glCreateShader(GL_FRAGMENT_SHADER);
-        //glShaderSource(fragment, parseIncludes(Utils.loadString(fragmentPath)));
-        glShaderSource(fragment, Utils.loadString(fragmentPath));
-        glCompileShader(fragment);
-        if (glGetShaderi(fragment, GL_COMPILE_STATUS) == 0) {
-            Logger.error(fragmentPath + System.lineSeparator() + glGetShaderInfoLog(fragment));
-        }
-
+    public void load(String path, int type) {
+        int shader = glCreateShader(type);
+        glShaderSource(shader, Utils.loadString(path));
+        glCompileShader(shader);
+        if (glGetShaderi(shader, GL_COMPILE_STATUS) == 0)
+            Logger.error(path + System.lineSeparator() + glGetShaderInfoLog(shader));
+        shaders.add(shader);
+    }
+    
+    public void initProgram() {
         program = glCreateProgram();
-        glAttachShader(program, vertex);
-        glAttachShader(program, fragment);
+        for (int shader : shaders) glAttachShader(program, shader);
         glLinkProgram(program);
-        if (glGetProgrami(program, GL_LINK_STATUS) == 0) {
+        if (glGetProgrami(program, GL_LINK_STATUS) == 0)
             Logger.error("Shader program " + glGetProgramInfoLog(program));
-        }
     }
 
-    private String parseIncludes(String code) {
+    /*private String parseIncludes(String code) {
         int includeIndex = code.indexOf("#include");
         while (includeIndex != -1) {
             String includeLine = code.substring(includeIndex, code.indexOf(System.lineSeparator(), includeIndex));
@@ -48,7 +43,7 @@ public class Shader {
             includeIndex = code.indexOf("#include", code.indexOf(includePath));
         }
         return code;
-    }
+    }*/
 
     public void setInt(String name, int value) {
         glUniform1i(glGetUniformLocation(program, name), value);

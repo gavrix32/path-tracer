@@ -317,91 +317,6 @@ public class SceneEditor {
             }
             ImGui.treePop();
         }
-        if (ImGui.treeNode("triangles")) {
-            for (int i = 0; i < scene.getTriangles().size(); i++) {
-                float[] color = new float[] {
-                        scene.getTriangle(i).getColor().x,
-                        scene.getTriangle(i).getColor().y,
-                        scene.getTriangle(i).getColor().z
-                };
-                ImBoolean isMetal = new ImBoolean(scene.getTriangle(i).getMaterial().isMetal());
-                ImBoolean isGlass = new ImBoolean(scene.getTriangle(i).getMaterial().isGlass());
-                float[] emission = new float[] {scene.getTriangle(i).getMaterial().getEmission()};
-                float[] roughness = new float[] {scene.getTriangle(i).getMaterial().getRoughness()};
-                float[] IOR = new float[] {scene.getTriangle(i).getMaterial().getIOR()};
-                float[] v1 = new float[] {
-                        scene.getTriangle(i).getV1().x,
-                        scene.getTriangle(i).getV1().y,
-                        scene.getTriangle(i).getV1().z
-                };
-                float[] v2 = new float[] {
-                        scene.getTriangle(i).getV2().x,
-                        scene.getTriangle(i).getV2().y,
-                        scene.getTriangle(i).getV2().z
-                };
-                float[] v3 = new float[] {
-                        scene.getTriangle(i).getV3().x,
-                        scene.getTriangle(i).getV3().y,
-                        scene.getTriangle(i).getV3().z
-                };
-                float[] rotation = new float[] {
-                        scene.getTriangle(i).getRot().x,
-                        scene.getTriangle(i).getRot().y,
-                        scene.getTriangle(i).getRot().z
-                };
-
-                ImGui.pushID(i);
-                if (ImGui.colorEdit3("triangle " + i + " color", color)) {
-                    Renderer.resetAccFrames();
-                    scene.getTriangle(i).setColor(color[0], color[1], color[2]);
-                }
-                if (ImGui.checkbox("is metal", isMetal)) {
-                    Renderer.resetAccFrames();
-                    scene.getTriangle(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
-                }
-                if (ImGui.dragFloat("emission", emission, 0.01f, 0, Float.MAX_VALUE, "%.2f")) {
-                    Renderer.resetAccFrames();
-                    scene.getTriangle(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
-                }
-                if (ImGui.sliderFloat("roughness", roughness, 0, 1, "%.2f")) {
-                    Renderer.resetAccFrames();
-                    scene.getTriangle(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
-                }
-                if (ImGui.checkbox("glass", isGlass)) {
-                    Renderer.resetAccFrames();
-                    scene.getTriangle(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
-                }
-                ImGui.beginDisabled(!isGlass.get());
-                if (ImGui.dragFloat("ior", IOR, 0.01f, 1, Float.MAX_VALUE, "%.2f")) {
-                    Renderer.resetAccFrames();
-                    scene.getTriangle(i).setMaterial(isMetal.get(), emission[0], roughness[0], IOR[0], isGlass.get());
-                }
-                ImGui.endDisabled();
-                if (ImGui.dragFloat3("v1", v1)) {
-                    Renderer.resetAccFrames();
-                    scene.getTriangle(i).setV1(v1[0], v1[1], v1[2]);
-                }
-                if (ImGui.dragFloat3("v2", v2)) {
-                    Renderer.resetAccFrames();
-                    scene.getTriangle(i).setV2(v2[0], v2[1], v2[2]);
-                }
-                if (ImGui.dragFloat3("v3", v3)) {
-                    Renderer.resetAccFrames();
-                    scene.getTriangle(i).setV3(v3[0], v3[1], v3[2]);
-                }
-                if (ImGui.dragFloat3("rotation", rotation)) {
-                    Renderer.resetAccFrames();
-                    scene.getTriangle(i).setRot(rotation[0], rotation[1], rotation[2]);
-                }
-                if (ImGui.button("remove")) {
-                    Renderer.resetAccFrames();
-                    scene.removeTriangle(i);
-                }
-                ImGui.popID();
-                ImGui.separator();
-            }
-            ImGui.treePop();
-        }
         if (ImGui.button("add sphere")) {
             scene.addSpheres(new Sphere());
             Renderer.resetAccFrames();
@@ -412,10 +327,6 @@ public class SceneEditor {
             Renderer.resetAccFrames();
         }
         ImGui.sameLine();
-        if (ImGui.button("add triangle")) {
-            scene.addTriangle(new Triangle());
-            Renderer.resetAccFrames();
-        }
         if (scene.getPlane() == null) {
             if (ImGui.button("add plane")) {
                 scene.setPlane(new Plane(true));

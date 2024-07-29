@@ -2,9 +2,9 @@
 
 out vec3 out_color;
 
-uniform float gamma, exposure;
 uniform sampler2D color_texture;
 uniform vec2 resolution;
+uniform float gamma, exposure;
 
 vec3 post_process(vec3 col) {
     if (exposure != 0.0) col = vec3(1.0) - exp(-col * exposure);

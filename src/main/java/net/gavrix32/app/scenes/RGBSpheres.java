@@ -78,7 +78,7 @@ public class RGBSpheres {
         );
         Random random = new Random();
         long seed = random.nextLong();
-        System.out.println("seed: " + seed);
+        //System.out.println("seed: " + seed);
         // Beautiful seeds: 8974213222167044418L
         random.setSeed(8974213222167044418L);
         for (int i = 0; i < 64; i++) {

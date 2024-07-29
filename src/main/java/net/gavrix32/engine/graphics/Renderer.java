@@ -47,9 +47,20 @@ public class Renderer {
 
         Quad.init();
 
-        pathtraceShader = new Shader("shaders/quad.vert", "shaders/pathtrace.frag");
-        atrousShader = new Shader("shaders/quad.vert", "shaders/atrous.frag");
-        presentShader = new Shader("shaders/quad.vert", "shaders/present.frag");
+        pathtraceShader = new Shader();
+        pathtraceShader.load("shaders/quad.vert", GL_VERTEX_SHADER);
+        pathtraceShader.load("shaders/pathtrace.frag", GL_FRAGMENT_SHADER);
+        pathtraceShader.initProgram();
+
+        atrousShader = new Shader();
+        atrousShader.load("shaders/quad.vert", GL_VERTEX_SHADER);
+        atrousShader.load("shaders/atrous.frag", GL_FRAGMENT_SHADER);
+        atrousShader.initProgram();
+
+        presentShader = new Shader();
+        presentShader.load("shaders/quad.vert", GL_VERTEX_SHADER);
+        presentShader.load("shaders/present.frag", GL_FRAGMENT_SHADER);
+        presentShader.initProgram();
 
         scene = new Scene();
 
@@ -247,17 +258,13 @@ public class Renderer {
         }
         pathtraceShader.setVec3("box_bounds.min", boxBounds.min);
         pathtraceShader.setVec3("box_bounds.max", boxBounds.max);
-
         pathtraceShader.setVec3("triangles_offset", triangles_offset);
         pathtraceShader.setMat4("triangles_rotation", new Matrix4f().rotate(triangles_rotation));
-
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, accTexture[prevAcc]);
         pathtraceShader.setInt("prev_frame", 2);
-
         glBindFramebuffer(GL_FRAMEBUFFER, accFramebuffer[currAcc]);
         Quad.draw();
-
         if (atrousFilter) {
             for (int i = 0; i < Gui.iterations[0]; i++) {
                 glBindFramebuffer(GL_FRAMEBUFFER, atrousFramebuffer[currAtrous]);
@@ -283,7 +290,6 @@ public class Renderer {
                 atrousShader.setFloat("n_phi", 1.0f / (1 << i) * Gui.n_phi[0]);
                 atrousShader.setFloat("p_phi", 1.0f / (1 << i) * Gui.p_phi[0]);
                 Quad.draw();
-
                 swapAtrousFrames();
             }
         }
@@ -292,13 +298,16 @@ public class Renderer {
         presentShader.setFloat("gamma", gamma);
         presentShader.setFloat("exposure", exposure);
         glActiveTexture(GL_TEXTURE7);
-        if (atrousFilter) glBindTexture(GL_TEXTURE_2D, atrousTexture[currAtrous]);
-        else glBindTexture(GL_TEXTURE_2D, accTexture[currAcc]);
+        if (atrousFilter)
+            glBindTexture(GL_TEXTURE_2D, atrousTexture[currAtrous]);
+        else
+            glBindTexture(GL_TEXTURE_2D, accTexture[currAcc]);
         presentShader.setInt("color_texture", 7);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         Quad.draw();
         swapAccFrames();
-        if (accumulation && accumulatedSamples != maxAccumulatedSamples) accumulatedSamples++;
+        if (accumulation && accumulatedSamples != maxAccumulatedSamples)
+            accumulatedSamples++;
     }
 
     public static void resetAccFrames() {

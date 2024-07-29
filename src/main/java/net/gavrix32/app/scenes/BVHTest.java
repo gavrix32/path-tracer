@@ -2,7 +2,6 @@ package net.gavrix32.app.scenes;
 
 import net.gavrix32.engine.graphics.*;
 import net.gavrix32.engine.math.Vector3f;
-import net.gavrix32.engine.objects.Triangle;
 
 public class BVHTest {
     private final Scene scene;
@@ -12,17 +11,13 @@ public class BVHTest {
     public BVHTest() {
         scene = new Scene();
         scene.setName("BVH Test");
-        scene.setCamera(new Vector3f(-25, 90, -150)); // bunny
-        //scene.setCamera(new Vector3f(0, 100, 300)).rotateY(180);
+        //scene.setCamera(new Vector3f(-25, 90, -150)); // bunny
+        scene.setCamera(new Vector3f(-25, 200, 500)).rotateY(180); // breakfast_room
+        //scene.setCamera(new Vector3f(0, 100, 300)).rotateY(180); // cornell_box
         //scene.setCamera(new Vector3f(-80, 0, 0)).rotateY(90); // dragon
-        scene.setSky("textures/sky/HDR_041_Path_Env.hdr").setMaterial(true, 1, 1, 1, false);
-        model = new Model("models/bunny.obj", 100.0f);
-        for (int i = 0; i < model.getTriangles().size(); i++) {
-            Triangle triangle = model.getTriangles().get(i);
-            triangle.setColor(new Vector3f(1));
-            triangle.setMaterial(new Material(true, 0, 1.0f, 1, false));
-            scene.addTriangle(triangle);
-        }
+        //scene.setSky("textures/sky/quarry_cloudy_2k.hdr").setMaterial(true, 1, 1, 1, false);
+        scene.getSky().setColor(1, 1, 1).setMaterial(true, 2, 1, 1, false);
+        model = new Model("models/breakfast_room.obj", 100.0f);
         bvh = new BoundingVolumeHierarchy();
         bvh.build(model.getTriangles());
     }

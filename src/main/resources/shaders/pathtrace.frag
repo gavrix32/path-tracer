@@ -5,8 +5,8 @@ out vec4 out_color;
 #define PI 3.14159
 #define EPSILON 0.001
 #define MAX_DISTANCE 1e10
-#define MAX_SPHERES 64
-#define MAX_BOXES 64
+#define MAX_SPHERES 32
+#define MAX_BOXES 32
 
 struct Ray {
     vec3 origin, dir, invdir;
@@ -285,7 +285,8 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
                 if (dist > 0 && dist < hitInfo.distance) {
                     hit = true;
                     hitInfo.distance = dist;
-                    hitInfo.material = Material(vec3(1.0, 0.5, 0.2), true, 0.0, 0.3, false, 0.0);
+                    //hitInfo.material = Material(vec3(1.0, 0.5, 0.2), true, 0.0, 0.3, false, 0.0); // gold
+                    hitInfo.material = Material(vec3(1.0), true, 0.0, 1.0, false, 0.0);
                     hitInfo.normal = normalize(normal);
                 }
             }
@@ -487,7 +488,8 @@ void main() {
     if (debug_bvh) {
         float bounds_weight = boundsTests / float(bounds_test_threshold);
         float triangles_weight = triangleTests / float(triangle_test_threshold);
-        color = max(bounds_weight, triangles_weight) > 1.0 ? vec3(1.0) : vec3(triangles_weight, 0.0, bounds_weight);
+        //color = max(bounds_weight, triangles_weight) > 1.0 ? vec3(1.0) : vec3(triangles_weight, 0.0, bounds_weight);
+        color = bounds_weight > 1.0 ? vec3(1.0, 0.0, 0.0) : vec3(bounds_weight);
     }
 
     float factor = accumulated_samples / (accumulated_samples + 1.0);

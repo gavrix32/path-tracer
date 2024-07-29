@@ -9,7 +9,7 @@ public class BoundingBox {
     public Vector3f min = new Vector3f(Float.POSITIVE_INFINITY);
     public Vector3f max = new Vector3f(Float.NEGATIVE_INFINITY);
 
-    private void addPoint(Vector3f point) {
+    public void addPoint(Vector3f point) {
         min.x = Math.min(min.x, point.x);
         min.y = Math.min(min.y, point.y);
         min.z = Math.min(min.z, point.z);
