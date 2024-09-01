@@ -80,4 +80,8 @@ public class Shader {
     public void use() {
         glUseProgram(program);
     }
+
+    public int get() {
+        return program;
+    }
 }

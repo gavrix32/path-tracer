@@ -5,9 +5,16 @@ import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector2f;
 import net.gavrix32.engine.math.Vector3f;
+import net.gavrix32.engine.utils.Logger;
+import net.gavrix32.engine.utils.Utils;
+import org.lwjgl.BufferUtils;
+
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.stb.STBImage.*;
 
 public class Renderer {
     private static Scene scene;
@@ -28,8 +35,7 @@ public class Renderer {
     private static float gamma, exposure, focusDistance, aperture, fov;
     private static boolean accumulation, temporalReprojection, temporalAntialiasing, atrousFilter;
 
-    // TODO: isKeyUp method
-    // TODO: try inverse view matrix on CPU
+    private static int modelTexture;
 
     public static void init() {
         samples = Config.getInt("samples");
@@ -144,7 +150,7 @@ public class Renderer {
         glBufferData(GL_SHADER_STORAGE_BUFFER, bvh_node_data, GL_STATIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, bvh_nodes_ssbo);
 
-        float[] bvh_triangles_data = new float[12 * bvh.triangles.size()];
+        float[] bvh_triangles_data = new float[24 * bvh.triangles.size()];
         index = 0;
         for (int i = 0; i < bvh.triangles.size(); i++) {
             bvh_triangles_data[index++] = bvh.triangles.get(i).v1.x;
@@ -159,11 +165,37 @@ public class Renderer {
             bvh_triangles_data[index++] = bvh.triangles.get(i).v3.y;
             bvh_triangles_data[index++] = bvh.triangles.get(i).v3.z;
             bvh_triangles_data[index++] = 0.0f;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).uv1.x;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).uv1.y;
+            bvh_triangles_data[index++] = 0.0f;
+            bvh_triangles_data[index++] = 0.0f;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).uv2.x;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).uv2.y;
+            bvh_triangles_data[index++] = 0.0f;
+            bvh_triangles_data[index++] = 0.0f;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).uv3.x;
+            bvh_triangles_data[index++] = bvh.triangles.get(i).uv3.y;
+            bvh_triangles_data[index++] = 0.0f;
+            bvh_triangles_data[index++] = 0.0f;
         }
         int bvh_triangles_ssbo = glGenBuffers();
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, bvh_triangles_ssbo);
         glBufferData(GL_SHADER_STORAGE_BUFFER, bvh_triangles_data, GL_STATIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, bvh_triangles_ssbo);
+
+        modelTexture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, modelTexture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        int[] width = new int[1], height = new int[1];
+        /*byte[] bytes = Utils.loadBytes("models/breakfast_room/picture3.jpg");
+        ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
+        buffer.put(bytes).flip();*/
+        stbi_set_flip_vertically_on_load(true);
+        ByteBuffer data = stbi_load_from_memory(BVHTest.getModel().data, width, height, new int[1], 3);
+        if (data == null) Logger.error("Failed to load texture: \"\"" + " " + stbi_failure_reason());
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     public static void render() {
@@ -196,6 +228,9 @@ public class Renderer {
         } else {
             pathtraceShader.setVec3("sky.material.color", scene.sky.getColor());
         }
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, modelTexture);
+        pathtraceShader.setInt("model_texture", 2);
         pathtraceShader.setBool("sky.material.is_metal", scene.sky.getMaterial().isMetal());
         pathtraceShader.setFloat("sky.material.emission", scene.sky.getMaterial().getEmission());
         pathtraceShader.setFloat("sky.material.roughness", scene.sky.getMaterial().getRoughness());
@@ -260,30 +295,30 @@ public class Renderer {
         pathtraceShader.setVec3("box_bounds.max", boxBounds.max);
         pathtraceShader.setVec3("triangles_offset", triangles_offset);
         pathtraceShader.setMat4("triangles_rotation", new Matrix4f().rotate(triangles_rotation));
-        glActiveTexture(GL_TEXTURE2);
+        glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, accTexture[prevAcc]);
-        pathtraceShader.setInt("prev_frame", 2);
+        pathtraceShader.setInt("prev_frame", 3);
         glBindFramebuffer(GL_FRAMEBUFFER, accFramebuffer[currAcc]);
         Quad.draw();
         if (atrousFilter) {
             for (int i = 0; i < Gui.iterations[0]; i++) {
                 glBindFramebuffer(GL_FRAMEBUFFER, atrousFramebuffer[currAtrous]);
                 atrousShader.use();
-                glActiveTexture(GL_TEXTURE3);
-                glBindTexture(GL_TEXTURE_2D, i == 0 ? accTexture[currAcc] : atrousTexture[prevAtrous]);
-                atrousShader.setInt("color_texture", 3);
                 glActiveTexture(GL_TEXTURE4);
-                glBindTexture(GL_TEXTURE_2D, normalImage);
-                glBindSampler(4, sampler);
-                atrousShader.setInt("normal_texture", 4);
+                glBindTexture(GL_TEXTURE_2D, i == 0 ? accTexture[currAcc] : atrousTexture[prevAtrous]);
+                atrousShader.setInt("color_texture", 4);
                 glActiveTexture(GL_TEXTURE5);
-                glBindTexture(GL_TEXTURE_2D, positionImage);
+                glBindTexture(GL_TEXTURE_2D, normalImage);
                 glBindSampler(5, sampler);
-                atrousShader.setInt("position_texture", 5);
+                atrousShader.setInt("normal_texture", 5);
                 glActiveTexture(GL_TEXTURE6);
-                glBindTexture(GL_TEXTURE_2D, albedoImage);
+                glBindTexture(GL_TEXTURE_2D, positionImage);
                 glBindSampler(6, sampler);
-                atrousShader.setInt("albedo_texture", 6);
+                atrousShader.setInt("position_texture", 6);
+                glActiveTexture(GL_TEXTURE7);
+                glBindTexture(GL_TEXTURE_2D, albedoImage);
+                glBindSampler(7, sampler);
+                atrousShader.setInt("albedo_texture", 7);
                 atrousShader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
                 atrousShader.setFloat("stepWidth", (1 << (i + 1)) - 1 * Gui.stepWidth[0]);
                 atrousShader.setFloat("c_phi", 1.0f / i * Gui.c_phi[0]);
@@ -297,12 +332,12 @@ public class Renderer {
         presentShader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
         presentShader.setFloat("gamma", gamma);
         presentShader.setFloat("exposure", exposure);
-        glActiveTexture(GL_TEXTURE7);
+        glActiveTexture(GL_TEXTURE8);
         if (atrousFilter)
             glBindTexture(GL_TEXTURE_2D, atrousTexture[currAtrous]);
         else
             glBindTexture(GL_TEXTURE_2D, accTexture[currAcc]);
-        presentShader.setInt("color_texture", 7);
+        presentShader.setInt("color_texture", 8);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         Quad.draw();
         swapAccFrames();

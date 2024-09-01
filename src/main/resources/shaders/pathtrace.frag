@@ -40,7 +40,7 @@ struct Box {
 };
 
 struct Triangle {
-    vec3 v1, v2, v3;
+    vec3 v1, v2, v3, uv1, uv2, uv3;
 };
 
 struct Sky {
@@ -68,7 +68,7 @@ uniform vec3 camera_position, prev_camera_position, triangles_offset;
 uniform mat4 camera_rotation, prev_camera_rotation, triangles_rotation;
 uniform int samples, bounces, spheres_count, boxes_count, accumulated_samples, max_accumulated_samples;
 uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture;
-uniform sampler2D sky_texture, prev_frame;
+uniform sampler2D sky_texture, model_texture, prev_frame;
 uniform float time, fov, focus_distance, aperture;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
@@ -91,6 +91,35 @@ layout(binding = 0) readonly buffer node_buffer {
 layout(binding = 1) readonly buffer triangle_buffer {
     Triangle triangles[];
 };
+
+uint seed = 0;
+
+// source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+uint pcg_hash(uint seed) {
+    uint state = seed * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+float random() {
+    seed = pcg_hash(seed);
+    return float(seed) * (1.0 / 4294967296.0);
+}
+
+vec3 random_cosine_weighted_hemisphere(vec3 normal) {
+    float a = random() * 2.0 * PI;
+    float z = random() * 2.0 - 1.0;
+    float r = sqrt(1.0 - z * z);
+    float x = r * cos(a);
+    float y = r * sin(a);
+    return normalize(normal + vec3(x, y, z));
+}
+
+void update_seed() {
+    seed = pcg_hash(uint(gl_FragCoord.x));
+    seed = pcg_hash(seed + uint(gl_FragCoord.y));
+    seed = pcg_hash(seed + uint(time * 1000.0));
+}
 
 float intersect_plane(Ray ray, vec4 p) {
     return -(dot(ray.origin, p.xyz) + p.w) / dot(ray.dir, p.xyz);
@@ -133,9 +162,7 @@ float intersect_bounding_box(Ray ray, BoundingBox bounds) {
     return tNear;
 }
 
-vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 normal/*, mat4 rotation*/) {
-    /*vec3 ro = (rotation * vec4(ray.o, 1)).xyz;
-    vec3 rd = (rotation * vec4(ray.d, 0)).xyz;*/
+vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 normal) {
     vec3 ro = ray.origin;
     vec3 rd = ray.dir;
     vec3 v1v0 = v1 - v0;
@@ -280,13 +307,54 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
             for (int i = int(node.triangle_start_index); i < int(node.triangle_start_index + node.triangles_count); i++) {
                 vec3 normal;
                 Triangle tri = triangles[i];
-                dist = intersect_triangle(ray, tri.v1, tri.v2, tri.v3, normal).x;
+                vec3 tuv = intersect_triangle(ray, tri.v1, tri.v2, tri.v3, normal);
+                dist = tuv.x;
                 triangleTests++;
                 if (dist > 0 && dist < hitInfo.distance) {
                     hit = true;
                     hitInfo.distance = dist;
                     //hitInfo.material = Material(vec3(1.0, 0.5, 0.2), true, 0.0, 0.3, false, 0.0); // gold
-                    hitInfo.material = Material(vec3(1.0), true, 0.0, 1.0, false, 0.0);
+                    vec2 uv = tri.uv1.xy * (1.0 - tuv.y - tuv.z) + tri.uv2.xy * tuv.y + tri.uv3.xy * tuv.z;
+                    hitInfo.material = Material(texture(model_texture, uv).rgb, true, 0.0, 1.0, false, 0.0);
+                    //hitInfo.material = Material(vec3(1), true, 0.0, 1.0, false, 0.0);
+                    // monu2
+                    /*if (hitInfo.material.color == vec3(255.0/255.0, 148.0/255.0, 0.0/255.0)) {
+                        hitInfo.material.emission = 3.0;
+                    }
+                    if (hitInfo.material.color == vec3(158.0/255.0, 164.0/255.0, 110.0/255.0)) {
+                        hitInfo.material.emission = 3.0;
+                    }*/
+
+                    // nebulae
+                    if (hitInfo.material.color == vec3(1.0/255.0, 200.0/255.0, 239.0/255.0)) {
+                        hitInfo.material.emission = 3.0;
+                    }
+                    if (hitInfo.material.color == vec3(106.0/255.0, 200.0/255.0, 239.0/255.0)) {
+                        hitInfo.material.emission = 3.0;
+                    }
+                    if (hitInfo.material.color == vec3(228.0/255.0, 100.0/255.0, 159.0/255.0)) {
+                        hitInfo.material.emission = 3.0;
+                    }
+
+                    // portal
+                    /*if (hitInfo.material.color == vec3(103.0/255.0, 215.0/255.0, 190.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.color == vec3(219.0/255.0, 46.0/255.0, 46.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.color == vec3(212.0/255.0, 78.0/255.0, 112.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.color == vec3(210.0/255.0, 11.0/255.0, 21.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.color == vec3(197.0/255.0, 25.0/255.0, 31.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.color == vec3(255.0/255.0, 255.0/255.0, 255.0/255.0) && vec3(ray.origin + ray.dir * hitInfo.distance).x > 0.0) hitInfo.material.emission = 3.0;
+
+                    if (hitInfo.material.color.r >= 20.0/255.0 && hitInfo.material.color.r <= 150.0/255.0 &&
+                        hitInfo.material.color.g >= 140.0/255.0 && hitInfo.material.color.g <= 255.0/255.0 &&
+                        hitInfo.material.color.b >= 230.0/255.0 && hitInfo.material.color.b <= 255.0/255.0
+                    ) hitInfo.material.emission = 3.0;
+
+                    if (hitInfo.material.color.r >= 200.0/255.0 && hitInfo.material.color.r <= 255.0/255.0 &&
+                    hitInfo.material.color.g >= 120.0/255.0 && hitInfo.material.color.g <= 255.0/255.0 &&
+                    hitInfo.material.color.b >= 0.0/255.0 && hitInfo.material.color.b <= 150.0/255.0
+                    ) hitInfo.material.emission = 3.0;*/
+
+                    //hitInfo.material = Material(vec3(1.0), true, 0.0, 1.0, false, 0.0);
                     hitInfo.normal = normalize(normal);
                 }
             }
@@ -340,35 +408,6 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
         return true;
     }
     return hit;
-}
-
-uint seed = 0;
-
-// source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
-uint pcg_hash(uint seed) {
-    uint state = seed * 747796405u + 2891336453u;
-    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
-    return (word >> 22u) ^ word;
-}
-
-float random() {
-    seed = pcg_hash(seed);
-    return float(seed) * (1.0 / 4294967296.0);
-}
-
-vec3 random_cosine_weighted_hemisphere(vec3 normal) {
-    float a = random() * 2.0 * PI;
-    float z = random() * 2.0 - 1.0;
-    float r = sqrt(1.0 - z * z);
-    float x = r * cos(a);
-    float y = r * sin(a);
-    return normalize(normal + vec3(x, y, z));
-}
-
-void update_seed() {
-    seed = pcg_hash(uint(gl_FragCoord.x));
-    seed = pcg_hash(seed + uint(gl_FragCoord.y));
-    seed = pcg_hash(seed + uint(time * 1000.0));
 }
 
 float fresnel(vec3 dir, vec3 n, float ior) {
@@ -449,8 +488,8 @@ void main() {
     // TAA
     if (temporal_antialiasing) {
         vec2 uv_jitter = uv;
-        uv_jitter.x += (random() - 0.5) * 0.001;
-        uv_jitter.y += (random() - 0.5) * 0.001;
+        uv_jitter.x += (random() - 0.5) * 0.002;
+        uv_jitter.y += (random() - 0.5) * 0.002;
         direction = normalize(vec3(uv_jitter * fov_converted, 1.0) * mat3(camera_rotation));
     } else {
         direction = normalize(vec3(uv * fov_converted, 1.0) * mat3(camera_rotation));
