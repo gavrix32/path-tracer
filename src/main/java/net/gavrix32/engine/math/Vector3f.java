@@ -1,6 +1,6 @@
 package net.gavrix32.engine.math;
 
-import net.gavrix32.engine.utils.Logger;
+import org.tinylog.Logger;
 
 public final class Vector3f {
     public float x, y, z;

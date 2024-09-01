@@ -2,10 +2,10 @@ package net.gavrix32.engine.io;
 
 import net.gavrix32.engine.graphics.Config;
 import net.gavrix32.engine.graphics.Renderer;
-import net.gavrix32.engine.utils.Logger;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.tinylog.Logger;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;

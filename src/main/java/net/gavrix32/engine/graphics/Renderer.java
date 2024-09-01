@@ -5,12 +5,9 @@ import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector2f;
 import net.gavrix32.engine.math.Vector3f;
-import net.gavrix32.engine.utils.Logger;
-import net.gavrix32.engine.utils.Utils;
-import org.lwjgl.BufferUtils;
+import org.tinylog.Logger;
 
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;

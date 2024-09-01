@@ -2,6 +2,7 @@ package net.gavrix32.engine.utils;
 
 import net.gavrix32.engine.io.Window;
 import org.lwjgl.BufferUtils;
+import org.tinylog.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

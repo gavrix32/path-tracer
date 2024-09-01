@@ -2,9 +2,9 @@ package net.gavrix32.engine;
 
 import net.gavrix32.engine.graphics.Config;
 import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.utils.Logger;
 import net.gavrix32.engine.utils.Timer;
 import org.lwjgl.Version;
+import org.tinylog.Logger;
 
 import static org.lwjgl.glfw.GLFW.*;
 

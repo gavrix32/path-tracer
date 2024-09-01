@@ -1,6 +1,6 @@
 package net.gavrix32.engine.math;
 
-import net.gavrix32.engine.utils.Logger;
+import org.tinylog.Logger;
 
 public final class Matrix4f {
     public float[][] m = new float[4][4];

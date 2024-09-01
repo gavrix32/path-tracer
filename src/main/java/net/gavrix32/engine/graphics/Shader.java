@@ -4,8 +4,8 @@ import net.gavrix32.engine.math.Matrix4f;
 import net.gavrix32.engine.math.Vector2f;
 import net.gavrix32.engine.math.Vector3f;
 import net.gavrix32.engine.math.Vector4f;
-import net.gavrix32.engine.utils.Logger;
 import net.gavrix32.engine.utils.Utils;
+import org.tinylog.Logger;
 
 import java.util.ArrayList;
 import java.util.List;

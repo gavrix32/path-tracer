@@ -16,8 +16,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class Gui {
-    private static final ImGuiImplGl3 imGuiImplGl3 = new ImGuiImplGl3();
     private static final ImGuiImplGlfw imGuiImplGlfw = new ImGuiImplGlfw();
+    private static final ImGuiImplGl3 imGuiImplGl3 = new ImGuiImplGl3();
     private static final String fontPath = "fonts/Inter-Regular.ttf";
 
     private static final int[] vsync = new int[1], fpsLimit = new int[1], samples = new int[1], bounces = new int[1], maxAccumulatedSamples = new int[1];
@@ -36,8 +36,8 @@ public class Gui {
         ImGui.createContext();
         ImGuiIO io = ImGui.getIO();
         io.setIniFilename(null);
-        ImGui.loadIniSettingsFromMemory(Utils.loadString("imgui.ini"));
         io.getFonts().addFontFromMemoryTTF(Utils.loadBytes(fontPath), 15);
+        ImGui.loadIniSettingsFromMemory(Utils.loadString("imgui.ini"));
         imGuiImplGlfw.init(Window.get(), true);
         imGuiImplGl3.init();
 

@@ -16,14 +16,8 @@ switch (OperatingSystem.current()) {
             project.ext.lwjglNatives += "-riscv64"
         }
         break
-    case OperatingSystem.MAC_OS:
-        project.ext.lwjglNatives = System.getProperty("os.arch").startsWith("aarch64") ? "natives-macos-arm64" : "natives-macos"
-        break
     case OperatingSystem.WINDOWS:
-        def osArch = System.getProperty("os.arch")
-        project.ext.lwjglNatives = osArch.contains("64")
-                ? "natives-windows${osArch.startsWith("aarch64") ? "-arm64" : ""}"
-                : "natives-windows-x86"
+        project.ext.lwjglNatives = "natives-windows"
         break
 }
 
@@ -45,4 +39,6 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
     implementation "io.github.spair:imgui-java-app:1.86.11"
+    implementation 'org.tinylog:tinylog-api:2.7.0'
+    implementation 'org.tinylog:tinylog-impl:2.7.0'
 }
