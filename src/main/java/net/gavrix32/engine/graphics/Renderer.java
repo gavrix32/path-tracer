@@ -23,8 +23,10 @@ public class Renderer {
     private static int prevAtrous = 1, currAtrous = 0;
     private static int albedoImage, positionImage, normalImage;
     private static int sampler;
-    private static final int[] accFramebuffer = new int[2], accTexture = new int[2];
-    private static final int[] atrousFramebuffer = new int[2], atrousTexture = new int[2];
+    private static final Framebuffer[] accFramebuffer = new Framebuffer[2];
+    private static final Texture[] accTexture = new Texture[2];
+    private static final Framebuffer[] atrousFramebuffer = new Framebuffer[2];
+    private static final Texture[] atrousTexture = new Texture[2];
     public static Vector3f triangles_offset = new Vector3f(0, 0, 0), triangles_rotation = new Vector3f(0, 0, 0);
 
     // Config variables
@@ -68,11 +70,11 @@ public class Renderer {
         scene = new Scene();
 
         for (int i = 0; i < 2; i++) {
-            accFramebuffer[i] = glGenFramebuffers();
-            glBindFramebuffer(GL_FRAMEBUFFER, accFramebuffer[i]);
+            accFramebuffer[i] = new Framebuffer();
+            accFramebuffer[i].bind();
 
-            accTexture[i] = glGenTextures();
-            glBindTexture(GL_TEXTURE_2D, accTexture[i]);
+            accTexture[i] = new Texture();
+            accTexture[i].bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -80,16 +82,16 @@ public class Renderer {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glBindTexture(GL_TEXTURE_2D, 0);
 
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, accTexture[i], 0);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, accTexture[i].id, 0);
+            accFramebuffer[i].unbind();
         }
 
         for (int i = 0; i < 2; i++) {
-            atrousFramebuffer[i] = glGenFramebuffers();
-            glBindFramebuffer(GL_FRAMEBUFFER, atrousFramebuffer[i]);
+            atrousFramebuffer[i] = new Framebuffer();
+            atrousFramebuffer[i].bind();
 
-            atrousTexture[i] = glGenTextures();
-            glBindTexture(GL_TEXTURE_2D, atrousTexture[i]);
+            atrousTexture[i] = new Texture();
+            atrousTexture[i].bind();
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -97,8 +99,8 @@ public class Renderer {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glBindTexture(GL_TEXTURE_2D, 0);
 
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, atrousTexture[i], 0);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, atrousTexture[i].id, 0);
+            atrousFramebuffer[i].unbind();
         }
 
         normalImage = glGenTextures();
@@ -293,16 +295,20 @@ public class Renderer {
         pathtraceShader.setVec3("triangles_offset", triangles_offset);
         pathtraceShader.setMat4("triangles_rotation", new Matrix4f().rotate(triangles_rotation));
         glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, accTexture[prevAcc]);
+        accTexture[prevAcc].bind();
         pathtraceShader.setInt("prev_frame", 3);
-        glBindFramebuffer(GL_FRAMEBUFFER, accFramebuffer[currAcc]);
+        accFramebuffer[currAcc].bind();
         Quad.draw();
         if (atrousFilter) {
             for (int i = 0; i < Gui.iterations[0]; i++) {
-                glBindFramebuffer(GL_FRAMEBUFFER, atrousFramebuffer[currAtrous]);
+                atrousFramebuffer[currAtrous].bind();
                 atrousShader.use();
                 glActiveTexture(GL_TEXTURE4);
-                glBindTexture(GL_TEXTURE_2D, i == 0 ? accTexture[currAcc] : atrousTexture[prevAtrous]);
+                if (i == 0) {
+                    accTexture[currAcc].bind();
+                } else {
+                    atrousTexture[prevAtrous].bind();
+                }
                 atrousShader.setInt("color_texture", 4);
                 glActiveTexture(GL_TEXTURE5);
                 glBindTexture(GL_TEXTURE_2D, normalImage);
@@ -330,10 +336,11 @@ public class Renderer {
         presentShader.setFloat("gamma", gamma);
         presentShader.setFloat("exposure", exposure);
         glActiveTexture(GL_TEXTURE8);
-        if (atrousFilter)
-            glBindTexture(GL_TEXTURE_2D, atrousTexture[currAtrous]);
-        else
-            glBindTexture(GL_TEXTURE_2D, accTexture[currAcc]);
+        if (atrousFilter) {
+            atrousTexture[currAtrous].bind();
+        } else {
+            accTexture[currAcc].bind();
+        }
         presentShader.setInt("color_texture", 8);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         Quad.draw();
@@ -357,9 +364,9 @@ public class Renderer {
     }
 
     public static void resetFramebufferTextures() {
-        glBindTexture(GL_TEXTURE_2D, accTexture[0]);
+        accTexture[0].bind();
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-        glBindTexture(GL_TEXTURE_2D, accTexture[1]);
+        accTexture[1].bind();
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
         glBindTexture(GL_TEXTURE_2D, normalImage);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
@@ -367,9 +374,9 @@ public class Renderer {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
         glBindTexture(GL_TEXTURE_2D, albedoImage);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-        glBindTexture(GL_TEXTURE_2D, atrousTexture[0]);
+        atrousTexture[0].bind();
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-        glBindTexture(GL_TEXTURE_2D, atrousTexture[1]);
+        atrousTexture[1].bind();
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
     }

@@ -337,7 +337,7 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
                     }
 
                     // portal
-                    /*if (hitInfo.material.color == vec3(103.0/255.0, 215.0/255.0, 190.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.color == vec3(103.0/255.0, 215.0/255.0, 190.0/255.0)) hitInfo.material.emission = 3.0;
                     if (hitInfo.material.color == vec3(219.0/255.0, 46.0/255.0, 46.0/255.0)) hitInfo.material.emission = 3.0;
                     if (hitInfo.material.color == vec3(212.0/255.0, 78.0/255.0, 112.0/255.0)) hitInfo.material.emission = 3.0;
                     if (hitInfo.material.color == vec3(210.0/255.0, 11.0/255.0, 21.0/255.0)) hitInfo.material.emission = 3.0;
@@ -352,7 +352,7 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
                     if (hitInfo.material.color.r >= 200.0/255.0 && hitInfo.material.color.r <= 255.0/255.0 &&
                     hitInfo.material.color.g >= 120.0/255.0 && hitInfo.material.color.g <= 255.0/255.0 &&
                     hitInfo.material.color.b >= 0.0/255.0 && hitInfo.material.color.b <= 150.0/255.0
-                    ) hitInfo.material.emission = 3.0;*/
+                    ) hitInfo.material.emission = 3.0;
 
                     //hitInfo.material = Material(vec3(1.0), true, 0.0, 1.0, false, 0.0);
                     hitInfo.normal = normalize(normal);
