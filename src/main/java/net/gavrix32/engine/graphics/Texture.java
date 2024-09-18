@@ -17,12 +17,12 @@ public class Texture {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    protected void setLinearFiltering() {
+    protected void linearFiltering() {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
 
-    protected void setClampToEdge() {
+    protected void clampToEdge() {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
