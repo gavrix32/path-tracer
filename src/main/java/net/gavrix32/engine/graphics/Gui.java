@@ -26,7 +26,7 @@ public class Gui {
     public static final float[] stepWidth = new float[] {2.8f}, c_phi = new float[] {0.01f}, n_phi = new float[] {0.01f}, p_phi = new float[] {1000.0f};
     private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(),
             temporalAntialiasing = new ImBoolean(), atrousFilter = new ImBoolean();
-    private static final ImInt sceneId = new ImInt(6);
+    private static final ImInt sceneId = new ImInt(1);
 
     // Debug BVH
     public static final ImBoolean debugBVH = new ImBoolean(false);

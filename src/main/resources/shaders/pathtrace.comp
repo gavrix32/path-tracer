@@ -83,7 +83,7 @@ layout(local_size_x = 8, local_size_y = 8) in;
 layout(binding = 0, rgba32f) uniform image2D normal_image;
 layout(binding = 1, rgba32f) uniform image2D position_image;
 layout(binding = 2, rgba32f) uniform image2D albedo_image;
-layout(binding = 3, rgba32f) uniform image2D out_color;
+layout(binding = 3, rgba32f) uniform image2D color_image;
 
 layout(binding = 0) readonly buffer node_buffer {
     Node nodes[];
@@ -298,7 +298,7 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
         }
     }
     // BVH
-    int stack[32];
+    /**int stack[32];
     int index = 0;
     stack[index++] = 0;
     while (index > 0) {
@@ -324,7 +324,7 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
                     }
                     if (hitInfo.material.color == vec3(158.0/255.0, 164.0/255.0, 110.0/255.0)) {
                         hitInfo.material.emission = 3.0;
-                    }*/
+                    }*//**
 
                     // nebulae
                     if (hitInfo.material.color == vec3(1.0/255.0, 200.0/255.0, 239.0/255.0)) {
@@ -378,7 +378,7 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
             if (distFar != -1.0 && distFar < hitInfo.distance) stack[index++] = childIndexFar;
             if (distNear != -1.0 && distNear < hitInfo.distance) stack[index++] = childIndexNear;
         }
-    }
+    }*/
     // ray marching
     /*vec3 trap;
     dist = intersect(ray.o, ray.d, trap);
@@ -510,7 +510,7 @@ void main() {
         } else {
             focus_dist = focus_distance;
         }
-        vec3 dof_position = (50.0 / aperture) * vec3(random_cosine_weighted_hemisphere(vec3(0)));
+        vec3 dof_position = (50.0 / aperture) * vec3(random_cosine_weighted_hemisphere(vec3(0.0)));
         vec3 dof_direction = normalize(ray.dir * focus_dist - dof_position);
         ray.origin += dof_position;
         ray.dir = normalize(dof_direction);
@@ -555,5 +555,5 @@ void main() {
     imageStore(normal_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.normal, 0.0));
     imageStore(position_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.hitpos, 0.0));
     imageStore(albedo_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.material.color, 0.0));
-    imageStore(out_color, ivec2(gl_GlobalInvocationID.xy), vec4(color, hitinfo.distance));
+    imageStore(color_image, ivec2(gl_GlobalInvocationID.xy), vec4(color, hitinfo.distance));
 }

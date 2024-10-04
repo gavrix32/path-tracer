@@ -57,8 +57,7 @@ public class Renderer {
         pathtraceShader.initProgram();
 
         atrousShader = new Shader();
-        atrousShader.load("shaders/quad.vert", GL_VERTEX_SHADER);
-        atrousShader.load("shaders/atrous.frag", GL_FRAGMENT_SHADER);
+        atrousShader.load("shaders/atrous.comp", GL_COMPUTE_SHADER);
         atrousShader.initProgram();
 
         presentShader = new Shader();
@@ -92,9 +91,9 @@ public class Renderer {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
             atrousTexture[i].linearFiltering();
             atrousTexture[i].clampToEdge();
+            glBindImageTexture(4, atrousTexture[i].id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
             atrousTexture[i].unbind();
 
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, atrousTexture[i].id, 0);
             atrousFramebuffer[i].unbind();
         }
 
@@ -295,39 +294,45 @@ public class Renderer {
         accTexture[prevAcc].bind();
         glBindSampler(3, sampler);
         pathtraceShader.setInt("prev_frame", 3);
+
         glBindImageTexture(3, accTexture[currAcc].id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
-        glDispatchCompute(Window.getWidth() / 8, Window.getHeight() / 8, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        pathtraceShader.invokeCompute();
+
         if (atrousFilter) {
             for (int i = 0; i < Gui.iterations[0]; i++) {
-                atrousFramebuffer[currAtrous].bind();
                 atrousShader.use();
-                glActiveTexture(GL_TEXTURE4);
-                if (i == 0) {
-                    accTexture[currAcc].bind();
-                } else {
-                    atrousTexture[prevAtrous].bind();
-                }
-                atrousShader.setInt("color_texture", 4);
-                glActiveTexture(GL_TEXTURE5);
-                normalImage.bind();
-                glBindSampler(5, sampler);
-                atrousShader.setInt("normal_texture", 5);
-                glActiveTexture(GL_TEXTURE6);
-                positionImage.bind();
-                glBindSampler(6, sampler);
-                atrousShader.setInt("position_texture", 6);
-                glActiveTexture(GL_TEXTURE7);
-                albedoImage.bind();
-                glBindSampler(7, sampler);
-                atrousShader.setInt("albedo_texture", 7);
+
                 atrousShader.setVec2("resolution", new Vector2f(Window.getWidth(), Window.getHeight()));
                 atrousShader.setFloat("stepWidth", (1 << (i + 1)) - 1 * Gui.stepWidth[0]);
                 atrousShader.setFloat("c_phi", 1.0f / i * Gui.c_phi[0]);
                 atrousShader.setFloat("n_phi", 1.0f / (1 << i) * Gui.n_phi[0]);
                 atrousShader.setFloat("p_phi", 1.0f / (1 << i) * Gui.p_phi[0]);
-                Quad.draw();
-                swapAtrousFrames();
+
+                glActiveTexture(GL_TEXTURE4);
+                if (i == 0) accTexture[currAcc].bind();
+                else atrousTexture[prevAtrous].bind();
+                glBindSampler(4, sampler);
+                atrousShader.setInt("color_texture", 4);
+
+                glActiveTexture(GL_TEXTURE5);
+                normalImage.bind();
+                glBindSampler(5, sampler);
+                atrousShader.setInt("normal_texture", 5);
+
+                glActiveTexture(GL_TEXTURE6);
+                positionImage.bind();
+                glBindSampler(6, sampler);
+                atrousShader.setInt("position_texture", 6);
+
+                glActiveTexture(GL_TEXTURE7);
+                albedoImage.bind();
+                glBindSampler(7, sampler);
+                atrousShader.setInt("albedo_texture", 7);
+
+                glBindImageTexture(4, atrousTexture[currAtrous].id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+                atrousShader.invokeCompute();
+
+                swapAtrous();
             }
         }
         presentShader.use();
@@ -357,7 +362,7 @@ public class Renderer {
         prevAcc = 1 - prevAcc;
     }
 
-    private static void swapAtrousFrames() {
+    private static void swapAtrous() {
         currAtrous = 1 - currAtrous;
         prevAtrous = 1 - prevAtrous;
     }

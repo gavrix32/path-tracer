@@ -1,19 +1,17 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.math.Matrix4f;
-import net.gavrix32.engine.math.Vector2f;
-import net.gavrix32.engine.math.Vector3f;
-import net.gavrix32.engine.math.Vector4f;
+import net.gavrix32.engine.io.Window;
+import net.gavrix32.engine.math.*;
 import net.gavrix32.engine.utils.Utils;
 import org.tinylog.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL46C.*;
 
 public class Shader {
-    private List<Integer> shaders = new ArrayList<>();
+    private final List<Integer> shaders = new ArrayList<>();
     private int program;
 
     public void load(String path, int type) {
@@ -31,6 +29,11 @@ public class Shader {
         glLinkProgram(program);
         if (glGetProgrami(program, GL_LINK_STATUS) == 0)
             Logger.error("Shader program " + glGetProgramInfoLog(program));
+    }
+
+    public void invokeCompute() {
+        glDispatchCompute(Window.getWidth() / 8, Window.getHeight() / 8, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
 
     /*private String parseIncludes(String code) {

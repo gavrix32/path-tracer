@@ -1,13 +1,15 @@
 #version 460 core
 
-out vec3 out_color;
+layout(local_size_x = 8, local_size_y = 8) in;
+layout(binding = 4, rgba32f) uniform image2D atrous_image;
 
 uniform sampler2D color_texture, normal_texture, position_texture, albedo_texture;
+
 uniform vec2 resolution;
 uniform float stepWidth, c_phi, n_phi, p_phi;
 
 void main() {
-    vec2 offset[25];
+vec2 offset[25];
     int counter = 0;
     for (int i = -2; i <= 2; i++) {
         for (int j = -2; j <= 2; j++) {
@@ -47,31 +49,34 @@ void main() {
     kernel[23] = 1.0f/64.0f;
     kernel[24] = 1.0f/256.0f;
 
+    vec2 uv = (gl_GlobalInvocationID.xy + 0.5) / resolution;
+    
+    vec3 cval = texture(color_texture, uv).rgb;
+    vec3 nval = texture(normal_texture, uv).rgb;
+    vec3 pval = texture(position_texture, uv).rgb;
+    vec3 aval = texture(albedo_texture, uv).rgb;
     vec3 sum;
-    vec3 cval = texture(color_texture, gl_FragCoord.xy / resolution).rgb;
-    vec3 nval = texture(normal_texture, gl_FragCoord.xy / resolution).rgb;
-    vec3 pval = texture(position_texture, gl_FragCoord.xy / resolution).rgb;
-    vec3 aval = texture(albedo_texture, gl_FragCoord.xy / resolution).rgb;
     float cum_w;
-    for (int i = 0; i < 25; i++) {
-        vec2 uv = (gl_FragCoord.xy + offset[i] * stepWidth) / resolution;
 
-        vec3 ctmp = texture(color_texture, uv).rgb;
+    for (int i = 0; i < 25; i++) {
+        vec2 offset_uv = (gl_GlobalInvocationID.xy + 0.5 + offset[i] * stepWidth) / resolution;
+
+        vec3 ctmp = texture(color_texture, offset_uv).rgb;
         vec3 t = cval - ctmp;
         float dist2 = dot(t, t);
         float c_w = min(exp(-dist2 / c_phi), 1.0);
 
-        vec3 ntmp = texture(normal_texture, uv).rgb;
+        vec3 ntmp = texture(normal_texture, offset_uv).rgb;
         t = nval - ntmp;
         dist2 = max(dot(t, t) / stepWidth * stepWidth, 0.0);
         float n_w = min(exp(-dist2 / n_phi), 1.0);
 
-        vec3 ptmp = texture(position_texture, uv).rgb;
+        vec3 ptmp = texture(position_texture, offset_uv).rgb;
         t = pval - ptmp;
         dist2 = dot(t, t);
         float p_w = min(exp(-(dist2) / p_phi), 1.0);
 
-        vec3 atmp = texture(albedo_texture, uv).rgb;
+        vec3 atmp = texture(albedo_texture, offset_uv).rgb;
         t = aval - atmp;
         dist2 = max(dot(t, t), 0.0);
         float a_w = min(exp(-dist2 / 0.5), 1.0);
@@ -80,5 +85,6 @@ void main() {
         sum += ctmp * weight * kernel[i];
         cum_w += weight * kernel[i];
     }
-    out_color = sum / cum_w;
+
+    imageStore(atrous_image, ivec2(gl_GlobalInvocationID.xy), vec4(sum / cum_w, 0.0));
 }
