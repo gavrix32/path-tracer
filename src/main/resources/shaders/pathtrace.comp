@@ -7,11 +7,11 @@
 #define MAX_BOXES 32
 
 struct Ray {
-    vec3 origin, dir, invdir;
+    vec3 origin, dir, invdir, energy;
 };
 
 struct Material {
-    vec3 color;
+    vec3 albedo;
     bool is_metal;
     float emission;
     float roughness;
@@ -263,12 +263,11 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
             hitInfo.normal = vec3(0.0, 1.0, 0.0);
             if (plane.checkerboard) {
                 float cb = checkerboard(vec3(ray.dir * dist + ray.origin).xz / (plane.scale * 0.4f));
-                if (cb != 0.0)
-                hitInfo.material.color = plane.color1;
-                else
-                hitInfo.material.color = plane.color2;
+                if (cb != 0.0) hitInfo.material.albedo = plane.color1;
+                else hitInfo.material.albedo = plane.color2;
+                //hitInfo.material.albedo = texture(sky_texture, vec3(ray.origin + ray.dir * dist).xz / 100.0).rgb;
             } else {
-                hitInfo.material.color = plane.material.color;
+                hitInfo.material.albedo = plane.material.albedo;
             }
         }
     }
@@ -288,7 +287,7 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
     if (dist != -1.0 && dist < hitInfo.distance) {
         for (int i = 0; i < boxes_count; i++) {
             vec3 normal;
-            dist = intersect_box(Ray(ray.origin - boxes[i].position, ray.dir, ray.invdir), boxes[i].scale, normal, boxes[i].rotation).x;
+            dist = intersect_box(Ray(ray.origin - boxes[i].position, ray.dir, ray.invdir, vec3(0.0)), boxes[i].scale, normal, boxes[i].rotation).x;
             if (dist > 0.0 && dist < hitInfo.distance) {
                 hit = true;
                 hitInfo.distance = dist;
@@ -319,40 +318,40 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
                     hitInfo.material = Material(texture(model_texture, uv).rgb, true, 0.0, 1.0, false, 0.0);
                     //hitInfo.material = Material(vec3(1), true, 0.0, 1.0, false, 0.0);
                     // monu2
-                    /*if (hitInfo.material.color == vec3(255.0/255.0, 148.0/255.0, 0.0/255.0)) {
+                    if (hitInfo.material.albedo == vec3(255.0/255.0, 148.0/255.0, 0.0/255.0)) {
                         hitInfo.material.emission = 3.0;
                     }
-                    if (hitInfo.material.color == vec3(158.0/255.0, 164.0/255.0, 110.0/255.0)) {
+                    if (hitInfo.material.albedo == vec3(158.0/255.0, 164.0/255.0, 110.0/255.0)) {
                         hitInfo.material.emission = 3.0;
-                    }*//**
+                    }
 
                     // nebulae
-                    if (hitInfo.material.color == vec3(1.0/255.0, 200.0/255.0, 239.0/255.0)) {
+                    if (hitInfo.material.albedo == vec3(1.0/255.0, 200.0/255.0, 239.0/255.0)) {
                         hitInfo.material.emission = 3.0;
                     }
-                    if (hitInfo.material.color == vec3(106.0/255.0, 200.0/255.0, 239.0/255.0)) {
+                    if (hitInfo.material.albedo == vec3(106.0/255.0, 200.0/255.0, 239.0/255.0)) {
                         hitInfo.material.emission = 3.0;
                     }
-                    if (hitInfo.material.color == vec3(228.0/255.0, 100.0/255.0, 159.0/255.0)) {
+                    if (hitInfo.material.albedo == vec3(228.0/255.0, 100.0/255.0, 159.0/255.0)) {
                         hitInfo.material.emission = 3.0;
                     }
 
                     // portal
-                    if (hitInfo.material.color == vec3(103.0/255.0, 215.0/255.0, 190.0/255.0)) hitInfo.material.emission = 3.0;
-                    if (hitInfo.material.color == vec3(219.0/255.0, 46.0/255.0, 46.0/255.0)) hitInfo.material.emission = 3.0;
-                    if (hitInfo.material.color == vec3(212.0/255.0, 78.0/255.0, 112.0/255.0)) hitInfo.material.emission = 3.0;
-                    if (hitInfo.material.color == vec3(210.0/255.0, 11.0/255.0, 21.0/255.0)) hitInfo.material.emission = 3.0;
-                    if (hitInfo.material.color == vec3(197.0/255.0, 25.0/255.0, 31.0/255.0)) hitInfo.material.emission = 3.0;
-                    if (hitInfo.material.color == vec3(255.0/255.0, 255.0/255.0, 255.0/255.0) && vec3(ray.origin + ray.dir * hitInfo.distance).x > 0.0) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.albedo == vec3(103.0/255.0, 215.0/255.0, 190.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.albedo == vec3(219.0/255.0, 46.0/255.0, 46.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.albedo == vec3(212.0/255.0, 78.0/255.0, 112.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.albedo == vec3(210.0/255.0, 11.0/255.0, 21.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.albedo == vec3(197.0/255.0, 25.0/255.0, 31.0/255.0)) hitInfo.material.emission = 3.0;
+                    if (hitInfo.material.albedo == vec3(255.0/255.0, 255.0/255.0, 255.0/255.0) && vec3(ray.origin + ray.dir * hitInfo.distance).x > 0.0) hitInfo.material.emission = 3.0;
 
-                    if (hitInfo.material.color.r >= 20.0/255.0 && hitInfo.material.color.r <= 150.0/255.0 &&
-                    hitInfo.material.color.g >= 140.0/255.0 && hitInfo.material.color.g <= 255.0/255.0 &&
-                    hitInfo.material.color.b >= 230.0/255.0 && hitInfo.material.color.b <= 255.0/255.0
+                    if (hitInfo.material.albedo.r >= 20.0/255.0 && hitInfo.material.albedo.r <= 150.0/255.0 &&
+                    hitInfo.material.albedo.g >= 140.0/255.0 && hitInfo.material.albedo.g <= 255.0/255.0 &&
+                    hitInfo.material.albedo.b >= 230.0/255.0 && hitInfo.material.albedo.b <= 255.0/255.0
                     ) hitInfo.material.emission = 3.0;
 
-                    if (hitInfo.material.color.r >= 200.0/255.0 && hitInfo.material.color.r <= 255.0/255.0 &&
-                    hitInfo.material.color.g >= 120.0/255.0 && hitInfo.material.color.g <= 255.0/255.0 &&
-                    hitInfo.material.color.b >= 0.0/255.0 && hitInfo.material.color.b <= 150.0/255.0
+                    if (hitInfo.material.albedo.r >= 200.0/255.0 && hitInfo.material.albedo.r <= 255.0/255.0 &&
+                    hitInfo.material.albedo.g >= 120.0/255.0 && hitInfo.material.albedo.g <= 255.0/255.0 &&
+                    hitInfo.material.albedo.b >= 0.0/255.0 && hitInfo.material.albedo.b <= 150.0/255.0
                     ) hitInfo.material.emission = 3.0;
 
                     //hitInfo.material = Material(vec3(1.0), true, 0.0, 1.0, false, 0.0);
@@ -402,9 +401,9 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
         if (sky_has_texture) {
             vec2 uv_ = vec2(atan(ray.dir.z, ray.dir.x) / PI, asin(ray.dir.y) * 2.0 / PI);
             uv_ = uv_ * 0.5 + 0.5;
-            hitInfo.material.color = texture(sky_texture, uv_).rgb;
+            hitInfo.material.albedo = texture(sky_texture, uv_).rgb;
         } else {
-            hitInfo.material.color = sky.material.color;
+            hitInfo.material.albedo = sky.material.albedo;
         }
         return true;
     }
@@ -430,42 +429,39 @@ float fresnel(vec3 dir, vec3 n, float ior) {
 }
 
 Ray brdf(Ray ray, HitInfo hitInfo) {
-    if (hitInfo.material.is_glass)
-    ray.origin += ray.dir * (hitInfo.distance + EPSILON);
-    else
-    ray.origin += ray.dir * (hitInfo.distance - EPSILON);
+    if (hitInfo.material.is_glass) ray.origin += ray.dir * (hitInfo.distance + EPSILON);
+    else ray.origin += ray.dir * (hitInfo.distance - EPSILON);
     vec3 diffused = random_cosine_weighted_hemisphere(hitInfo.normal);
     vec3 reflected = reflect(ray.dir, hitInfo.normal);
     vec3 refracted = refract(ray.dir, hitInfo.normal, 1.0 / hitInfo.material.IOR);
     if (hitInfo.material.is_glass) {
         if (fresnel(ray.dir, hitInfo.normal, hitInfo.material.IOR) > random()) refracted = reflected;
-        if (hitInfo.material.is_metal)
-        ray.dir = mix(refracted, diffused, hitInfo.material.roughness > 0.5 ? 0.5 : hitInfo.material.roughness);
-        else
-        ray.dir = mix(refracted, diffused, random() < hitInfo.material.roughness ? 1.0 : 0.0);
+        if (hitInfo.material.is_metal) ray.dir = mix(refracted, diffused, hitInfo.material.roughness > 0.5 ? 0.5 : hitInfo.material.roughness);
+        else ray.dir = mix(refracted, diffused, random() < hitInfo.material.roughness ? 1.0 : 0.0);
     } else {
-        if (hitInfo.material.is_metal)
-        ray.dir = mix(reflected, diffused, hitInfo.material.roughness);
-        else
-        ray.dir = mix(reflected, diffused, random() < hitInfo.material.roughness ? 1.0 : 0.0);
+        if (hitInfo.material.is_metal) ray.dir = mix(reflected, diffused, hitInfo.material.roughness);
+        else ray.dir = mix(reflected, diffused, random() < hitInfo.material.roughness ? 1.0 : 0.0);
     }
     ray.invdir = 1.0 / ray.dir;
     return ray;
 }
 
-vec3 trace(Ray ray) {
-    vec3 energy = vec3(1.0);
-    for (int i = 0; i <= bounces; i++) {
+vec3 trace(inout Ray ray, in int depth) {
+    vec3 color = vec3(0.0);
+    for (int i = 0; i < depth; i++) {
         HitInfo hitinfo;
         if (raycast(ray, hitinfo)) {
-            ray = brdf(ray, hitinfo);
-            energy *= hitinfo.material.color;
+            ray.energy *= hitinfo.material.albedo;
             if (hitinfo.material.emission > 0.0) {
-                return energy * hitinfo.material.emission;
+                color += ray.energy * hitinfo.material.emission;
+                break;
             }
+            ray = brdf(ray, hitinfo);
+        } else {
+            break;
         }
     }
-    return vec3(0);
+    return color;
 }
 
 vec2 uv2fragcoord(vec2 uv) {
@@ -496,7 +492,7 @@ void main() {
     } else {
         direction = normalize(vec3(uv * fov_converted, 1.0) * mat3(camera_rotation));
     }
-    Ray ray = Ray(camera_position, direction, 1.0 / direction);
+    Ray ray = Ray(camera_position, direction, 1.0 / direction, vec3(1.0));
 
     // depth of field
     if (aperture != 0.0) {
@@ -504,7 +500,7 @@ void main() {
         if (focus_distance == 0.0) {
             HitInfo autofocus_hitinfo;
             vec3 dir = normalize(vec3(vec2(0.001), 1.0) * mat3(camera_rotation));
-            Ray autofocus_ray = Ray(camera_position, dir, 1.0 / dir);
+            Ray autofocus_ray = Ray(camera_position, dir, 1.0 / dir, vec3(0.0));
             raycast(autofocus_ray, autofocus_hitinfo);
             focus_dist = autofocus_hitinfo.distance >= MAX_DISTANCE ? 1000 : autofocus_hitinfo.distance;
         } else {
@@ -516,22 +512,28 @@ void main() {
         ray.dir = normalize(dof_direction);
     }
 
+    // G-buffer
     HitInfo hitinfo;
     vec3 dir = normalize(vec3(uv * fov_converted, 1.0) * mat3(camera_rotation));
-    raycast(Ray(camera_position, dir, 1.0 / dir), hitinfo);
+    raycast(Ray(camera_position, dir, 1.0 / dir, vec3(0.0)), hitinfo);
 
-    vec3 color;
+    vec3 color, direct, indirect;
     for (int i = 0; i < samples; i++) {
-        color += trace(ray);
+        direct += trace(ray, 2);
+        indirect += trace(ray, bounces);
     }
+    color = direct + indirect;
     color /= samples;
 
-    if (debug_bvh) {
+    // demodulate albedo
+    // color /= max(hitinfo.material.albedo, vec3(0.001));
+
+    /*if (debug_bvh) {
         float bounds_weight = boundsTests / float(bounds_test_threshold);
         float triangles_weight = triangleTests / float(triangle_test_threshold);
         //color = max(bounds_weight, triangles_weight) > 1.0 ? vec3(1.0) : vec3(triangles_weight, 0.0, bounds_weight);
         color = bounds_weight > 1.0 ? vec3(1.0, 0.0, 0.0) : vec3(bounds_weight);
-    }
+    }*/
 
     float factor = accumulated_samples / (accumulated_samples + 1.0);
     if (temporal_reprojection) {
@@ -554,6 +556,6 @@ void main() {
 
     imageStore(normal_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.normal, 0.0));
     imageStore(position_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.hitpos, 0.0));
-    imageStore(albedo_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.material.color, 0.0));
+    imageStore(albedo_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.material.albedo, 0.0));
     imageStore(color_image, ivec2(gl_GlobalInvocationID.xy), vec4(color, hitinfo.distance));
 }

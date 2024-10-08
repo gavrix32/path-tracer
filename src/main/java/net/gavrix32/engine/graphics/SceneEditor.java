@@ -326,8 +326,8 @@ public class SceneEditor {
             scene.addBox(new Box());
             Renderer.resetAccFrames();
         }
-        ImGui.sameLine();
         if (scene.getPlane() == null) {
+            ImGui.sameLine();
             if (ImGui.button("add plane")) {
                 scene.setPlane(new Plane(true));
                 Renderer.resetAccFrames();

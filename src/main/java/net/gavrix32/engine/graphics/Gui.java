@@ -26,7 +26,10 @@ public class Gui {
     public static final float[] stepWidth = new float[] {2.8f}, c_phi = new float[] {0.01f}, n_phi = new float[] {0.01f}, p_phi = new float[] {1000.0f};
     private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(),
             temporalAntialiasing = new ImBoolean(), atrousFilter = new ImBoolean();
-    private static final ImInt sceneId = new ImInt(1);
+    private static final ImInt sceneId = new ImInt();
+
+    private static final String[] lightingModeNames = {"Combined", "Direct", "Indirect"};
+    private static final ImInt lightingMode = new ImInt(0);
 
     // Debug BVH
     public static final ImBoolean debugBVH = new ImBoolean(false);
@@ -68,10 +71,16 @@ public class Gui {
         ImGui.beginDisabled(!Window.isCursorVisible());
         ImGui.begin("Path Tracer");
         ImGui.pushItemWidth(150);
+
+        // Frametime / FPS
         ImGui.text("Frametime: " + Math.floor(Engine.getDeltaTime() * 1000) + " ms ("
                 + (int) (1 / Engine.getDeltaTime()) + " FPS)");
+
+        // Accumulated samples
         ImGui.text("Accumulated samples: " + Renderer.getAccumulatedSamples());
+
         ImGui.separator();
+        // Renderer
         if (ImGui.treeNode("Renderer")) {
             String vsyncFormat = "";
             switch (vsync[0]) {
@@ -88,36 +97,52 @@ public class Gui {
             }
             if (ImGui.sliderInt("FPS Limit", fpsLimit, 1, 300))
                 Engine.setFpsLimit(fpsLimit[0]);
+
             if (ImGui.sliderInt("Samples", samples, 1, 16))
                 Renderer.setSamples(samples[0]);
+
             if (ImGui.sliderInt("Bounces", bounces, 1, 16))
                 Renderer.setBounces(bounces[0]);
+
             String gammaFormat = gamma[0] == 0.0f ? "Off" : "%.1f";
             if (ImGui.sliderFloat("Gamma", gamma, 0.0f, 10.0f, gammaFormat))
                 Renderer.setGamma(gamma[0]);
+
             String exposureFormat = exposure[0] == 0.0f ? "Off" : "%.1f";
             if (ImGui.sliderFloat("Exposure", exposure, 0.0f, 10.0f, exposureFormat))
                 Renderer.setExposure(exposure[0]);
+
             String focusDistanceFormat = focusDistance[0] == 0.0 ? "Auto" : "%.1f";
             if (ImGui.sliderFloat("Focus Distance", focusDistance, 0.0f, 1000.0f, focusDistanceFormat))
                 Renderer.setFocusDistance(focusDistance[0]);
+
             String apertureFormat = aperture[0] == 0.0 ? "Off" : "%.1f";
             if (ImGui.sliderFloat("Aperture", aperture, 0.0f, 50.0f, apertureFormat))
                 Renderer.setAperture(aperture[0]);
+
             if (ImGui.sliderFloat("FOV", fov, 0.0f, 180.0f, "%.1f"))
                 Renderer.setFOV(fov[0]);
+
             if (ImGui.checkbox("Accumulation", accumulation))
                 Renderer.useAccumulation(accumulation.get());
             ImGui.beginDisabled(!accumulation.get());
+
             if (ImGui.sliderInt("Max Accumulated Samples", maxAccumulatedSamples, -1, 100))
                 Renderer.setMaxAccumulatedSamples(maxAccumulatedSamples[0]);
             ImGui.endDisabled();
+
+            // Temporal Reprojection
             if (ImGui.checkbox("Temporal Reprojection", temporalReprojection))
                 Renderer.useTemporalReprojection(temporalReprojection.get());
-            if (ImGui.checkbox("Temporal Anti-Aliasing", temporalAntialiasing))
+
+            // TAA
+            if (ImGui.checkbox("TAA", temporalAntialiasing))
                 Renderer.useTemporalAntialiasing(temporalAntialiasing.get());
+
+            // À-Trous Filter
             if (ImGui.checkbox("À-Trous Filter", atrousFilter))
                 Renderer.useAtrousFilter(atrousFilter.get());
+
             ImGui.beginDisabled(!atrousFilter.get());
             ImGui.sliderInt("iterations", iterations, 1, 10);
             ImGui.sliderFloat("stepWidth", stepWidth, 0.0f, 10.0f);
@@ -125,8 +150,22 @@ public class Gui {
             ImGui.sliderFloat("n_phi", n_phi, 0.0f, 10.0f);
             ImGui.sliderFloat("p_phi", p_phi, 0.0f, 10.0f);
             ImGui.endDisabled();
+
+            // Lighting Mode
+            ImGui.beginDisabled();
+            if (ImGui.combo("Lighting Mode", lightingMode, lightingModeNames)) {}
+            ImGui.endDisabled();
+
+            // Debug BVH
+            ImGui.checkbox("BVH Debug View", debugBVH);
+            ImGui.beginDisabled(!debugBVH.get());
+            ImGui.dragInt("Bounds Test Threshold", boundsTestThreshold, 1);
+            ImGui.dragInt("Triangles Test Threshold", triangleTestThreshold, 1);
+            ImGui.endDisabled();
+
             if (ImGui.button("Save"))
                 Config.save();
+
             ImGui.sameLine();
             if (ImGui.button("Reset")) {
                 Config.reset();
@@ -152,16 +191,20 @@ public class Gui {
             }
             ImGui.treePop();
         }
+
+        // Scene
+        sceneId.set(scenes.indexOf(Renderer.getScene()));
         if (ImGui.treeNode("Scene")) {
             String[] names = new String[scenes.size()];
             for (int i = 0; i < scenes.size(); i++)
                 names[i] = scenes.get(i).getName();
-            if (ImGui.combo("Select", sceneId, names))
+            if (ImGui.combo("Select", sceneId, names)) {
+                Renderer.setScene(scenes.get(sceneId.get()));
                 Renderer.resetAccFrames();
+            }
             SceneEditor.showSceneObjectProps(scenes.get(sceneId.get()));
             ImGui.treePop();
         }
-        Renderer.setScene(scenes.get(sceneId.get()));
         if (ImGui.button("Screenshot")) {
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
             LocalDateTime now = LocalDateTime.now();
@@ -170,13 +213,6 @@ public class Gui {
                 screenshotsDir.mkdir();
             Utils.takeScreenshot(System.getProperty("user.dir") + "/screenshots/" + dtf.format(now) + ".png");
         }
-
-        // Debug BVH
-        ImGui.checkbox("BVH Debug View", debugBVH);
-        ImGui.beginDisabled(!debugBVH.get());
-        ImGui.dragInt("Bounds Test Threshold", boundsTestThreshold, 1);
-        ImGui.dragInt("Triangles Test Threshold", triangleTestThreshold, 1);
-        ImGui.endDisabled();
 
         ImGui.end();
         ImGui.endDisabled();

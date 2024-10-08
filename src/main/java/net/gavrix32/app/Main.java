@@ -54,6 +54,7 @@ public class Main implements IApp {
         // plastic -- mirror -- metal
 
         Renderer.init();
+        Renderer.setScene(rgbRoom.getScene());
     }
 
     public void update() {
