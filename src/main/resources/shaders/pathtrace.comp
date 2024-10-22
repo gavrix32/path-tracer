@@ -3,8 +3,8 @@
 #define PI 3.14159
 #define EPSILON 0.001
 #define MAX_DISTANCE 1e10
-#define MAX_SPHERES 32
-#define MAX_BOXES 32
+#define MAX_SPHERES 16
+#define MAX_BOXES 16
 
 struct Ray {
     vec3 origin, dir, invdir, energy;
@@ -405,6 +405,9 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
         } else {
             hitInfo.material.albedo = sky.material.albedo;
         }
+        // Gradient sky
+        float dir_y = (ray.dir.y + 1.0) / 2.0;
+        hitInfo.material.albedo = clamp((1 - dir_y) * vec3(1.0) + dir_y * vec3(0.2, 0.5, 1.0), 0.0, 1.0);
         return true;
     }
     return hit;
@@ -439,7 +442,7 @@ Ray brdf(Ray ray, HitInfo hitInfo) {
         if (hitInfo.material.is_metal) ray.dir = mix(refracted, diffused, hitInfo.material.roughness > 0.5 ? 0.5 : hitInfo.material.roughness);
         else ray.dir = mix(refracted, diffused, random() < hitInfo.material.roughness ? 1.0 : 0.0);
     } else {
-        if (hitInfo.material.is_metal) ray.dir = mix(reflected, diffused, hitInfo.material.roughness);
+        if (hitInfo.material.is_metal) ray.dir = reflected + random_cosine_weighted_hemisphere(hitInfo.normal) * hitInfo.material.roughness;
         else ray.dir = mix(reflected, diffused, random() < hitInfo.material.roughness ? 1.0 : 0.0);
     }
     ray.invdir = 1.0 / ray.dir;
@@ -518,11 +521,14 @@ void main() {
     raycast(Ray(camera_position, dir, 1.0 / dir, vec3(0.0)), hitinfo);
 
     vec3 color, direct, indirect;
-    for (int i = 0; i < samples; i++) {
+    /*for (int i = 0; i < samples; i++) {
         direct += trace(ray, 2);
-        indirect += trace(ray, bounces);
+        indirect += trace(ray, 2);
     }
-    color = direct + indirect;
+    color = indirect;*/
+    for (int i = 0; i < samples; i++) {
+        color += trace(ray, bounces + 2);
+    }
     color /= samples;
 
     // demodulate albedo

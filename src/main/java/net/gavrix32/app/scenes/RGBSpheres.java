@@ -43,7 +43,7 @@ public class RGBSpheres {
                         new Vector3f(),
                         new Vector3f(1),
                         new Vector3f(0, 250, 500),
-                        new Material(true, 0, 1, 1, false)
+                        new Material(false, 0, 1, 1, false)
                 ),
                 // Right
                 new Box(
@@ -51,7 +51,7 @@ public class RGBSpheres {
                         new Vector3f(),
                         new Vector3f(1),
                         new Vector3f(0, 250, 500),
-                        new Material(true, 0, 1, 1, false)
+                        new Material(false, 0, 1, 1, false)
                 ),
                 // Front
                 new Box(
@@ -59,21 +59,21 @@ public class RGBSpheres {
                         new Vector3f(),
                         new Vector3f(1),
                         new Vector3f(500, 250, 0),
-                        new Material(true, 0, 1, 1, false)
+                        new Material(false, 0, 1, 1, false)
                 ),
                 new Box(
                         new Vector3f(500, 250, 0),
                         new Vector3f(),
                         new Vector3f(1),
                         new Vector3f(500, 250, 0),
-                        new Material(true, 0, 1, 1, false)
+                        new Material(false, 0, 1, 1, false)
                 ),
                 new Box(
                         new Vector3f(500, 500, 500),
                         new Vector3f(),
                         new Vector3f(1),
                         new Vector3f(500, 0, 500),
-                        new Material(true, 0, 1, 1, false)
+                        new Material(false, 0, 1, 1, false)
                 )
         );
         Random random = new Random();
@@ -96,7 +96,7 @@ public class RGBSpheres {
                             new Vector3f(random.nextFloat() * 360, random.nextFloat() * 360, random.nextFloat() * 360),
                             new Vector3f(red, red > 0.8f ? random.nextFloat(0.0f, 0.5f) : 0.0f, 0),
                             new Vector3f(random.nextFloat() * 50, random.nextFloat() * 50, random.nextFloat() * 50),
-                            new Material(true, random.nextBoolean() ? 5 : 0, 0, 1, false)
+                            new Material(false, random.nextBoolean() ? 5 : 0, 0, 1, false)
             ));
         }
     }

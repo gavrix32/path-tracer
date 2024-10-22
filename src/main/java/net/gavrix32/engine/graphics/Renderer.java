@@ -355,7 +355,7 @@ public class Renderer {
         prevAtrous = 1 - prevAtrous;
     }
 
-    public static void resetFramebufferTextures() {
+    public static void resetTextures() {
         accTexture[0].bind();
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, Window.getWidth(), Window.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
         accTexture[1].bind();

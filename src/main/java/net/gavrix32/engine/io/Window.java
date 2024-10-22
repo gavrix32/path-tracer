@@ -2,6 +2,7 @@ package net.gavrix32.engine.io;
 
 import net.gavrix32.engine.graphics.Config;
 import net.gavrix32.engine.graphics.Renderer;
+import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
@@ -56,7 +57,7 @@ public class Window {
             }
             glViewport(0, 0, w, h);
             Renderer.resetAccFrames();
-            Renderer.resetFramebufferTextures();
+            Renderer.resetTextures();
         });
         glfwSetWindowPosCallback(window, (window, xpos, ypos) -> {
             if (!fullscreen) {

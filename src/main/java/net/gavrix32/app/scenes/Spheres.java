@@ -19,7 +19,7 @@ public class Spheres {
                 new Vector3f(),
                 new Vector3f(),
                 new Vector3f(1),
-                new Vector3f(250, 0, 100), new Material(true, 0, 1, 1, false)
+                new Vector3f(250, 0, 100), new Material(false, 0, 1, 1, false)
         ));
         scene.addSpheres(
                 new Sphere(
