@@ -406,8 +406,8 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
             hitInfo.material.albedo = sky.material.albedo;
         }
         // Gradient sky
-        float dir_y = (ray.dir.y + 1.0) / 2.0;
-        hitInfo.material.albedo = clamp((1 - dir_y) * vec3(1.0) + dir_y * vec3(0.2, 0.5, 1.0), 0.0, 1.0);
+        /*float dir_y = (ray.dir.y + 1.0) / 2.0;
+        hitInfo.material.albedo = clamp((1 - dir_y) * vec3(1.0) + dir_y * vec3(0.2, 0.5, 1.0), 0.0, 1.0);*/
         return true;
     }
     return hit;

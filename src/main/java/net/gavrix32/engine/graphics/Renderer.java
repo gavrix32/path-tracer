@@ -52,16 +52,16 @@ public class Renderer {
         Quad.init();
 
         pathtraceShader = new Shader();
-        pathtraceShader.load("shaders/pathtrace.comp", GL_COMPUTE_SHADER);
+        pathtraceShader.load("shaders/pathtrace.cs.glsl", GL_COMPUTE_SHADER);
         pathtraceShader.initProgram();
 
         atrousShader = new Shader();
-        atrousShader.load("shaders/atrous.comp", GL_COMPUTE_SHADER);
+        atrousShader.load("shaders/atrous.cs.glsl", GL_COMPUTE_SHADER);
         atrousShader.initProgram();
 
         presentShader = new Shader();
-        presentShader.load("shaders/quad.vert", GL_VERTEX_SHADER);
-        presentShader.load("shaders/present.frag", GL_FRAGMENT_SHADER);
+        presentShader.load("shaders/quad.vs.glsl", GL_VERTEX_SHADER);
+        presentShader.load("shaders/present.fs.glsl", GL_FRAGMENT_SHADER);
         presentShader.initProgram();
 
         scene = new Scene();
