@@ -1,5 +1,10 @@
 package net.gavrix32.engine.graphics;
 
+import net.gavrix32.engine.io.Window;
+
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+
 import static org.lwjgl.opengl.GL46C.*;
 
 public class Texture {
@@ -15,6 +20,18 @@ public class Texture {
 
     protected void unbind() {
         glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    protected void texImage(int internalFormat, int type, long pixels) {
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, Window.getWidth(), Window.getHeight(), 0, GL_RGB, type, pixels);
+    }
+
+    protected void texImage(int internalFormat, int type, ByteBuffer pixels) {
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, Window.getWidth(), Window.getHeight(), 0, GL_RGB, type, pixels);
+    }
+
+    protected void texImage(int internalFormat, int type, FloatBuffer pixels) {
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, Window.getWidth(), Window.getHeight(), 0, GL_RGB, type, pixels);
     }
 
     protected void linearFiltering() {

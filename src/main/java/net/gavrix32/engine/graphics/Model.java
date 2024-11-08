@@ -1,7 +1,7 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.math.Vector2f;
-import net.gavrix32.engine.math.Vector3f;
+import net.gavrix32.engine.linearmath.Vector2f;
+import net.gavrix32.engine.linearmath.Vector3f;
 import net.gavrix32.engine.objects.Triangle;
 import net.gavrix32.engine.utils.Utils;
 import org.lwjgl.BufferUtils;

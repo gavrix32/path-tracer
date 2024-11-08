@@ -1,7 +1,7 @@
 package net.gavrix32.engine.objects;
 
-import net.gavrix32.engine.math.Matrix4f;
-import net.gavrix32.engine.math.Vector3f;
+import net.gavrix32.engine.linearmath.Matrix4f;
+import net.gavrix32.engine.linearmath.Vector3f;
 
 public class Camera {
     private Vector3f temp_pos, position, rotation;

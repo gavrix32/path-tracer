@@ -1,4 +1,4 @@
-package net.gavrix32.engine.math;
+package net.gavrix32.engine.linearmath;
 
 public final class Vector2f {
     public float x, y;

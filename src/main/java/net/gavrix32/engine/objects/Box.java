@@ -1,8 +1,8 @@
 package net.gavrix32.engine.objects;
 
 import net.gavrix32.engine.graphics.Material;
-import net.gavrix32.engine.math.Matrix4f;
-import net.gavrix32.engine.math.Vector3f;
+import net.gavrix32.engine.linearmath.Matrix4f;
+import net.gavrix32.engine.linearmath.Vector3f;
 import org.tinylog.Logger;
 
 public class Box extends Shape {

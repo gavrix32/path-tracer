@@ -1,7 +1,7 @@
 package net.gavrix32.engine.objects;
 
 import net.gavrix32.engine.graphics.Material;
-import net.gavrix32.engine.math.Vector3f;
+import net.gavrix32.engine.linearmath.Vector3f;
 
 public class Plane {
     private Vector3f color, color1, color2;

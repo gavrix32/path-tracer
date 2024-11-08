@@ -1,7 +1,7 @@
 package net.gavrix32.engine.graphics;
 
 import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.math.*;
+import net.gavrix32.engine.linearmath.*;
 import net.gavrix32.engine.utils.Utils;
 import org.tinylog.Logger;
 

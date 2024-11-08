@@ -1,7 +1,7 @@
 package net.gavrix32.app.scenes;
 
 import net.gavrix32.engine.graphics.*;
-import net.gavrix32.engine.math.Vector3f;
+import net.gavrix32.engine.linearmath.Vector3f;
 
 public class BVHTest {
     private final Scene scene;

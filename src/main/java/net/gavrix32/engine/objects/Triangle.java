@@ -1,7 +1,7 @@
 package net.gavrix32.engine.objects;
 
-import net.gavrix32.engine.math.Vector2f;
-import net.gavrix32.engine.math.Vector3f;
+import net.gavrix32.engine.linearmath.Vector2f;
+import net.gavrix32.engine.linearmath.Vector3f;
 
 public class Triangle {
     public Vector3f v1, v2, v3;

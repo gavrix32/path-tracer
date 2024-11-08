@@ -61,12 +61,13 @@ struct Node {
     float triangle_start_index, triangles_count, child_index;
 };
 
-uniform vec2 resolution;
 uniform vec3 camera_position, prev_camera_position, triangles_offset;
 uniform mat4 camera_rotation, prev_camera_rotation, triangles_rotation;
 uniform int samples, bounces, spheres_count, boxes_count, accumulated_samples, max_accumulated_samples;
 uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture;
-uniform sampler2D sky_texture, model_texture, prev_frame;
+uniform sampler2D sky_texture;
+uniform sampler2D prev_color;
+uniform sampler2D prev_normal;
 uniform float time, fov, focus_distance, aperture;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
@@ -80,9 +81,9 @@ uniform int bounds_test_threshold, triangle_test_threshold;
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
-layout(binding = 0, rgba32f) uniform image2D normal_image;
-layout(binding = 1, rgba32f) uniform image2D position_image;
-layout(binding = 2, rgba32f) uniform image2D albedo_image;
+layout(binding = 0, rgba32f) uniform image2D position_image;
+layout(binding = 1, rgba32f) uniform image2D albedo_image;
+layout(binding = 2, rgba32f) uniform image2D normal_image;
 layout(binding = 3, rgba32f) uniform image2D color_image;
 
 layout(binding = 0) readonly buffer node_buffer {
@@ -94,6 +95,7 @@ layout(binding = 1) readonly buffer triangle_buffer {
 };
 
 uint seed = 0;
+vec2 resolution = imageSize(color_image);
 
 // source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
 uint pcg_hash(uint seed) {
@@ -138,7 +140,7 @@ float intersect_sphere(Ray ray, vec3 ce, float ra) {
 float intersect_box(Ray ray, vec3 scale, out vec3 normal, mat4 rotation) {
     vec3 ro = (rotation * vec4(ray.origin, 1.0)).xyz;
     vec3 rd = (rotation * vec4(ray.dir, 0.0)).xyz;
-    vec3 m = 1 / rd;
+    vec3 m = 1.0 / rd;
     vec3 n = m * ro;
     vec3 k = abs(m) * scale;
     vec3 t1 = -n - k;
@@ -449,7 +451,7 @@ Ray brdf(Ray ray, HitInfo hitInfo) {
     return ray;
 }
 
-vec3 trace(inout Ray ray, in int depth) {
+vec3 trace(in Ray ray, in int depth) {
     vec3 color = vec3(0.0);
     for (int i = 0; i < depth; i++) {
         HitInfo hitinfo;
@@ -520,12 +522,7 @@ void main() {
     vec3 dir = normalize(vec3(uv * fov_converted, 1.0) * mat3(camera_rotation));
     raycast(Ray(camera_position, dir, 1.0 / dir, vec3(0.0)), hitinfo);
 
-    vec3 color, direct, indirect;
-    /*for (int i = 0; i < samples; i++) {
-        direct += trace(ray, 2);
-        indirect += trace(ray, 2);
-    }
-    color = indirect;*/
+    vec3 color = vec3(0.0);
     for (int i = 0; i < samples; i++) {
         color += trace(ray, bounces + 2);
     }
@@ -541,6 +538,7 @@ void main() {
         color = bounds_weight > 1.0 ? vec3(1.0, 0.0, 0.0) : vec3(bounds_weight);
     }*/
 
+    float variance = 0.0;
     float factor = accumulated_samples / (accumulated_samples + 1.0);
     if (temporal_reprojection) {
         vec2 reproj_fragcoord = reproject(mat3(prev_camera_rotation), prev_camera_position, hitinfo, fov_converted);
@@ -549,19 +547,28 @@ void main() {
         if (reproj_uv.x < 0.0 || reproj_uv.y < 0.0 || reproj_uv.x > 1.0 || reproj_uv.y > 1.0) {
             temporal_mix_factor = 0.0;
         }
-        if (abs(hitinfo.distance - texture(prev_frame, reproj_uv).a) > 15.0) {
+        if (abs(hitinfo.distance - texture(prev_normal, reproj_uv).a) > 15.0) {
             temporal_mix_factor = 0.0;
         }
-        vec3 prev_color = texture(prev_frame, reproj_uv).rgb;
+        if (hitinfo.material.roughness < 1.0) {
+            temporal_mix_factor = 0.0;
+        }
+        vec3 normal_delta = abs(hitinfo.normal - texture(prev_normal, reproj_uv).rgb);
+        if (normal_delta.r > 0.1 || normal_delta.g > 0.1 || normal_delta.b > 0.1) {
+            temporal_mix_factor = 0.0;
+        }
+        vec3 prev_color = texture(prev_color, reproj_uv).rgb;
+        float color_diff = length(color - prev_color);
+        variance = color_diff * color_diff;
         color = accumulated_samples != 0 ? mix(color, prev_color, factor == 0.0 ? temporal_mix_factor : factor) : mix(color, prev_color, temporal_mix_factor);
     }
     if (accumulated_samples != 0 && !temporal_reprojection) {
-        vec3 prev_color = texelFetch(prev_frame, ivec2(gl_GlobalInvocationID.xy), 0).rgb;
+        vec3 prev_color = texelFetch(prev_color, ivec2(gl_GlobalInvocationID.xy), 0).rgb;
         color = accumulated_samples == max_accumulated_samples ? prev_color : mix(color, prev_color, factor);
     }
 
-    imageStore(normal_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.normal, 0.0));
-    imageStore(position_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.hitpos, 0.0));
+    imageStore(normal_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.normal, hitinfo.distance));
+    imageStore(position_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.hitpos, variance));
     imageStore(albedo_image, ivec2(gl_GlobalInvocationID.xy), vec4(hitinfo.material.albedo, 0.0));
-    imageStore(color_image, ivec2(gl_GlobalInvocationID.xy), vec4(color, hitinfo.distance));
+    imageStore(color_image, ivec2(gl_GlobalInvocationID.xy), vec4(color, 0.0));
 }

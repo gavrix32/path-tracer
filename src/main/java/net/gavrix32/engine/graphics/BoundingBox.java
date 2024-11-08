@@ -1,6 +1,6 @@
 package net.gavrix32.engine.graphics;
 
-import net.gavrix32.engine.math.Vector3f;
+import net.gavrix32.engine.linearmath.Vector3f;
 import net.gavrix32.engine.objects.Box;
 import net.gavrix32.engine.objects.Sphere;
 import net.gavrix32.engine.objects.Triangle;

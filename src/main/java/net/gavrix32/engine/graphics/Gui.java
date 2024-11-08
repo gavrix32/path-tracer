@@ -20,10 +20,12 @@ public class Gui {
     private static final ImGuiImplGl3 imGuiImplGl3 = new ImGuiImplGl3();
     private static final String fontPath = "fonts/Inter-Regular.ttf";
 
-    private static final int[] vsync = new int[1], fpsLimit = new int[1], samples = new int[1], bounces = new int[1], maxAccumulatedSamples = new int[1];
+    private static final int[] vsync = new int[1], fpsLimit = new int[1], samples = new int[1], bounces = new int[2], maxAccumulatedSamples = new int[1];
     public static final int[] iterations = new int[] {5};
     private static final float[] gamma = new float[1], exposure = new float[1], focusDistance = new float[1], aperture = new float[1], fov = new float[1];
     public static final float[] stepWidth = new float[] {2.8f}, c_phi = new float[] {0.01f}, n_phi = new float[] {0.01f}, p_phi = new float[] {1000.0f};
+    public static final float[] sigma_spatial = new float[] {10.0f}, sigma_color = new float[] {0.2f}, sigma_depth = new float[] {10.0f}, sigma_normal = new float[] {0.1f};
+    public static final int[] radius = new int[] {2};
     private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(),
             temporalAntialiasing = new ImBoolean(), atrousFilter = new ImBoolean();
     private static final ImInt sceneId = new ImInt();
@@ -145,10 +147,15 @@ public class Gui {
 
             ImGui.beginDisabled(!atrousFilter.get());
             ImGui.sliderInt("iterations", iterations, 1, 10);
-            ImGui.sliderFloat("stepWidth", stepWidth, 0.0f, 10.0f);
+            /*ImGui.sliderFloat("stepWidth", stepWidth, 0.0f, 10.0f);
             ImGui.sliderFloat("c_phi", c_phi, 0.0f, 10.0f);
             ImGui.sliderFloat("n_phi", n_phi, 0.0f, 10.0f);
-            ImGui.sliderFloat("p_phi", p_phi, 0.0f, 10.0f);
+            ImGui.sliderFloat("p_phi", p_phi, 0.0f, 10.0f);*/
+            ImGui.sliderInt("radius", radius, 1, 5);
+            ImGui.sliderFloat("sigma_spatial", sigma_spatial, 0.0f, 15.0f);
+            ImGui.sliderFloat("sigma_color", sigma_color, 0.0f, 0.3f);
+            ImGui.sliderFloat("sigma_depth", sigma_depth, 0.0f, 15.0f);
+            ImGui.sliderFloat("sigma_normal", sigma_normal, 0.0f, 1.0f);
             ImGui.endDisabled();
 
             // Lighting Mode
