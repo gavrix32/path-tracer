@@ -16,49 +16,49 @@ public class OpenBox {
                 // Floor
                 new Box(new Vector3f(0, -100, 0),
                         new Vector3f(),
-                        new Vector3f(1),
+                        new Vector3f(0.8f),
                         new Vector3f(100, 0, 100),
                         new Material(false, 0, 1, 1, false)
                 ),
                 // Roof
                 new Box(new Vector3f(0, 100, 0),
                         new Vector3f(),
-                        new Vector3f(1),
+                        new Vector3f(0.8f),
                         new Vector3f(100, 0, 100),
                         new Material(false, 0, 1, 1, false)
                 ),
                 // Left wall
                 new Box(new Vector3f(-100, 0, 0),
                         new Vector3f(),
-                        new Vector3f(1, 0, 0),
+                        new Vector3f(0.8f, 0, 0),
                         new Vector3f(0, 100, 100),
                         new Material(false, 0, 1, 1, false)
                 ),
                 // Right wall
                 new Box(new Vector3f(100, 0, 0),
                         new Vector3f(),
-                        new Vector3f(0, 1, 0),
+                        new Vector3f(0, 0.8f, 0),
                         new Vector3f(0, 100, 100),
                         new Material(false, 0, 1, 1, false)
                 ),
                 // Front wall
                 new Box(new Vector3f(0, 0, 100),
                         new Vector3f(),
-                        new Vector3f(1),
+                        new Vector3f(0.8f),
                         new Vector3f(100, 100, 0),
                         new Material(false, 0, 1, 1, false)
                 ),
                 // Tall box
                 new Box(new Vector3f(-45, -50, 25),
                         new Vector3f(0, -25, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.8f),
                         new Vector3f(25, 50, 25),
                         new Material(false, 0, 1, 1, false)
                 ),
                 // Short box
                 new Box(new Vector3f(45, -75, -25),
                         new Vector3f(0, 25, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.8f),
                         new Vector3f(25),
                         new Material(false, 0, 1, 1, false)
                 )

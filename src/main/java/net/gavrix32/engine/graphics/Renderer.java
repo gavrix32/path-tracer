@@ -29,7 +29,7 @@ public class Renderer {
     // Config variables
     private static int samples, maxAccumulatedSamples, bounces;
     private static float gamma, exposure, focusDistance, aperture, fov;
-    private static boolean accumulation, temporalReprojection, temporalAntialiasing, atrousFilter;
+    private static boolean accumulation, temporalReprojection, temporalAntialiasing, atrousFilter, russianRoulette;
 
     private static int modelTexture;
 
@@ -46,6 +46,7 @@ public class Renderer {
         temporalReprojection = Config.getBoolean("temporal_reprojection");
         temporalAntialiasing = Config.getBoolean("temporal_antialiasing");
         atrousFilter = Config.getBoolean("atrous_filter");
+        russianRoulette = Config.getBoolean("russian_roulette");
 
         Quad.init();
 
@@ -191,6 +192,7 @@ public class Renderer {
         pathtraceShader.setInt("accumulated_samples", accumulatedSamples);
         pathtraceShader.setInt("max_accumulated_samples", maxAccumulatedSamples);
         pathtraceShader.setInt("bounces", bounces);
+        pathtraceShader.setBool("russian_roulette", russianRoulette);
         pathtraceShader.setFloat("fov", fov);
         pathtraceShader.setBool("temporal_reprojection", temporalReprojection);
         pathtraceShader.setBool("temporal_antialiasing", temporalAntialiasing);
@@ -287,11 +289,6 @@ public class Renderer {
         if (atrousFilter) {
             for (int i = 0; i < Gui.iterations[0]; i++) {
                 atrousShader.use();
-
-                atrousShader.setFloat("stepWidth", (1 << (i + 1)) - 1 * Gui.stepWidth[0]);
-                atrousShader.setFloat("c_phi", 1.0f / i * Gui.c_phi[0]);
-                atrousShader.setFloat("n_phi", 1.0f / (1 << i) * Gui.n_phi[0]);
-                atrousShader.setFloat("p_phi", 1.0f / (1 << i) * Gui.p_phi[0]);
 
                 atrousShader.setInt("radius", Gui.radius[0]);
                 atrousShader.setInt("step_size", 1 << i);
@@ -403,6 +400,16 @@ public class Renderer {
         resetAccFrames();
         bounces = value;
         Config.setInt("bounces", value);
+    }
+
+    public static boolean isRussianRoulette() {
+        return russianRoulette;
+    }
+
+    public static void useRussianRoulette(boolean value) {
+        resetAccFrames();
+        russianRoulette = value;
+        Config.setBoolean("russian_roulette", value);
     }
 
     public static int getAccumulatedSamples() {

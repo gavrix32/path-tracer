@@ -17,61 +17,61 @@ public class RGBRoom {
         scene.addBoxes(
                 new Box(new Vector3f(-30, 100, 90),     // Red light wall
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1, 0, 0),
+                        new Vector3f(0.7f, 0, 0),
                         new Vector3f(20, 100, 10),
                         new Material(false, 1, 1, 1, false)
                 ),
                 new Box(new Vector3f(10, 100, 80),      // Wall
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.7f),
                         new Vector3f(20, 100, 20),
                         new Material(false, 0, 1, 1, false)
                 ),
                 new Box(new Vector3f(50, 100, 90),      // Green light wall
                         new Vector3f(0, 0, 0),
-                        new Vector3f(0, 1, 0),
+                        new Vector3f(0, 0.7f, 0),
                         new Vector3f(20, 100, 10),
                         new Material(false, 1, 1, 1, false)
                 ),
                 new Box(new Vector3f(90, 100, 80),      // Wall
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.7f),
                         new Vector3f(20, 100, 20),
                         new Material(false, 0, 1, 1, false)
                 ),
                 new Box(new Vector3f(130, 100, 90),     // Blue light wall
                         new Vector3f(0, 0, 0),
-                        new Vector3f(0, 0, 1),
+                        new Vector3f(0, 0, 0.7f),
                         new Vector3f(20, 100, 10),
                         new Material(false, 1, 1, 1, false)
                 ),
                 new Box(new Vector3f(50, 200, 0),
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.7f),
                         new Vector3f(100, 0, 100),
                         new Material(false, 0, 1, 1, false)
                 ),
                 new Box(new Vector3f(50, 0, 0),
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.7f),
                         new Vector3f(100, 0, 100),
                         new Material(false, 0, 1, 1, false)
                 ),
                 new Box(new Vector3f(-50, 100, 0),
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.7f),
                         new Vector3f(0, 100, 100),
                         new Material(false, 0, 1, 1, false)
                 ),
                 new Box(new Vector3f(150, 100, 0),
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.7f),
                         new Vector3f(0, 100, 100),
                         new Material(false, 0, 1, 1, false)
                 ),
                 new Box(new Vector3f(50, 100, -100),
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.7f),
                         new Vector3f(100, 100, 0),
                         new Material(false, 0, 1, 1, false)
                 )

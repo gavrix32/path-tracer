@@ -27,7 +27,7 @@ public class Gui {
     public static final float[] sigma_spatial = new float[] {10.0f}, sigma_color = new float[] {0.2f}, sigma_depth = new float[] {10.0f}, sigma_normal = new float[] {0.1f};
     public static final int[] radius = new int[] {2};
     private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(),
-            temporalAntialiasing = new ImBoolean(), atrousFilter = new ImBoolean();
+            temporalAntialiasing = new ImBoolean(), atrousFilter = new ImBoolean(), russianRoulette = new ImBoolean();
     private static final ImInt sceneId = new ImInt();
 
     private static final String[] lightingModeNames = {"Combined", "Direct", "Indirect"};
@@ -64,6 +64,7 @@ public class Gui {
         temporalReprojection.set(Renderer.isTemporalReprojection());
         temporalAntialiasing.set(Renderer.isTemporalAntialiasing());
         atrousFilter.set(Renderer.isAtrousFilter());
+        russianRoulette.set(Renderer.isRussianRoulette());
     }
 
     public static void update(ArrayList<Scene> scenes) {
@@ -142,15 +143,15 @@ public class Gui {
                 Renderer.useTemporalAntialiasing(temporalAntialiasing.get());
 
             // À-Trous Filter
+            if (ImGui.checkbox("Russian Roulette", russianRoulette))
+                Renderer.useRussianRoulette(russianRoulette.get());
+
+            // À-Trous Filter
             if (ImGui.checkbox("À-Trous Filter", atrousFilter))
                 Renderer.useAtrousFilter(atrousFilter.get());
 
             ImGui.beginDisabled(!atrousFilter.get());
             ImGui.sliderInt("iterations", iterations, 1, 10);
-            /*ImGui.sliderFloat("stepWidth", stepWidth, 0.0f, 10.0f);
-            ImGui.sliderFloat("c_phi", c_phi, 0.0f, 10.0f);
-            ImGui.sliderFloat("n_phi", n_phi, 0.0f, 10.0f);
-            ImGui.sliderFloat("p_phi", p_phi, 0.0f, 10.0f);*/
             ImGui.sliderInt("radius", radius, 1, 5);
             ImGui.sliderFloat("sigma_spatial", sigma_spatial, 0.0f, 15.0f);
             ImGui.sliderFloat("sigma_color", sigma_color, 0.0f, 0.3f);
@@ -195,6 +196,7 @@ public class Gui {
                 temporalReprojection.set(Config.getBoolean("temporal_reprojection")); Renderer.useTemporalReprojection(temporalReprojection.get());
                 temporalAntialiasing.set(Config.getBoolean("temporal_antialiasing")); Renderer.useTemporalAntialiasing(temporalAntialiasing.get());
                 atrousFilter.set(Config.getBoolean("atrous_filter")); Renderer.useAtrousFilter(atrousFilter.get());
+                russianRoulette.set(Config.getBoolean("russian_roulette")); Renderer.useRussianRoulette(russianRoulette.get());
             }
             ImGui.treePop();
         }

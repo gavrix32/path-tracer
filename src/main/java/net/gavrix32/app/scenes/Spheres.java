@@ -18,24 +18,24 @@ public class Spheres {
         scene.addBox(new Box(
                 new Vector3f(),
                 new Vector3f(),
-                new Vector3f(1),
+                new Vector3f(0.8f),
                 new Vector3f(250, 0, 100), new Material(false, 0, 1, 1, false)
         ));
         scene.addSpheres(
                 new Sphere(
                         new Vector3f(-120, 50, 0),
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.8f),
                         new Material(true, 0, 1, 1, false), 50),
                 new Sphere(
                         new Vector3f(0, 50, 0),
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.8f),
                         new Material(true, 0, 0.5f, 1, false), 50),
                 new Sphere(
                         new Vector3f(120, 50, 0),
                         new Vector3f(0, 0, 0),
-                        new Vector3f(1),
+                        new Vector3f(0.8f),
                         new Material(true, 0, 0, 1, false), 50)
         );
     }

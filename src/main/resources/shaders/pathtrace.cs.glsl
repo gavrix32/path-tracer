@@ -64,7 +64,7 @@ struct Node {
 uniform vec3 camera_position, prev_camera_position, triangles_offset;
 uniform mat4 camera_rotation, prev_camera_rotation, triangles_rotation;
 uniform int samples, bounces, spheres_count, boxes_count, accumulated_samples, max_accumulated_samples;
-uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture;
+uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture, russian_roulette;
 uniform sampler2D sky_texture;
 uniform sampler2D prev_color;
 uniform sampler2D prev_normal;
@@ -451,11 +451,22 @@ Ray brdf(Ray ray, HitInfo hitInfo) {
     return ray;
 }
 
+bool russianRoulette(inout Ray ray, in HitInfo hitinfo, int depth) {
+    if (russian_roulette) {
+        float probability = max(ray.energy.r, max(ray.energy.g, ray.energy.b));
+        if (random() > probability) {
+            return false;
+        }
+        ray.energy /= probability;
+    }
+    return true;
+}
+
 vec3 trace(in Ray ray, in int depth) {
     vec3 color = vec3(0.0);
     for (int i = 0; i < depth; i++) {
         HitInfo hitinfo;
-        if (raycast(ray, hitinfo)) {
+        if (raycast(ray, hitinfo) && russianRoulette(ray, hitinfo, i)) {
             ray.energy *= hitinfo.material.albedo;
             if (hitinfo.material.emission > 0.0) {
                 color += ray.energy * hitinfo.material.emission;

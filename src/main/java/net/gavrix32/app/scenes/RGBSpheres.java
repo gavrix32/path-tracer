@@ -16,7 +16,7 @@ public class RGBSpheres {
         scene = new Scene();
         scene.setName("RGB Spheres");
         scene.setCamera(new Camera().setPosition(500, 250, 5));
-        scene.setPlane(new Plane(false).setScale(200));
+        scene.setPlane(new Plane(false).setScale(200).setFirstColor(0.5f, 0.5f, 0.5f));
         scene.setSky("textures/sky/kiara_1_dawn_2k.hdr");
         /*scene.addSpheres(
                 new Sphere(
@@ -40,7 +40,7 @@ public class RGBSpheres {
                 new Box(
                         new Vector3f(0, 250, 500),
                         new Vector3f(),
-                        new Vector3f(1),
+                        new Vector3f(0.5f),
                         new Vector3f(0, 250, 500),
                         new Material(false, 0, 1, 1, false)
                 ),
@@ -48,7 +48,7 @@ public class RGBSpheres {
                 new Box(
                         new Vector3f(1000, 250, 500),
                         new Vector3f(),
-                        new Vector3f(1),
+                        new Vector3f(0.5f),
                         new Vector3f(0, 250, 500),
                         new Material(false, 0, 1, 1, false)
                 ),
@@ -56,21 +56,21 @@ public class RGBSpheres {
                 new Box(
                         new Vector3f(500, 250, 1000),
                         new Vector3f(),
-                        new Vector3f(1),
+                        new Vector3f(0.5f),
                         new Vector3f(500, 250, 0),
                         new Material(false, 0, 1, 1, false)
                 ),
                 new Box(
                         new Vector3f(500, 250, 0),
                         new Vector3f(),
-                        new Vector3f(1),
+                        new Vector3f(0.5f),
                         new Vector3f(500, 250, 0),
                         new Material(false, 0, 1, 1, false)
                 ),
                 new Box(
                         new Vector3f(500, 500, 500),
                         new Vector3f(),
-                        new Vector3f(1),
+                        new Vector3f(0.5f),
                         new Vector3f(500, 0, 500),
                         new Material(false, 0, 1, 1, false)
                 )
