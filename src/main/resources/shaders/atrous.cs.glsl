@@ -31,6 +31,8 @@ void main() {
     vec3 filteredColor = vec3(0.0);
     float totalWeight = 0.0;
 
+    variance = clamp(1.0 + variance * 10.0, 1.0, 10.0);
+
     for (int dy = -radius; dy <= radius; ++dy) {
         for (int dx = -radius; dx <= radius; ++dx) {
             vec2 offset = vec2(dx, dy);
@@ -39,23 +41,22 @@ void main() {
             float spatialWeight = gaussianWeight(length(offset), sigma_spatial);
 
             vec3 sampleColor = texture(color_texture, offset_uv).rgb;
-            float colorDistance = length(sampleColor - centerColor);
-            float colorWeight = gaussianWeight(colorDistance, sigma_color);
+            float colorDistance = min(length(sampleColor - centerColor), sigma_color * variance);
+            float colorWeight = gaussianWeight(colorDistance, sigma_color * variance);
 
             float sampleDepth = texture(normal_texture, offset_uv).a;
             float depthDifference = abs(sampleDepth - centerDepth);
-            float depthWeight = gaussianWeight(depthDifference, sigma_depth);
+            float depthWeight = gaussianWeight(depthDifference, sigma_depth * variance);
 
             vec3 sampleNormal = texture(normal_texture, offset_uv).rgb;
             float normalDifference = length(sampleNormal - centerNormal);
-            float normalWeight = gaussianWeight(normalDifference, sigma_normal);
+            float normalWeight = gaussianWeight(normalDifference, sigma_normal * variance);
 
             vec3 sampleAlbedo = texture(albedo_texture, offset_uv).rgb;
             float albedoDifference = length(sampleAlbedo - centerAlbedo);
-            float albedoWeight = gaussianWeight(albedoDifference, 1.0);
+            float albedoWeight = gaussianWeight(albedoDifference, 1.0 * variance);
 
             float weight = spatialWeight * colorWeight * depthWeight * normalWeight * albedoWeight;
-            //weight *= 1.0 + variance;
 
             filteredColor += sampleColor * weight;
             totalWeight += weight;

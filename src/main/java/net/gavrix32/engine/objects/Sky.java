@@ -17,7 +17,7 @@ public class Sky {
     private Material material;
     private String path;
     private boolean hasTexture;
-    private int texture;
+    public int texture;
 
     public Sky() {
         color = new Vector3f(0);

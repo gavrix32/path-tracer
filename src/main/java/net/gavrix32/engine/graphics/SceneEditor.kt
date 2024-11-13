@@ -51,7 +51,7 @@ class SceneEditor {
             }
             ImGui.sameLine()
 
-            val skyTextureId = ImInt()
+            var skyTextureId = ImInt(0)
             val skyTextureNames = Utils.listResources("textures/sky")
             ImGui.pushID("sky_textures")
             if (ImGui.combo("", skyTextureId, skyTextureNames)) {
