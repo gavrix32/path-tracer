@@ -1,15 +1,13 @@
+/*
 package net.gavrix32.engine.graphics;
 
 import imgui.ImGui;
-import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import net.gavrix32.engine.objects.Box;
 import net.gavrix32.engine.objects.Plane;
 import net.gavrix32.engine.objects.Sphere;
-import net.gavrix32.engine.objects.Triangle;
-
-import java.util.ArrayList;
+import net.gavrix32.engine.utils.Utils;
 
 public class SceneEditor {
     public static void showSceneObjectProps(Scene scene) {
@@ -55,25 +53,12 @@ public class SceneEditor {
             ImGui.sameLine();
             ImInt skyTextureId = new ImInt();
 
-            /*File dir = null;
-            try {
-                dir = new File(SceneEditor.class.getResource("/textures").toURI());
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            }*/
-            //Logger.info(dir.exists());
-            /*File[] files = dir.listFiles();
-            for (File file : files) {
-                if (file.isFile()) {
-                    System.out.println(file.getName());
-                }
-            }*/
-
-            String[] skyTextureNames = new String[] {"HDR_041_Path_Env.hdr", "texture2"};
+            String[] skyTextureNames = Utils.listResources("textures/sky");
             ImGui.pushID("sky_textures");
             if (ImGui.combo("", skyTextureId, skyTextureNames)) {
                 Renderer.resetAccFrames();
-            };
+                scene.getSky().setTexture("textures/sky/" + skyTextureNames[skyTextureId.get()]);
+            }
             ImGui.popID();
             if (skyHasTexture.get()) ImGui.beginDisabled();
             if (ImGui.colorEdit3("color", color)) {
@@ -334,4 +319,4 @@ public class SceneEditor {
             }
         }
     }
-}
+}*/

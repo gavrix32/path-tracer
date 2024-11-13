@@ -17,11 +17,11 @@ public class Renderer {
     private static Shader atrousShader;
     private static Shader presentShader;
     private static int accumulatedSamples = 0;
-    private static Texture albedoImage, positionImage;
+    private static Texture albedoTexture, positionTexture;
     private static final Texture[] normalTexture = new Texture[2];
     private static final Texture[] pathtraceTexture = new Texture[2];
     private static final Texture[] atrousTexture = new Texture[2];
-    private static int prevPT = 1, currPT = 0;
+    private static int prevPt = 1, currPt = 0;
     private static int prevAtr = 1, currAtr = 0;
     public static Vector3f triangles_offset = new Vector3f(0, 0, 0);
     public static Vector3f triangles_rotation = new Vector3f(0, 0, 0);
@@ -65,21 +65,21 @@ public class Renderer {
 
         scene = new Scene();
 
-        positionImage = new Texture();
-        positionImage.bind();
-        positionImage.texImage(GL_RGBA32F, GL_FLOAT, 0);
-        positionImage.linearFiltering();
-        positionImage.clampToEdge();
-        glBindImageTexture(0, positionImage.id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
-        positionImage.unbind();
+        positionTexture = new Texture();
+        positionTexture.bind();
+        positionTexture.texImage(GL_RGBA32F, GL_FLOAT, 0);
+        positionTexture.linearFiltering();
+        positionTexture.clampToEdge();
+        glBindImageTexture(0, positionTexture.getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+        positionTexture.unbind();
 
-        albedoImage = new Texture();
-        albedoImage.bind();
-        albedoImage.texImage(GL_RGBA32F, GL_FLOAT, 0);
-        albedoImage.linearFiltering();
-        albedoImage.clampToEdge();
-        glBindImageTexture(1, albedoImage.id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
-        albedoImage.unbind();
+        albedoTexture = new Texture();
+        albedoTexture.bind();
+        albedoTexture.texImage(GL_RGBA32F, GL_FLOAT, 0);
+        albedoTexture.linearFiltering();
+        albedoTexture.clampToEdge();
+        glBindImageTexture(1, albedoTexture.getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+        albedoTexture.unbind();
 
         for (int i = 0; i < 2; i++) {
             normalTexture[i] = new Texture();
@@ -87,7 +87,7 @@ public class Renderer {
             normalTexture[i].texImage(GL_RGBA32F, GL_FLOAT, 0);
             normalTexture[i].linearFiltering();
             normalTexture[i].clampToEdge();
-            glBindImageTexture(2, normalTexture[i].id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+            glBindImageTexture(2, normalTexture[i].getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
             normalTexture[i].unbind();
 
             pathtraceTexture[i] = new Texture();
@@ -95,7 +95,7 @@ public class Renderer {
             pathtraceTexture[i].texImage(GL_RGBA32F, GL_FLOAT, 0);
             pathtraceTexture[i].linearFiltering();
             pathtraceTexture[i].clampToEdge();
-            glBindImageTexture(3, pathtraceTexture[i].id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+            glBindImageTexture(3, pathtraceTexture[i].getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
             pathtraceTexture[i].unbind();
 
             atrousTexture[i] = new Texture();
@@ -103,7 +103,7 @@ public class Renderer {
             atrousTexture[i].texImage(GL_RGBA32F, GL_FLOAT, 0);
             atrousTexture[i].linearFiltering();
             atrousTexture[i].clampToEdge();
-            glBindImageTexture(4, atrousTexture[i].id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+            glBindImageTexture(4, atrousTexture[i].getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
             atrousTexture[i].unbind();
         }
 
@@ -275,14 +275,14 @@ public class Renderer {
         pathtraceShader.setMat4("triangles_rotation", new Matrix4f().rotate(triangles_rotation));
 
         glActiveTexture(GL_TEXTURE2);
-        normalTexture[prevPT].bind();
+        normalTexture[prevPt].bind();
         pathtraceShader.setInt("prev_normal", 2);
-        glBindImageTexture(2, normalTexture[currPT].id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(2, normalTexture[currPt].getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
 
         glActiveTexture(GL_TEXTURE3);
-        pathtraceTexture[prevPT].bind();
+        pathtraceTexture[prevPt].bind();
         pathtraceShader.setInt("prev_color", 3);
-        glBindImageTexture(3, pathtraceTexture[currPT].id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(3, pathtraceTexture[currPt].getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
 
         pathtraceShader.invokeCompute();
 
@@ -298,36 +298,39 @@ public class Renderer {
                 atrousShader.setFloat("sigma_normal", 1.0f / (1 << i) * Gui.sigma_normal[0]);
 
                 glActiveTexture(GL_TEXTURE0);
-                positionImage.bind();
+                positionTexture.bind();
                 atrousShader.setInt("position_texture", 0);
 
                 glActiveTexture(GL_TEXTURE1);
-                albedoImage.bind();
+                albedoTexture.bind();
                 atrousShader.setInt("albedo_texture", 1);
 
                 glActiveTexture(GL_TEXTURE2);
-                normalTexture[currPT].bind();
+                normalTexture[currPt].bind();
                 atrousShader.setInt("normal_texture", 2);
 
                 glActiveTexture(GL_TEXTURE3);
-                if (i == 0) pathtraceTexture[currPT].bind();
+                if (i == 0) pathtraceTexture[currPt].bind();
                 else atrousTexture[prevAtr].bind();
                 atrousShader.setInt("color_texture", 3);
 
-                glBindImageTexture(4, atrousTexture[currAtr].id, 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
+                glBindImageTexture(4, atrousTexture[currAtr].getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
                 atrousShader.invokeCompute();
 
                 swapAtrous();
             }
         }
         presentShader.use();
-        presentShader.setFloat("gamma", gamma);
+        glActiveTexture(GL_TEXTURE1);
+        albedoTexture.bind();
+        presentShader.setInt("albedo_texture", 1);
         presentShader.setFloat("exposure", exposure);
+        presentShader.setFloat("gamma", gamma);
         glActiveTexture(GL_TEXTURE8);
         if (atrousFilter) {
             atrousTexture[currAtr].bind();
         } else {
-            pathtraceTexture[currPT].bind();
+            pathtraceTexture[currPt].bind();
         }
         presentShader.setInt("color_texture", 8);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -342,8 +345,8 @@ public class Renderer {
     }
 
     private static void swapColorTextures() {
-        currPT = 1 - currPT;
-        prevPT = 1 - prevPT;
+        currPt = 1 - currPt;
+        prevPt = 1 - prevPt;
     }
 
     private static void swapAtrous() {
@@ -356,8 +359,8 @@ public class Renderer {
         pathtraceTexture[1].bind(); pathtraceTexture[1].texImage(GL_RGBA32F, GL_FLOAT, 0);
         normalTexture[0].bind(); normalTexture[0].texImage(GL_RGBA32F, GL_FLOAT, 0);
         normalTexture[1].bind(); normalTexture[1].texImage(GL_RGBA32F, GL_FLOAT, 0);
-        positionImage.bind(); positionImage.texImage(GL_RGBA32F, GL_FLOAT, 0);
-        albedoImage.bind(); albedoImage.texImage(GL_RGBA32F, GL_FLOAT, 0);
+        positionTexture.bind(); positionTexture.texImage(GL_RGBA32F, GL_FLOAT, 0);
+        albedoTexture.bind(); albedoTexture.texImage(GL_RGBA32F, GL_FLOAT, 0);
         atrousTexture[0].bind(); atrousTexture[0].texImage(GL_RGBA32F, GL_FLOAT, 0);
         atrousTexture[1].bind(); atrousTexture[1].texImage(GL_RGBA32F, GL_FLOAT, 0);
         glBindTexture(GL_TEXTURE_2D, 0);

@@ -3,8 +3,8 @@
 out vec3 out_color;
 
 layout(binding = 3, rgba32f) uniform image2D color_image;
-uniform sampler2D color_texture;
-uniform float gamma, exposure;
+uniform sampler2D color_texture, albedo_texture;
+uniform float exposure, gamma;
 
 vec3 post_process(vec3 col) {
     if (exposure != 0.0) col = vec3(1.0) - exp(-col * exposure);
@@ -14,5 +14,12 @@ vec3 post_process(vec3 col) {
 
 void main() {
     vec3 color = texture(color_texture, gl_FragCoord.xy / imageSize(color_image)).rgb;
-    out_color = post_process(color);
+
+    // modulate albedo
+    color *= texture(albedo_texture, gl_FragCoord.xy / imageSize(color_image)).rgb;
+
+    // post prcessing
+    color = post_process(color);
+
+    out_color = color;
 }

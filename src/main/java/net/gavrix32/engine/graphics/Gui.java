@@ -23,8 +23,7 @@ public class Gui {
     private static final int[] vsync = new int[1], fpsLimit = new int[1], samples = new int[1], bounces = new int[2], maxAccumulatedSamples = new int[1];
     public static final int[] iterations = new int[] {5};
     private static final float[] gamma = new float[1], exposure = new float[1], focusDistance = new float[1], aperture = new float[1], fov = new float[1];
-    public static final float[] stepWidth = new float[] {2.8f}, c_phi = new float[] {0.01f}, n_phi = new float[] {0.01f}, p_phi = new float[] {1000.0f};
-    public static final float[] sigma_spatial = new float[] {10.0f}, sigma_color = new float[] {0.2f}, sigma_depth = new float[] {10.0f}, sigma_normal = new float[] {0.1f};
+    public static final float[] sigma_spatial = new float[] {2.01f}, sigma_color = new float[] {0.2f}, sigma_depth = new float[] {10.0f}, sigma_normal = new float[] {0.1f};
     public static final int[] radius = new int[] {2};
     private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(),
             temporalAntialiasing = new ImBoolean(), atrousFilter = new ImBoolean(), russianRoulette = new ImBoolean();
@@ -76,8 +75,8 @@ public class Gui {
         ImGui.pushItemWidth(150);
 
         // Frametime / FPS
-        ImGui.text("Frametime: " + Math.floor(Engine.getDeltaTime() * 1000) + " ms ("
-                + (int) (1 / Engine.getDeltaTime()) + " FPS)");
+        ImGui.text("Frametime: " + Math.floor(1.0f / Engine.getFps() * 1000) + " ms ("
+                + Engine.getFps() + " FPS)");
 
         // Accumulated samples
         ImGui.text("Accumulated samples: " + Renderer.getAccumulatedSamples());
@@ -211,7 +210,7 @@ public class Gui {
                 Renderer.setScene(scenes.get(sceneId.get()));
                 Renderer.resetAccFrames();
             }
-            SceneEditor.showSceneObjectProps(scenes.get(sceneId.get()));
+            new SceneEditor().showSceneObjectProps(scenes.get(sceneId.get()));
             ImGui.treePop();
         }
         if (ImGui.button("Screenshot")) {

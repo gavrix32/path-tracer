@@ -26,37 +26,35 @@ void main() {
     float variance = texture(position_texture, uv).a;
     vec3 centerNormal = texture(normal_texture, uv).rgb;
     float centerDepth = texture(normal_texture, uv).a;
+    vec3 centerAlbedo = texture(albedo_texture, uv).rgb;
 
     vec3 filteredColor = vec3(0.0);
     float totalWeight = 0.0;
 
-    // Проходим по окну фильтрации
     for (int dy = -radius; dy <= radius; ++dy) {
         for (int dx = -radius; dx <= radius; ++dx) {
             vec2 offset = vec2(dx, dy);
             vec2 offset_uv = (gl_GlobalInvocationID.xy + 0.5 + offset * step_size) / resolution;
 
-            vec3 sampleColor = texture(color_texture, offset_uv).rgb;
-            float sampleDepth = texture(normal_texture, offset_uv).a;
-            vec3 sampleNormal = texture(normal_texture, offset_uv).rgb;
-
-            // Пространственный вес
             float spatialWeight = gaussianWeight(length(offset), sigma_spatial);
 
-            // Цветовой вес
+            vec3 sampleColor = texture(color_texture, offset_uv).rgb;
             float colorDistance = length(sampleColor - centerColor);
             float colorWeight = gaussianWeight(colorDistance, sigma_color);
 
-            // Глубинный вес
+            float sampleDepth = texture(normal_texture, offset_uv).a;
             float depthDifference = abs(sampleDepth - centerDepth);
             float depthWeight = gaussianWeight(depthDifference, sigma_depth);
 
-            // Нормальный вес
+            vec3 sampleNormal = texture(normal_texture, offset_uv).rgb;
             float normalDifference = length(sampleNormal - centerNormal);
             float normalWeight = gaussianWeight(normalDifference, sigma_normal);
 
-            // Общий вес
-            float weight = spatialWeight * colorWeight * depthWeight * normalWeight;
+            vec3 sampleAlbedo = texture(albedo_texture, offset_uv).rgb;
+            float albedoDifference = length(sampleAlbedo - centerAlbedo);
+            float albedoWeight = gaussianWeight(albedoDifference, 1.0);
+
+            float weight = spatialWeight * colorWeight * depthWeight * normalWeight * albedoWeight;
             //weight *= 1.0 + variance;
 
             filteredColor += sampleColor * weight;

@@ -9,8 +9,9 @@ import org.tinylog.Logger;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Engine {
-    private static float dt;
     private static int fpsLimit;
+    private static double delta = 0.0;
+    private static int fps = 0;
 
     static {
         Logger.info("OS: " + System.getProperty("os.name") + " " + System.getProperty("os.version") + " " + System.getProperty("os.arch"));
@@ -22,20 +23,31 @@ public class Engine {
     public static void run(IApp app) {
         app.init();
         double lastTime = glfwGetTime();
+        double lastFpsUpdateTime = glfwGetTime();
         while (!Window.isClosed()) {
-            Timer timer = new Timer();
-            timer.tick();
+            double currentTime = glfwGetTime();
+            delta = currentTime - lastTime;
+            lastTime = currentTime;
+
+            double period = 0.1;
+            if (currentTime - lastFpsUpdateTime >= period) {
+                fps = (int) (1.0 / delta);
+                lastFpsUpdateTime = currentTime;
+            }
             while (glfwGetTime() < lastTime + (double) 1 / fpsLimit);
-            lastTime += (double) 1 / fpsLimit;
             app.update();
-            dt = timer.getDelta();
         }
         glfwTerminate();
         System.exit(0);
     }
 
     public static float getDeltaTime() {
-        return dt;
+        return (float) delta;
+    }
+
+    // FPS updates once per second
+    public static int getFps() {
+        return fps;
     }
 
     public static int getFpsLimit() {

@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'org.jetbrains.kotlin.jvm'
 }
 
 import org.gradle.internal.os.OperatingSystem
@@ -39,6 +40,10 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
     implementation "io.github.spair:imgui-java-app:1.86.11"
-    implementation 'org.tinylog:tinylog-api:2.7.0'
+    implementation 'org.tinylog:tinylog-api-kotlin:2.7.0'
     implementation 'org.tinylog:tinylog-impl:2.7.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+}
+kotlin {
+    jvmToolchain(21)
 }

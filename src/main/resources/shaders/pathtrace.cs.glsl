@@ -128,6 +128,10 @@ float intersect_plane(Ray ray, vec4 p) {
     return -(dot(ray.origin, p.xyz) + p.w) / dot(ray.dir, p.xyz);
 }
 
+float checkerboard(vec2 p) {
+    return mod(floor(p.x) + floor(p.y), 2.0);
+}
+
 float intersect_sphere(Ray ray, vec3 ce, float ra) {
     vec3 oc = ray.origin - ce;
     float b = dot(oc, ray.dir);
@@ -181,10 +185,6 @@ vec3 intersect_triangle(Ray ray, in vec3 v0, in vec3 v1, in vec3 v2, out vec3 no
     if (dot(normal, rd) > 0.0) normal = -normal;
     //normal *= mat3(rotation);
     return vec3(t, u, v);
-}
-
-float checkerboard(vec2 p) {
-    return mod(floor(p.x) + floor(p.y), 2.0);
 }
 
 // ray marching
@@ -540,7 +540,7 @@ void main() {
     color /= samples;
 
     // demodulate albedo
-    // color /= max(hitinfo.material.albedo, vec3(0.001));
+    color /= max(hitinfo.material.albedo, vec3(0.001));
 
     /*if (debug_bvh) {
         float bounds_weight = boundsTests / float(bounds_test_threshold);
@@ -564,10 +564,10 @@ void main() {
         if (hitinfo.material.roughness < 1.0) {
             temporal_mix_factor = 0.0;
         }
-        vec3 normal_delta = abs(hitinfo.normal - texture(prev_normal, reproj_uv).rgb);
+        /**vec3 normal_delta = abs(hitinfo.normal - texture(prev_normal, reproj_uv).rgb);
         if (normal_delta.r > 0.1 || normal_delta.g > 0.1 || normal_delta.b > 0.1) {
             temporal_mix_factor = 0.0;
-        }
+        }*/
         vec3 prev_color = texture(prev_color, reproj_uv).rgb;
         float color_diff = length(color - prev_color);
         variance = color_diff * color_diff;

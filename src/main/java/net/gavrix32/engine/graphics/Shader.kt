@@ -1,90 +1,76 @@
-package net.gavrix32.engine.graphics;
+package net.gavrix32.engine.graphics
 
-import net.gavrix32.engine.io.Window;
-import net.gavrix32.engine.linearmath.*;
-import net.gavrix32.engine.utils.Utils;
-import org.tinylog.Logger;
+import net.gavrix32.engine.io.Window
+import net.gavrix32.engine.linearmath.Matrix4f
+import net.gavrix32.engine.linearmath.Vector2f
+import net.gavrix32.engine.linearmath.Vector3f
+import net.gavrix32.engine.linearmath.Vector4f
+import net.gavrix32.engine.utils.Utils
+import org.lwjgl.opengl.GL46C.*
+import org.tinylog.kotlin.Logger
 
-import java.util.ArrayList;
-import java.util.List;
+open class Shader {
+    private val shaders = mutableListOf<Int>()
+    private var program = 0
 
-import static org.lwjgl.opengl.GL46C.*;
-
-public class Shader {
-    private final List<Integer> shaders = new ArrayList<>();
-    private int program;
-
-    public void load(String path, int type) {
-        int shader = glCreateShader(type);
-        glShaderSource(shader, Utils.loadString(path));
-        glCompileShader(shader);
-        if (glGetShaderi(shader, GL_COMPILE_STATUS) == 0)
-            Logger.error(path + System.lineSeparator() + glGetShaderInfoLog(shader));
-        shaders.add(shader);
-    }
-    
-    public void initProgram() {
-        program = glCreateProgram();
-        for (int shader : shaders) glAttachShader(program, shader);
-        glLinkProgram(program);
-        if (glGetProgrami(program, GL_LINK_STATUS) == 0)
-            Logger.error("Shader program " + glGetProgramInfoLog(program));
-    }
-
-    public void invokeCompute() {
-        glDispatchCompute(Window.getWidth() / 8, Window.getHeight() / 8, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-    }
-
-    /*private String parseIncludes(String code) {
-        int includeIndex = code.indexOf("#include");
-        while (includeIndex != -1) {
-            String includeLine = code.substring(includeIndex, code.indexOf(System.lineSeparator(), includeIndex));
-            String includePath = includeLine.replace("#include", "");
-            includePath = includePath.replace(" ", "");
-            code = code.replace(includeLine, Utils.loadString(includePath));
-            includeIndex = code.indexOf("#include", code.indexOf(includePath));
+    fun load(path: String, type: Int) {
+        val shader = glCreateShader(type)
+        glShaderSource(shader, Utils.loadString(path))
+        glCompileShader(shader)
+        if (glGetShaderi(shader, GL_COMPILE_STATUS) == 0) {
+            Logger.error(path + System.lineSeparator() + glGetShaderInfoLog(shader))
         }
-        return code;
-    }*/
-
-    public void setInt(String name, int value) {
-        glUniform1i(glGetUniformLocation(program, name), value);
+        shaders.add(shader)
     }
 
-    public void setBool(String name, boolean value) {
-        glUniform1i(glGetUniformLocation(program, name), value ? 1 : 0);
+    fun initProgram() {
+        program = glCreateProgram()
+        for (shader in shaders) {
+            glAttachShader(program, shader)
+        }
+        glLinkProgram(program)
+        if (glGetProgrami(program, GL_LINK_STATUS) == 0)
+            Logger.error("Shader program " + glGetProgramInfoLog(program))
     }
 
-    public void setFloat(String name, float value) {
-        glUniform1f(glGetUniformLocation(program, name), value);
+    fun invokeCompute() {
+        glDispatchCompute(Window.getWidth() / 8, Window.getHeight() / 8, 1)
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
     }
 
-    public void setVec2(String name, Vector2f value) {
-        glUniform2f(glGetUniformLocation(program, name), value.x, value.y);
+    fun setInt(name: String, value: Int) {
+        glUniform1i(glGetUniformLocation(program, name), value)
     }
 
-    public void setVec3(String name, Vector3f value) {
-        glUniform3f(glGetUniformLocation(program, name), value.x, value.y, value.z);
+    fun setBool(name: String, value: Boolean) {
+        glUniform1i(glGetUniformLocation(program, name), if (value) 1 else 0)
     }
 
-    public void setVec4(String name, Vector4f value) {
-        glUniform4f(glGetUniformLocation(program, name), value.x, value.y, value.z, value.w);
+    fun setFloat(name: String, value: Float) {
+        glUniform1f(glGetUniformLocation(program, name), value)
     }
 
-    public void setMat4(String name, Matrix4f matrix) {
-        glUniformMatrix4fv(glGetUniformLocation(program, name), false, matrix.get());
+    fun setVec2(name: String, value: Vector2f) {
+        glUniform2f(glGetUniformLocation(program, name), value.x, value.y)
     }
 
-    public void setMat4(String name, float[] values) {
-        glUniformMatrix4fv(glGetUniformLocation(program, name), false, values);
+    fun setVec3(name: String, value: Vector3f) {
+        glUniform3f(glGetUniformLocation(program, name), value.x, value.y, value.z)
     }
 
-    public void use() {
-        glUseProgram(program);
+    fun setVec4(name: String, value: Vector4f) {
+        glUniform4f(glGetUniformLocation(program, name), value.x, value.y, value.z, value.w)
     }
 
-    public int get() {
-        return program;
+    fun setMat4(name: String, matrix: Matrix4f) {
+        glUniformMatrix4fv(glGetUniformLocation(program, name), false, matrix.get())
+    }
+
+    fun setMat4(name: String, values: FloatArray) {
+        glUniformMatrix4fv(glGetUniformLocation(program, name), false, values)
+    }
+
+    fun use() {
+        glUseProgram(program)
     }
 }

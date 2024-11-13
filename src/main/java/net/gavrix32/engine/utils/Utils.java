@@ -4,6 +4,7 @@ import net.gavrix32.engine.io.Window;
 import org.lwjgl.BufferUtils;
 import org.tinylog.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -38,5 +39,17 @@ public class Utils {
         } else {
             Logger.error("Failed to save screenshot: " + stbi_failure_reason());
         }
+    }
+
+    public static String[] listResources(String path) {
+        File dir = new File(Objects.requireNonNull(Utils.class.getClassLoader().getResource(path)).getPath());
+        File[] files = dir.listFiles();
+        String[] paths = new String[files.length];
+        for (int i = 0; i < files.length; i++) {
+            if (files[i].isFile()) {
+                paths[i] = files[i].getName();
+            }
+        }
+        return paths;
     }
 }
