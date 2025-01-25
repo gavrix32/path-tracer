@@ -18,6 +18,7 @@ public class Main implements IApp {
     private Liminal liminal;
     private OpenBox openBox;
     private BVHTest bvhTest;
+    protected static boolean showGui = true;
 
     public void init() {
         Window.init();
@@ -60,7 +61,9 @@ public class Main implements IApp {
     public void update() {
         Controls.update();
         Renderer.render();
-        Gui.update(scenes);
+        if (showGui) {
+            Gui.update(scenes);
+        }
         Window.update();
     }
 

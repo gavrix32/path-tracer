@@ -16,7 +16,7 @@ public class RGBSpheres {
         scene = new Scene();
         scene.setName("RGB Spheres");
         scene.setCamera(new Camera().setPosition(500, 250, 5));
-        scene.setPlane(new Plane(false).setScale(200).setFirstColor(0.5f, 0.5f, 0.5f));
+        scene.setPlane(new Plane(false).setScale(200).setSecondColor(0.5f, 0.5f, 0.5f));
         scene.setSky("textures/sky/kiara_1_dawn_2k.hdr");
         /*scene.addSpheres(
                 new Sphere(
@@ -75,27 +75,33 @@ public class RGBSpheres {
                         new Material(false, 0, 1, 1, false)
                 )
         );
-        Random random = new Random();
-        long seed = random.nextLong();
+        Random rnd = new Random();
+//        long seed = rnd.nextLong();
         //System.out.println("seed: " + seed);
         // Beautiful seeds: 8974213222167044418L
-        random.setSeed(8974213222167044418L);
+//        rnd.setSeed(8974213222167044418L);
         for (int i = 0; i < 64; i++) {
             /*scene.addSpheres(
                     new Sphere(
-                            new Vector3f(random.nextFloat() * 800 + 100, random.nextFloat() * 300 + 100, random.nextFloat() * 500 + 400),
+                            new Vector3f(rnd.nextFloat() * 800 + 100, rnd.nextFloat() * 300 + 100, rnd.nextFloat() * 500 + 400),
                             new Vector3f(0),
-                            new Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat()),
-                            new Material(true, random.nextBoolean() ? 5 : 0, 1, 1.5f, false), 35)
+                            new Vector3f(rnd.nextFloat(), rnd.nextFloat(), rnd.nextFloat()),
+                            new Material(true, rnd.nextBoolean() ? 5 : 0, 1, 1.5f, false), 35)
             );*/
-            float red = random.nextFloat(0.0f, 1.0f);
+            int materialType = rnd.nextInt(1, 4);
+            Material mat = null;
+            switch (materialType) {
+                case 1 -> mat = new Material(true, rnd.nextFloat(3f, 8f), 0.0f, 0.0f, false); // Emit
+                case 2 -> mat = new Material(true, 0.0f, 0.0f, 0.0f, false); // Mirror
+                case 3 -> mat = new Material(true, 0.0f, 0.0f, 1.5f, true); // Glass
+            }
             scene.addBoxes(
                     new Box(
-                            new Vector3f(random.nextFloat() * 1000, random.nextFloat() * 500, random.nextFloat() * 700 + 300),
-                            new Vector3f(random.nextFloat() * 360, random.nextFloat() * 360, random.nextFloat() * 360),
-                            new Vector3f(red, red > 0.8f ? random.nextFloat(0.0f, 0.5f) : 0.0f, 0),
-                            new Vector3f(random.nextFloat() * 50, random.nextFloat() * 50, random.nextFloat() * 50),
-                            new Material(false, random.nextBoolean() ? 5 : 0, 0, 1, false)
+                            new Vector3f(rnd.nextFloat() * 1000, rnd.nextFloat() * 500, rnd.nextFloat() * 700 + 300),
+                            new Vector3f(rnd.nextFloat() * 360, rnd.nextFloat() * 360, rnd.nextFloat() * 360),
+                            new Vector3f(rnd.nextFloat(0.5f, 1.0f), rnd.nextFloat(0.0f, 0.2f), rnd.nextFloat(0.5f, 1.0f)),
+                            new Vector3f(rnd.nextFloat() * 50, rnd.nextFloat() * 50, rnd.nextFloat() * 50),
+                            mat
             ));
         }
     }

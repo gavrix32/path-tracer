@@ -61,8 +61,8 @@ public class Model {
             coords.add(new Vector2f());
         }
 
-        AITexture aiTexture = AITexture.create(scene.mTextures().get(0));
-        data = MemoryUtil.memByteBuffer(aiTexture.pcData().address(), aiTexture.mWidth());
+        /*AITexture aiTexture = AITexture.create(scene.mTextures().get(0));
+        data = MemoryUtil.memByteBuffer(aiTexture.pcData().address(), aiTexture.mWidth());*/
 
         int i = 0;
         while (i < indices.size()) {

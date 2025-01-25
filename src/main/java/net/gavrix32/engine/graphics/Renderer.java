@@ -1,6 +1,7 @@
 package net.gavrix32.engine.graphics;
 
 import net.gavrix32.app.scenes.BVHTest;
+import net.gavrix32.engine.io.Window;
 import net.gavrix32.engine.linearmath.Matrix4f;
 import net.gavrix32.engine.linearmath.Vector3f;
 import org.tinylog.Logger;
@@ -31,7 +32,7 @@ public class Renderer {
     private static float gamma, exposure, focusDistance, aperture, fov;
     private static boolean accumulation, temporalReprojection, temporalAntialiasing, atrousFilter, russianRoulette;
 
-    private static int modelTexture;
+    private static Texture modelTexture;
 
     public static void init() {
         samples = Config.getInt("samples");
@@ -67,7 +68,7 @@ public class Renderer {
 
         positionTexture = new Texture();
         positionTexture.bind();
-        positionTexture.texImage(GL_RGBA32F, GL_FLOAT, 0);
+        positionTexture.texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
         positionTexture.linearFiltering();
         positionTexture.clampToEdge();
         glBindImageTexture(0, positionTexture.getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -75,7 +76,7 @@ public class Renderer {
 
         albedoTexture = new Texture();
         albedoTexture.bind();
-        albedoTexture.texImage(GL_RGBA32F, GL_FLOAT, 0);
+        albedoTexture.texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
         albedoTexture.linearFiltering();
         albedoTexture.clampToEdge();
         glBindImageTexture(1, albedoTexture.getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -84,7 +85,7 @@ public class Renderer {
         for (int i = 0; i < 2; i++) {
             normalTexture[i] = new Texture();
             normalTexture[i].bind();
-            normalTexture[i].texImage(GL_RGBA32F, GL_FLOAT, 0);
+            normalTexture[i].texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
             normalTexture[i].linearFiltering();
             normalTexture[i].clampToEdge();
             glBindImageTexture(2, normalTexture[i].getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -92,7 +93,7 @@ public class Renderer {
 
             pathtraceTexture[i] = new Texture();
             pathtraceTexture[i].bind();
-            pathtraceTexture[i].texImage(GL_RGBA32F, GL_FLOAT, 0);
+            pathtraceTexture[i].texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
             pathtraceTexture[i].linearFiltering();
             pathtraceTexture[i].clampToEdge();
             glBindImageTexture(3, pathtraceTexture[i].getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -100,7 +101,7 @@ public class Renderer {
 
             atrousTexture[i] = new Texture();
             atrousTexture[i].bind();
-            atrousTexture[i].texImage(GL_RGBA32F, GL_FLOAT, 0);
+            atrousTexture[i].texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
             atrousTexture[i].linearFiltering();
             atrousTexture[i].clampToEdge();
             glBindImageTexture(4, atrousTexture[i].getId(), 0, false, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -164,19 +165,20 @@ public class Renderer {
         glBufferData(GL_SHADER_STORAGE_BUFFER, bvh_triangles_data, GL_STATIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, bvh_triangles_ssbo);
 
-        modelTexture = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, modelTexture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        int[] width = new int[1], height = new int[1];
+        // Model texture
+        //int[] width = new int[1], height = new int[1];
         /*byte[] bytes = Utils.loadBytes("models/breakfast_room/picture3.jpg");
         ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
         buffer.put(bytes).flip();*/
-        stbi_set_flip_vertically_on_load(true);
+        /*stbi_set_flip_vertically_on_load(true);
         ByteBuffer data = stbi_load_from_memory(BVHTest.getModel().data, width, height, new int[1], 3);
-        if (data == null) Logger.error("Failed to load texture: \"\"" + " " + stbi_failure_reason());
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width[0], height[0], 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        if (data == null) Logger.error("Failed to load texture: \"\"" + " " + stbi_failure_reason());*/
+
+        /*modelTexture = new Texture();
+        modelTexture.bind();
+        modelTexture.linearFiltering();
+        modelTexture.texImage(GL_RGB, width[0], height[0], GL_UNSIGNED_BYTE, data);
+        modelTexture.unbind();*/
     }
 
     public static void render() {
@@ -274,6 +276,10 @@ public class Renderer {
         pathtraceShader.setVec3("triangles_offset", triangles_offset);
         pathtraceShader.setMat4("triangles_rotation", new Matrix4f().rotate(triangles_rotation));
 
+        /*glActiveTexture(GL_TEXTURE5);
+        modelTexture.bind();
+        pathtraceShader.setInt("model_texture", 5);*/
+
         glActiveTexture(GL_TEXTURE2);
         normalTexture[prevPt].bind();
         pathtraceShader.setInt("prev_normal", 2);
@@ -355,14 +361,14 @@ public class Renderer {
     }
 
     public static void resetTextures() {
-        pathtraceTexture[0].bind(); pathtraceTexture[0].texImage(GL_RGBA32F, GL_FLOAT, 0);
-        pathtraceTexture[1].bind(); pathtraceTexture[1].texImage(GL_RGBA32F, GL_FLOAT, 0);
-        normalTexture[0].bind(); normalTexture[0].texImage(GL_RGBA32F, GL_FLOAT, 0);
-        normalTexture[1].bind(); normalTexture[1].texImage(GL_RGBA32F, GL_FLOAT, 0);
-        positionTexture.bind(); positionTexture.texImage(GL_RGBA32F, GL_FLOAT, 0);
-        albedoTexture.bind(); albedoTexture.texImage(GL_RGBA32F, GL_FLOAT, 0);
-        atrousTexture[0].bind(); atrousTexture[0].texImage(GL_RGBA32F, GL_FLOAT, 0);
-        atrousTexture[1].bind(); atrousTexture[1].texImage(GL_RGBA32F, GL_FLOAT, 0);
+        pathtraceTexture[0].bind(); pathtraceTexture[0].texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
+        pathtraceTexture[1].bind(); pathtraceTexture[1].texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
+        normalTexture[0].bind(); normalTexture[0].texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
+        normalTexture[1].bind(); normalTexture[1].texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
+        positionTexture.bind(); positionTexture.texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
+        albedoTexture.bind(); albedoTexture.texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
+        atrousTexture[0].bind(); atrousTexture[0].texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
+        atrousTexture[1].bind(); atrousTexture[1].texImage(GL_RGBA32F, Window.getWidth(), Window.getHeight(), GL_FLOAT, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 

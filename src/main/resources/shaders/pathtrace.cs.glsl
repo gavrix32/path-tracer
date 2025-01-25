@@ -4,7 +4,7 @@
 #define EPSILON 0.001
 #define MAX_DISTANCE 1e10
 #define MAX_SPHERES 16
-#define MAX_BOXES 16
+#define MAX_BOXES 70
 
 struct Ray {
     vec3 origin, dir, invdir, energy;
@@ -68,6 +68,7 @@ uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture, russ
 uniform sampler2D sky_texture;
 uniform sampler2D prev_color;
 uniform sampler2D prev_normal;
+uniform sampler2D model_texture;
 uniform float time, fov, focus_distance, aperture;
 uniform Sphere spheres[MAX_SPHERES];
 uniform Box boxes[MAX_BOXES];
@@ -265,8 +266,11 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
             hitInfo.normal = vec3(0.0, 1.0, 0.0);
             if (plane.checkerboard) {
                 float cb = checkerboard(vec3(ray.dir * dist + ray.origin).xz / (plane.scale * 0.4f));
-                if (cb != 0.0) hitInfo.material.albedo = plane.color1;
-                else hitInfo.material.albedo = plane.color2;
+                if (cb != 0.0) {
+                    hitInfo.material.albedo = plane.color1;
+                } else {
+                    hitInfo.material.albedo = plane.color2;
+                }
                 //hitInfo.material.albedo = texture(sky_texture, vec3(ray.origin + ray.dir * dist).xz / 100.0).rgb;
             } else {
                 hitInfo.material.albedo = plane.material.albedo;
@@ -315,20 +319,20 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
                 if (dist > 0 && dist < hitInfo.distance) {
                     hit = true;
                     hitInfo.distance = dist;
-                    //hitInfo.material = Material(vec3(1.0, 0.5, 0.2), true, 0.0, 0.3, false, 0.0); // gold
+                    hitInfo.material = Material(vec3(1.0, 0.5, 0.2), false, 0.0, 1.0, false, 0.0); // gold
                     vec2 uv = tri.uv1.xy * (1.0 - tuv.y - tuv.z) + tri.uv2.xy * tuv.y + tri.uv3.xy * tuv.z;
-                    hitInfo.material = Material(texture(model_texture, uv).rgb, true, 0.0, 1.0, false, 0.0);
+                    //hitInfo.material = Material(texture(model_texture, uv).rgb, true, 0.0, 1.0, false, 0.0);
                     //hitInfo.material = Material(vec3(1), true, 0.0, 1.0, false, 0.0);
                     // monu2
-                    if (hitInfo.material.albedo == vec3(255.0/255.0, 148.0/255.0, 0.0/255.0)) {
+                    /*if (hitInfo.material.albedo == vec3(255.0/255.0, 148.0/255.0, 0.0/255.0)) {
                         hitInfo.material.emission = 3.0;
                     }
                     if (hitInfo.material.albedo == vec3(158.0/255.0, 164.0/255.0, 110.0/255.0)) {
                         hitInfo.material.emission = 3.0;
-                    }
+                    }*//**
 
                     // nebulae
-                    if (hitInfo.material.albedo == vec3(1.0/255.0, 200.0/255.0, 239.0/255.0)) {
+                    *//**if (hitInfo.material.albedo == vec3(1.0/255.0, 200.0/255.0, 239.0/255.0)) {
                         hitInfo.material.emission = 3.0;
                     }
                     if (hitInfo.material.albedo == vec3(106.0/255.0, 200.0/255.0, 239.0/255.0)) {
@@ -336,10 +340,10 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
                     }
                     if (hitInfo.material.albedo == vec3(228.0/255.0, 100.0/255.0, 159.0/255.0)) {
                         hitInfo.material.emission = 3.0;
-                    }
+                    }*//**
 
                     // portal
-                    if (hitInfo.material.albedo == vec3(103.0/255.0, 215.0/255.0, 190.0/255.0)) hitInfo.material.emission = 3.0;
+                    *//**if (hitInfo.material.albedo == vec3(103.0/255.0, 215.0/255.0, 190.0/255.0)) hitInfo.material.emission = 3.0;
                     if (hitInfo.material.albedo == vec3(219.0/255.0, 46.0/255.0, 46.0/255.0)) hitInfo.material.emission = 3.0;
                     if (hitInfo.material.albedo == vec3(212.0/255.0, 78.0/255.0, 112.0/255.0)) hitInfo.material.emission = 3.0;
                     if (hitInfo.material.albedo == vec3(210.0/255.0, 11.0/255.0, 21.0/255.0)) hitInfo.material.emission = 3.0;
@@ -354,7 +358,7 @@ bool raycast(in Ray ray, out HitInfo hitInfo) {
                     if (hitInfo.material.albedo.r >= 200.0/255.0 && hitInfo.material.albedo.r <= 255.0/255.0 &&
                     hitInfo.material.albedo.g >= 120.0/255.0 && hitInfo.material.albedo.g <= 255.0/255.0 &&
                     hitInfo.material.albedo.b >= 0.0/255.0 && hitInfo.material.albedo.b <= 150.0/255.0
-                    ) hitInfo.material.emission = 3.0;
+                    ) hitInfo.material.emission = 3.0;*//**
 
                     //hitInfo.material = Material(vec3(1.0), true, 0.0, 1.0, false, 0.0);
                     hitInfo.normal = normalize(normal);

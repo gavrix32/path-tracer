@@ -27,6 +27,7 @@ public class Controls {
                 if (!screenshotsDir.exists()) screenshotsDir.mkdir();
                 Utils.takeScreenshot(System.getProperty("user.dir") + "/screenshots/" + dtf.format(now) + ".png");
             }
+            if (key == GLFW_KEY_TAB && action == GLFW_RELEASE) Main.showGui = !Main.showGui;
         });
         glfwSetMouseButtonCallback(Window.get(), (window, button, action, mods) -> {
             if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE /*&& Viewport.cursorInViewport()*/) Window.toggleCursor();

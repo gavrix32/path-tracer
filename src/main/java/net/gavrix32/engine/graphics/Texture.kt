@@ -1,6 +1,5 @@
 package net.gavrix32.engine.graphics
 
-import net.gavrix32.engine.io.Window
 import org.lwjgl.opengl.GL46C.*
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
@@ -16,16 +15,16 @@ open class Texture {
         glBindTexture(GL_TEXTURE_2D, 0)
     }
 
-    protected fun texImage(internalFormat: Int, type: Int, pixels: Long) {
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, Window.getWidth(), Window.getHeight(), 0, GL_RGB, type, pixels)
+    protected fun texImage(internalFormat: Int, width: Int, height: Int, type: Int, pixels: Long) {
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGB, type, pixels)
     }
 
-    protected fun texImage(internalFormat: Int, type: Int, pixels: ByteBuffer) {
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, Window.getWidth(), Window.getHeight(), 0, GL_RGB, type, pixels)
+    protected fun texImage(internalFormat: Int, width: Int, height: Int, type: Int, pixels: ByteBuffer) {
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGB, type, pixels)
     }
 
-    protected fun texImage(internalFormat: Int, type: Int, pixels: FloatBuffer) {
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, Window.getWidth(), Window.getHeight(), 0, GL_RGB, type, pixels)
+    protected fun texImage(internalFormat: Int, width: Int, height: Int, type: Int, pixels: FloatBuffer) {
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGB, type, pixels)
     }
 
     protected fun linearFiltering() {
