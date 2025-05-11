@@ -25,7 +25,7 @@ public class Gui {
     private static final float[] gamma = new float[1], exposure = new float[1], focusDistance = new float[1], aperture = new float[1], fov = new float[1];
     public static final float[] sigma_spatial = new float[] {2.01f}, sigma_color = new float[] {0.2f}, sigma_depth = new float[] {10.0f}, sigma_normal = new float[] {0.1f};
     public static final int[] radius = new int[] {2};
-    private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(),
+    private static final ImBoolean accumulation = new ImBoolean(), temporalReprojection = new ImBoolean(), checkerboardRendering = new ImBoolean(),
             temporalAntialiasing = new ImBoolean(), atrousFilter = new ImBoolean(), russianRoulette = new ImBoolean();
     private static final ImInt sceneId = new ImInt();
 
@@ -61,6 +61,7 @@ public class Gui {
         maxAccumulatedSamples[0] = Renderer.getMaxAccumulatedSamples();
         accumulation.set(Renderer.isAccumulation());
         temporalReprojection.set(Renderer.isTemporalReprojection());
+        checkerboardRendering.set(Renderer.ischeckerboardRendering());
         temporalAntialiasing.set(Renderer.isTemporalAntialiasing());
         atrousFilter.set(Renderer.isAtrousFilter());
         russianRoulette.set(Renderer.isRussianRoulette());
@@ -137,6 +138,10 @@ public class Gui {
             if (ImGui.checkbox("Temporal Reprojection", temporalReprojection))
                 Renderer.useTemporalReprojection(temporalReprojection.get());
 
+            // Checkerboard Sampling
+            if (ImGui.checkbox("Checkerboard Rendering", checkerboardRendering))
+                Renderer.usecheckerboardRendering(checkerboardRendering.get());
+
             // TAA
             if (ImGui.checkbox("TAA", temporalAntialiasing))
                 Renderer.useTemporalAntialiasing(temporalAntialiasing.get());
@@ -193,6 +198,7 @@ public class Gui {
                 maxAccumulatedSamples[0] = Config.getInt("max_accumulated_samples"); Renderer.setMaxAccumulatedSamples(maxAccumulatedSamples[0]);
                 accumulation.set(Config.getBoolean("accumulation")); Renderer.useAccumulation(accumulation.get());
                 temporalReprojection.set(Config.getBoolean("temporal_reprojection")); Renderer.useTemporalReprojection(temporalReprojection.get());
+                checkerboardRendering.set(Config.getBoolean("checkerboard_rendering")); Renderer.usecheckerboardRendering(checkerboardRendering.get());
                 temporalAntialiasing.set(Config.getBoolean("temporal_antialiasing")); Renderer.useTemporalAntialiasing(temporalAntialiasing.get());
                 atrousFilter.set(Config.getBoolean("atrous_filter")); Renderer.useAtrousFilter(atrousFilter.get());
                 russianRoulette.set(Config.getBoolean("russian_roulette")); Renderer.useRussianRoulette(russianRoulette.get());

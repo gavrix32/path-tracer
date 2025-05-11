@@ -63,8 +63,8 @@ struct Node {
 
 uniform vec3 camera_position, prev_camera_position, triangles_offset;
 uniform mat4 camera_rotation, prev_camera_rotation, triangles_rotation;
-uniform int samples, bounces, spheres_count, boxes_count, accumulated_samples, max_accumulated_samples;
-uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture, russian_roulette;
+uniform int samples, bounces, spheres_count, boxes_count, accumulated_samples, max_accumulated_samples, frame_index;
+uniform bool temporal_reprojection, temporal_antialiasing, sky_has_texture, russian_roulette, checkerboard_rendering;
 uniform sampler2D sky_texture;
 uniform sampler2D prev_color;
 uniform sampler2D prev_normal;
@@ -495,6 +495,13 @@ vec2 reproject(mat3 prev_view, vec3 prev_cam_pos, HitInfo hitinfo, float fov_con
     return uv2fragcoord(dir.xy);
 }
 
+bool isCurrentPixelActive(vec2 fragCoord, int frameIndex) {
+    if (!checkerboard_rendering) return true;
+    ivec2 coord = ivec2(fragCoord);
+    int pattern = (coord.x + coord.y) % 2;
+    return (pattern == (frameIndex % 2));
+}
+
 void main() {
     update_seed();
     //seed = pcg_hash(uint(gl_GlobalInvocationID.x * gl_GlobalInvocationID.y));
@@ -538,10 +545,12 @@ void main() {
     raycast(Ray(camera_position, dir, 1.0 / dir, vec3(0.0)), hitinfo);
 
     vec3 color = vec3(0.0);
-    for (int i = 0; i < samples; i++) {
-        color += trace(ray, bounces + 2);
+    if (isCurrentPixelActive(gl_GlobalInvocationID.xy, frame_index)) {
+        for (int i = 0; i < samples; i++) {
+            color += trace(ray, bounces + 2);
+        }
+        color /= samples;
     }
-    color /= samples;
 
     // demodulate albedo
     color /= max(hitinfo.material.albedo, vec3(0.001));
@@ -555,17 +564,24 @@ void main() {
 
     float variance = 0.0;
     float factor = accumulated_samples / (accumulated_samples + 1.0);
+    if (!isCurrentPixelActive(gl_GlobalInvocationID.xy, frame_index)) {
+        factor = 1.0;
+    }
+
     if (temporal_reprojection) {
         vec2 reproj_fragcoord = reproject(mat3(prev_camera_rotation), prev_camera_position, hitinfo, fov_converted);
         vec2 reproj_uv = (reproj_fragcoord + 0.5) / resolution;
         float temporal_mix_factor = 0.9;
+        if (!isCurrentPixelActive(gl_GlobalInvocationID.xy, frame_index)) {
+            temporal_mix_factor = 1.0;
+        }
         if (reproj_uv.x < 0.0 || reproj_uv.y < 0.0 || reproj_uv.x > 1.0 || reproj_uv.y > 1.0) {
             temporal_mix_factor = 0.0;
         }
         if (abs(hitinfo.distance - texture(prev_normal, reproj_uv).a) > 15.0) {
             temporal_mix_factor = 0.0;
         }
-        if (hitinfo.material.roughness < 1.0) {
+        if (hitinfo.material.roughness < 1.0 && hitinfo.material.emission == 0.0) {
             temporal_mix_factor = 0.0;
         }
         /**vec3 normal_delta = abs(hitinfo.normal - texture(prev_normal, reproj_uv).rgb);

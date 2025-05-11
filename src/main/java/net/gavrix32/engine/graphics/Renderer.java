@@ -18,6 +18,7 @@ public class Renderer {
     private static Shader atrousShader;
     private static Shader presentShader;
     private static int accumulatedSamples = 0;
+    private static int frameIndex = 0;
     private static Texture albedoTexture, positionTexture;
     private static final Texture[] normalTexture = new Texture[2];
     private static final Texture[] pathtraceTexture = new Texture[2];
@@ -30,7 +31,7 @@ public class Renderer {
     // Config variables
     private static int samples, maxAccumulatedSamples, bounces;
     private static float gamma, exposure, focusDistance, aperture, fov;
-    private static boolean accumulation, temporalReprojection, temporalAntialiasing, atrousFilter, russianRoulette;
+    private static boolean accumulation, temporalReprojection, temporalAntialiasing, atrousFilter, russianRoulette, checkerboardRendering;
 
     private static Texture modelTexture;
 
@@ -192,12 +193,14 @@ public class Renderer {
         pathtraceShader.setFloat("time", (float) glfwGetTime());
         pathtraceShader.setInt("samples", samples);
         pathtraceShader.setInt("accumulated_samples", accumulatedSamples);
+        pathtraceShader.setInt("frame_index", frameIndex);
         pathtraceShader.setInt("max_accumulated_samples", maxAccumulatedSamples);
         pathtraceShader.setInt("bounces", bounces);
         pathtraceShader.setBool("russian_roulette", russianRoulette);
         pathtraceShader.setFloat("fov", fov);
         pathtraceShader.setBool("temporal_reprojection", temporalReprojection);
         pathtraceShader.setBool("temporal_antialiasing", temporalAntialiasing);
+        pathtraceShader.setBool("checkerboard_rendering", checkerboardRendering);
         pathtraceShader.setFloat("focus_distance", focusDistance);
         pathtraceShader.setFloat("aperture", aperture);
         pathtraceShader.setBool("sky_has_texture", scene.sky.hasTexture());
@@ -344,6 +347,7 @@ public class Renderer {
         swapColorTextures();
         if (accumulation && accumulatedSamples != maxAccumulatedSamples)
             accumulatedSamples++;
+        frameIndex++;
     }
 
     public static void resetAccFrames() {
@@ -470,6 +474,15 @@ public class Renderer {
         resetAccFrames();
         temporalAntialiasing = value;
         Config.setBoolean("temporal_antialiasing", value);
+    }
+    public static boolean ischeckerboardRendering() {
+        return checkerboardRendering;
+    }
+
+    public static void usecheckerboardRendering(boolean value) {
+        resetAccFrames();
+        checkerboardRendering = value;
+        Config.setBoolean("checkerboard_rendering", value);
     }
 
     public static boolean isAtrousFilter() {
